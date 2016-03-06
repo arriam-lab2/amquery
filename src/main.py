@@ -1,10 +1,10 @@
 import itertools
 import random
 from collections import Counter
-from itertools import izip
 
 import iof
 from metrics import jaccard
+from subsampling import *
 
 #import scipy
 #from scipy import stats
@@ -46,22 +46,6 @@ def jackknifed_distance(table1, table2, subset_size):
     values = [jaccard(set(x), set(y)) for x, y in zipped_jackknife(table1, table2, subset_size)]
     print(str(scipy.stats.bayes_mvs(values)))
 
- 
-def zipped_jackknife(x, y, subset_size):
-    for xi, yi in izip(jackknifed(x, subset_size), 
-                       jackknifed(y, subset_size)):
-        yield (xi, yi)
-
-
-# jackknife resampling generator
-def jackknifed(table, chunk_size):
-    yield table
-    while len(table) > 0:
-        keys = random.sample(table.keys(), min(chunk_size, len(table)))
-        chunk = {}
-        x = [chunk.update({key: table.pop(key)}) for key in keys]
-        yield chunk
-
 
 if __name__ == "__main__":
     
@@ -73,7 +57,8 @@ if __name__ == "__main__":
     jackknife_subset_size = 1000
     filename = 'data/seqs.fna'
     data = iof.read_fasta(filename)
-    l = distance_matrix(data, k, jackknife_subset_size)
+    dmatrix = distance_matrix(data, k, jackknife_subset_size)
+    iof.write_distance_matrix(dmatrix, 'j_matrix.txt')
     print(l)
 
     #table1 = {1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7}

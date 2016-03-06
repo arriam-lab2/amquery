@@ -15,9 +15,17 @@ def read_fasta(filename):
     return data
 
 
-def write_distance_matrix(filename, dmatrix):
-    pass
+def write_distance_matrix(dmatrix, filename):
+    with open(filename, 'w') as f:
+        f.write('\n'.join('\t'.join(str(x) for x in line) for line in dmatrix))
+
+    #f.close()
 
 if __name__ == "__main__":
-    filename = 'data/seqs.fna'
-    data = read_fasta(filename)
+    #filename = 'data/seqs.fna'
+    #data = read_fasta(filename)
+
+    #a = [['a', 'b', 'c'], ['a', 1, 2, 3], ['b', 4, 5, 6], ['c', 7, 8, 9]] 
+    #write_distance_matrix(a, 'tmp.txt')
+
+    pass
