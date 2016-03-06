@@ -53,13 +53,12 @@ if __name__ == "__main__":
     start = time()
 
     random.seed(42)
-    k = 50
+    k = 100
     jackknife_subset_size = 1000
     filename = 'data/seqs.fna'
     data = iof.read_fasta(filename)
     dmatrix = distance_matrix(data, k, jackknife_subset_size)
     iof.write_distance_matrix(dmatrix, 'j_matrix.txt')
-    print(l)
 
     #table1 = {1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7}
     #print('\n'.join(str(t) for t in jackknifed(table1, 2)))

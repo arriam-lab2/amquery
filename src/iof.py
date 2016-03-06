@@ -17,6 +17,7 @@ def read_fasta(filename):
 
 def write_distance_matrix(dmatrix, filename):
     with open(filename, 'w') as f:
+        f.write('\t')
         f.write('\n'.join('\t'.join(str(x) for x in line) for line in dmatrix))
 
     #f.close()
