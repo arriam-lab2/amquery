@@ -1,5 +1,5 @@
 import itertools
-import time
+import random
 from Bio import SeqIO
 from collections import Counter
 from itertools import izip
@@ -41,7 +41,7 @@ def hasher(string_set, k):
     return table
 
 
-def distance_matrix(data, k):
+def distance_matrix(data, k, jk_size):
     # all pairs [sample, hash table]
     tables = {}
     [tables.update({sample: hasher(data[sample], k)}) for sample in data.keys()]
@@ -49,24 +49,23 @@ def distance_matrix(data, k):
     for pair in itertools.combinations(tables, r=2):
         table1 = tables[pair[0]].copy()
         table2 = tables[pair[1]].copy()
+        #print(len(table1))
+        #print(len(table2))
 
         print(pair[0] + " vs. " + pair[1] + ": ")
-        #jackknifed_distance(table1, table2)
-        distance(table1, table2)
+        jackknifed_distance(table1, table2, jk_size)
+        #distance(table1, table2)
 
 
 def distance(table1, table2):
     value = jaccard(set(table1.values()), set(table2.values()))
+    #value = JSD(set(table1.values()), set(table2.values()))
     print(value)
 
 
-# отобрать подмножество без возвращений
-def jackknifed_distance(table1, table2):
-    subset_size = 1000
+def jackknifed_distance(table1, table2, subset_size):
     values = [jaccard(set(x), set(y)) for x, y in zipped_jackknife(table1, table2, subset_size)]
     print(str(scipy.stats.bayes_mvs(values)))
-
-    #print(pair[0] + " vs. " + pair[1] + ": " + str(values))
 
 
 # Jaccard index of similarity
@@ -77,23 +76,21 @@ def jaccard(x, y):
 
 # Bray-Curtis dissimilarity
 #def bray_curtis(x, y):
-    #intersection = len(set.intersection(x, y))
-#    pass
+#intersection = len(set.intersection(x, y))
+#pass
 
-    # Jenson-Shanon divergence
+# Jenson-Shanon divergence
 def JSD(x, y):
-    from scipy.stats import entropy
-    from numpy.linalg import norm
     import numpy as np
-
-    print(x)
-    x = x / norm(x, ord=1)
-    print(x)
-    y = y / norm(y, ord=1)
-    z = 0.5 * (x + y)
-    jsd = 0.5 * entropy(x, z) + 0.5 * entropy(y, z)
-    return jsd
-    #return sqrt(jsd)
+    import warnings
+    warnings.filterwarnings("ignore", category = RuntimeWarning)
+    x = np.array(x)
+    y = np.array(y)
+    d1 = x*np.log2(2*x/(x+y))
+    d2 = y*np.log2(2*y/(x+y))
+    d1[np.isnan(d1)] = 0
+    d2[np.isnan(d2)] = 0
+    return sqrt(0.5 * np.sum(d1 + d2))
 
  
 def zipped_jackknife(x, y, subset_size):
@@ -106,26 +103,31 @@ def zipped_jackknife(x, y, subset_size):
 def jackknifed(table, chunk_size):
     yield table
     while len(table) > 0:
-        #print("J", len(table))
-        [table.pop(x) for x in [key for key in table.keys()][:chunk_size]]
-        yield table
+        keys = random.sample(table.keys(), min(chunk_size, len(table)))
+        chunk = {}
+        x = [chunk.update({key: table.pop(key)}) for key in keys]
+        yield chunk
 
 
 if __name__ == "__main__":
     
-    start = time.time()
+    from time import time
+    start = time()
 
+    random.seed(42)
     k = 50
+    jackknife_subset_size = 1000
     filename = 'data/seqs.fna'
     data = read_data(filename)
-    distance_matrix(data, k)
+    distance_matrix(data, k, jackknife_subset_size)
 
     #table1 = {1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7}
+    #print('\n'.join(str(t) for t in jackknifed(table1, 2)))
     #table2 = {1:1, 13:9, 5:5, 16:3, 7:10}
     #print('\n'.join(str(x) for x in jackknifed(table1, 2)))
     #print(JSD(Counter(table1), Counter(table2)))
 
-    end = time.time()
-    print("Time: ", end - start)
+    end = time()
+    print("Time: " + str(end - start))
 
 
