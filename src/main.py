@@ -3,7 +3,7 @@ import random
 from collections import Counter
 
 import iof
-from metrics import jaccard
+from metrics import jaccard, JSD
 from subsampling import *
 
 #import scipy
@@ -29,14 +29,14 @@ def hasher(string_set, k):
     return table
 
 
-def distance_matrix(data, k, jk_size):
+def distance_matrix(data, k, jk_size, distance):
     tables = {}
     [tables.update({sample: hasher(data[sample], k)}) for sample in data.keys()]
 
     result = [tables.keys()]
     for key1 in tables:
         table1 = tables[key1].copy()
-        values = [jaccard(table1, tables[key2].copy()) for key2 in tables]
+        values = [distance(table1, tables[key2].copy()) for key2 in tables]
         result.append([key1] + values)
 
     return result
@@ -53,18 +53,20 @@ if __name__ == "__main__":
     start = time()
 
     random.seed(42)
-    k = 100
+    k = 200
     jackknife_subset_size = 1000
     filename = 'data/seqs.fna'
     data = iof.read_fasta(filename)
-    dmatrix = distance_matrix(data, k, jackknife_subset_size)
-    iof.write_distance_matrix(dmatrix, 'j_matrix.txt')
+    #dmatrix = distance_matrix(data, k, jackknife_subset_size, JSD)
+    dmatrix = distance_matrix(data, k, jackknife_subset_size, jaccard)
+    iof.write_distance_matrix(dmatrix, 'jaccard_matrix.txt')
+    #iof.write_distance_matrix(dmatrix, 'jsd_matrix.txt')
 
     #table1 = {1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7}
     #print('\n'.join(str(t) for t in jackknifed(table1, 2)))
-    #table2 = {1:1, 13:9, 5:5, 16:3, 7:10}
+    #table2 = {2:2, 5:5, 4:4, 7:7, 6:6, 3:3}
     #print('\n'.join(str(x) for x in jackknifed(table1, 2)))
-    #print(JSD(Counter(table1), Counter(table2)))
+    #print(JSD(table1, table2))
 
     end = time()
     print("Time: " + str(end - start))
