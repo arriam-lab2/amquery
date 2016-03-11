@@ -29,22 +29,25 @@ def hasher(string_set, k):
     return table
 
 
-def distance_matrix(data, k, jk_size, distance):
+def fulldata_distance(data, k, distance_func):
     tables = {}
-    [tables.update({sample: hasher(data[sample], k)}) for sample in data.keys()]
+    for sample in data.keys():
+        tables[sample] = hasher(data[sample], k)
 
     result = [tables.keys()]
     for key1 in tables:
         table1 = tables[key1].copy()
-        values = [distance(table1, tables[key2].copy()) for key2 in tables]
+        values = [distance_func(table1, tables[key2].copy()) for key2 in tables]
         result.append([key1] + values)
 
     return result
 
 
-def jackknifed_distance(table1, table2, subset_size):
+#def jackknifed_distance(table1, table2, subset_size):
+def jackknifed_distance(data, k, jk_size, distance):
     values = [jaccard(set(x), set(y)) for x, y in zipped_jackknife(table1, table2, subset_size)]
-    print(str(scipy.stats.bayes_mvs(values)))
+    #print(str(scipy.stats.bayes_mvs(values)))
+    print(values)
 
 
 if __name__ == "__main__":
@@ -57,9 +60,10 @@ if __name__ == "__main__":
     jackknife_subset_size = 1000
     filename = 'data/seqs.fna'
     data = iof.read_fasta(filename)
+    print(data['chem1'])
     #dmatrix = distance_matrix(data, k, jackknife_subset_size, JSD)
-    dmatrix = distance_matrix(data, k, jackknife_subset_size, jaccard)
-    iof.write_distance_matrix(dmatrix, 'jaccard_matrix.txt')
+    dmatrix = fulldata_distance(data, k, jaccard)
+    iof.write_distance_matrix(dmatrix, 'ji_full.txt')
     #iof.write_distance_matrix(dmatrix, 'jsd_matrix.txt')
 
     #table1 = {1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7}
@@ -67,6 +71,7 @@ if __name__ == "__main__":
     #table2 = {2:2, 5:5, 4:4, 7:7, 6:6, 3:3}
     #print('\n'.join(str(x) for x in jackknifed(table1, 2)))
     #print(JSD(table1, table2))
+
 
     end = time()
     print("Time: " + str(end - start))
