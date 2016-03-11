@@ -14,6 +14,13 @@ def read_fasta(filename):
 
     return data
 
+def clear_dir(path):
+    import os
+    import glob
+
+    files = glob.glob(path + '/*')
+    for f in files:
+        os.remove(f)
 
 def write_distance_matrix(dmatrix, filename):
     with open(filename, 'w') as f:

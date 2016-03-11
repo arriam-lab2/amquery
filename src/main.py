@@ -6,9 +6,6 @@ import iof
 from metrics import jaccard, JSD
 from subsampling import *
 
-#import scipy
-#from scipy import stats
-
 def kmer_generator(string, k):
     kmer = string[:k]
 
@@ -43,35 +40,34 @@ def fulldata_distance(data, k, distance_func):
     return result
 
 
-#def jackknifed_distance(table1, table2, subset_size):
-def jackknifed_distance(data, k, jk_size, distance):
-    values = [jaccard(set(x), set(y)) for x, y in zipped_jackknife(table1, table2, subset_size)]
-    #print(str(scipy.stats.bayes_mvs(values)))
-    print(values)
+def jackknifed_distance(data, k, jk_size, distance_func):
+    for subsample in jackknifed(data, jk_size):
+        yield fulldata_distance(subsample, k, distance_func)
 
 
 if __name__ == "__main__":
+    iof.clear_dir('out/ji')
     
     from time import time
     start = time()
 
     random.seed(42)
     k = 200
-    jackknife_subset_size = 1000
+    jk_size = 100
     filename = 'data/seqs.fna'
     data = iof.read_fasta(filename)
-    print(data['chem1'])
-    #dmatrix = distance_matrix(data, k, jackknife_subset_size, JSD)
-    dmatrix = fulldata_distance(data, k, jaccard)
-    iof.write_distance_matrix(dmatrix, 'ji_full.txt')
+
+    #dmatrix = fulldata_distance(data, k, JSD)
     #iof.write_distance_matrix(dmatrix, 'jsd_matrix.txt')
 
-    #table1 = {1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7}
-    #print('\n'.join(str(t) for t in jackknifed(table1, 2)))
-    #table2 = {2:2, 5:5, 4:4, 7:7, 6:6, 3:3}
-    #print('\n'.join(str(x) for x in jackknifed(table1, 2)))
-    #print(JSD(table1, table2))
+    dmatrix = fulldata_distance(data, k, jaccard)
+    iof.write_distance_matrix(dmatrix, 'out/ji_full.txt')
 
+    import tempfile
+    for jk_result in jackknifed_distance(data, k, jk_size, jaccard):
+    #for jk_result in [fulldata_distance(data, k, jaccard)]:
+        tfile = tempfile.NamedTemporaryFile(dir='./out/ji/', delete=False, prefix='ji_', suffix='.txt')
+        iof.write_distance_matrix(jk_result, tfile.name)
 
     end = time()
     print("Time: " + str(end - start))

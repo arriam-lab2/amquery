@@ -55,24 +55,25 @@ uf <- dm.parse.file(uu_full_filename)
 uu_path = 'data/out3/unweighted_unifrac/rare_dm/'
 uu_tables <- dm.parse.dir(uu_path)
 
-ji_full_filename = 'jaccard_matrix.txt'
-ji <- dm.parse.file(ji_full_filename)
+ji_full_filename = 'out/ji_full.txt'
+jf <- dm.parse.file(ji_full_filename)
+
+ji_path = 'out/ji'
+ji_tables <- dm.parse.dir(ji_path)
 
 #jsd_full_filename = 'jsd_matrix.txt'
 
 uu_tables <- lapply(uu_tables, dm.reformat, uf)
-ji <- dm.reformat(ji, uf)
+ji_tables <- lapply(ji_tables, dm.reformat, uf)
+jf <- dm.reformat(jf, uf)
 uf$X <- NULL
 
-N <- length(uu_tables)
-
 source('jackknife.R')
-round(jk.pseudomean(uu_tables, uf, N), 4)
-round(jk.pseudovar(uu_tables, uf, N), 4)
+round(jk.pseudomean(uu_tables, uf), 4)
+round(jk.pseudovar(uu_tables, uf), 4)
 
-
-
-
+round(jk.pseudomean(ji_tables, jf), 4)
+round(jk.pseudovar(ji_tables, jf), 4)
 
 
 #uu <- uu_tables[[1]]
