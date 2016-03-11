@@ -1,4 +1,6 @@
 library(ggplot2)
+library(plyr)
+library(gridExtra)
 
 dm.parse.file <- function(filename) {
     as.data.frame(read.table(filename, sep="\t", header=TRUE))
@@ -28,6 +30,7 @@ dm.compare.cor2 <- function(x, y) {
     # cor-squared heat map
     g <- ggplot(data = mcor_matrix, aes(x=Var1, y=Var2, fill=value)) + geom_tile()
     print(g)
+    #return (g)
 }
 
 dm.compare.r2 <- function(x, y) {
@@ -39,16 +42,30 @@ dm.compare.r2 <- function(x, y) {
     }
 
     df <- melt(mapply(r2, x, y))
-    g <- ggplot(df, aes(x=factor(rownames(df)), y=value, group=1)) + geom_line()
+    df <- rename(df, c("value"="R2"))
+    df$mean_dist <- sapply(x, mean)
+
+    g <- ggplot(df, aes(x=factor(rownames(df)))) + 
+        geom_line(aes(y=R2, colour = "R-squared", group=1)) + 
+        geom_line(aes(y=mean_dist, colour = "mean Unifrac", group=1))
+
     print(g)
+
+    print("Mean distance vs. R-squared corellation:")
+    print(cor(df$R2, df$mean_dist))
+
+    #return (g)
     return(df)
 }
 
 dm.compare <- function(x, y) {
     #y <- dm.reformat(y, x)
     #x$X <- NULL
-    dm.compare.cor2(x, y)
-    dm.compare.r2(x, y)
+    g1 <- dm.compare.cor2(x, y)
+    g2 <- dm.compare.r2(x, y)
+    #grid.draw(rbind(ggplotGrob(g1), ggplotGrob(g2), size="last"))
+    #grid.arrange(g1, g2, ncol=1)
+
 }
 
 dm.get <- function(x, i, j) { x[[i]][[j]] }
@@ -76,7 +93,7 @@ dm.compare.ci <- function(x, y, zfull) {
     print(resmat)
 
     md <- melt(resmat)
-    md$pp <- m$value > alpha | is.na(m$value)
+    md$pp <- md$value > alpha | is.na(md$value)
     g <- ggplot(data = md, aes(x=Var1, y=Var2, fill=pp)) + geom_tile()
     print(g)
     g <- ggplot(data = md, aes(x=Var1, y=Var2, fill=value)) + geom_tile()
