@@ -22,9 +22,18 @@ jk.pseudovar <- function(dm_list, dfull) {
     return ((N-1)/N * rss_sum)
 }
 
-
-jk.mean <- function(dm_list, dfull) {
+jk.mean <- function(dm_list) {
     N <- length(dm_list)
     return (Reduce('+', dm_list) / N)
+}
+
+jk.var <- function(dm_list) {
+    N <- length(dm_list)
+    dm_mean <- jk.mean(dm_list)
+    residuals <- lapply(dm_list, '-', dm_mean)
+    rss <- lapply(residuals, sqr)
+    rss_sum <- Reduce('+', rss)
+    return (rss_sum / (N - 1))
+
 }
 
