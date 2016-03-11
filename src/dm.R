@@ -39,8 +39,9 @@ dm.compare.r2 <- function(x, y) {
     }
 
     df <- melt(mapply(r2, x, y))
-    g <- ggplot(df, aes(x=seq(1, dim(df)[1]), y=value, fill=value)) + geom_line()
+    g <- ggplot(df, aes(x=factor(rownames(df)), y=value, group=1)) + geom_line()
     print(g)
+    return(df)
 }
 
 dm.compare <- function(x, y) {

@@ -19,6 +19,13 @@ uu_tables <- lapply(uu_tables, dm.reformat, uf)
 ji_tables <- lapply(ji_tables, dm.reformat, uf)
 jf <- dm.reformat(jf, uf)
 uf$X <- NULL
+rownames(uf) <- colnames(uf)
+rownames(jf) <- colnames(jf)
+
+
+# unifrac vs. jaccard
+dm.compare(uf, jf)
+
 
 source('jackknife.R')
 round(jk.pseudomean(uu_tables, uf), 4)
@@ -33,11 +40,8 @@ round(jk.var(uu_tables), 4)
 round(jk.mean(ji_tables), 4)
 round(jk.var(ji_tables), 4)
 
-
-# unifrac vs. jaccard
-dm.compare(uf, jf)
-
 dm.compare.ci(uu_tables, ji_tables, uf)
+
 
 #uu <- uu_tables[[1]]
 #lapply(uu_tables, dm.compare, ji)
