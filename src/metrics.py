@@ -62,10 +62,20 @@ if __name__ == "__main__":
     t1 = {1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7}
     t2 = {1:1, 13:9, 5:5, 16:3, 7:10}
     t3 = {1:1, 2:2, 3:2, 4:4, 5:5, 6:6, 7:8}
+    
+    from time import time
+    start = time()
 
-    [t1.update({2*x: x}) for x in xrange(10000)]
-    [t3.update({x: x}) for x in xrange(10000)]
+    import random
+    N = 500000
+    [t1.update({random.randint(1, N): x}) for x in xrange(N)]
+    [t3.update({random.randint(1, N): x}) for x in xrange(N)]
 
-    #import profile
-    #profile.run('j = JSD(t1, t3)')
-    #print(j)
+    import profile
+    profile.run('j = JSD(t1, t3)')
+    print(j)
+
+    end = time()
+    print("Time: " + str(end - start))
+
+

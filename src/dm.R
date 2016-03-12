@@ -77,6 +77,7 @@ dm.compare.ci <- function(x, y, zfull) {
     ci <- 0.95
     alpha <- 0.05
     res <- c()
+    res2 <- c()
     
     for (i in 1:tx) {
         for (j in 1:ty) {
@@ -84,6 +85,9 @@ dm.compare.ci <- function(x, y, zfull) {
             yi <- sapply(y, dm.get, i, j)
             pvalue <- round(t.test(xi, yi, conf.level=ci, var.equal=TRUE)$p.value, 4)
             res <- c(pvalue, res)
+
+            cor2 <- round(cor(xi, yi)^2 , 4)
+            res2 <- c(cor2, res2)
         }
     }
 
@@ -98,6 +102,17 @@ dm.compare.ci <- function(x, y, zfull) {
     print(g)
     g <- ggplot(data = md, aes(x=Var1, y=Var2, fill=value)) + geom_tile()
     print(g)
+
+
+    cormat <- matrix(res2, ncol=tx, nrow=ty)
+    rownames(cormat) <- names(zfull)
+    colnames(cormat) <- names(zfull)
+    print(cormat)
+
+    md <- melt(cormat)
+    g <- ggplot(data = md, aes(x=Var1, y=Var2, fill=value)) + geom_tile()
+    print(g)
+
 }
 
 

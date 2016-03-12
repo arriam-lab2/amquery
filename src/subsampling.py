@@ -1,8 +1,8 @@
-from itertools import izip
+#from itertools import zip
 import random
  
 def zipped_jackknife(x, y, subset_size):
-    for xi, yi in izip(jackknifed(x, subset_size), 
+    for xi, yi in zip(jackknifed(x, subset_size), 
                        jackknifed(y, subset_size)):
         yield (xi, yi)
 

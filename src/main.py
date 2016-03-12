@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import itertools
 import random
 from collections import Counter
@@ -57,17 +59,19 @@ if __name__ == "__main__":
     filename = 'data/seqs.fna'
     data = iof.read_fasta(filename)
 
-    #dmatrix = fulldata_distance(data, k, JSD)
-    #iof.write_distance_matrix(dmatrix, 'jsd_matrix.txt')
-
     dmatrix = fulldata_distance(data, k, jaccard)
     iof.write_distance_matrix(dmatrix, 'out/ji_full.txt')
 
-    import tempfile
-    for jk_result in jackknifed_distance(data, k, jk_size, jaccard):
-    #for jk_result in [fulldata_distance(data, k, jaccard)]:
-        tfile = tempfile.NamedTemporaryFile(dir='./out/ji/', delete=False, prefix='ji_', suffix='.txt')
-        iof.write_distance_matrix(jk_result, tfile.name)
+    #dmatrix = fulldata_distance(data, k, JSD)
+    #iof.write_distance_matrix(dmatrix, 'out/jsd_full.txt')
+
+    #import tempfile
+    #for jk_result in jackknifed_distance(data, k, jk_size, jaccard):
+    #    tfile = tempfile.NamedTemporaryFile(dir='./out/ji/', delete=False, prefix='ji_', suffix='.txt')
+    #    iof.write_distance_matrix(jk_result, tfile.name)
+
+    #for jk_result in jackknifed_distance(data, k, jk_size, JSD):
+    #    tfile = tempfile.NamedTemporaryFile(dir='./out/jsd/', delete=False, prefix='jsd_', suffix='.txt')
 
     end = time()
     print("Time: " + str(end - start))

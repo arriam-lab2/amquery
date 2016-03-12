@@ -1,19 +1,19 @@
 source('dm.R')
 
-#filename = 'data/weighted_unifrac_otu_table.txt'
 uu_full_filename = 'data/unweighted_unifrac_otu_table.txt'
+#uu_full_filename = 'data/weighted_unifrac_otu_table.txt'
 uf <- dm.parse.file(uu_full_filename)
 
 uu_path = 'data/out3/unweighted_unifrac/rare_dm/'
 uu_tables <- dm.parse.dir(uu_path)
 
 ji_full_filename = 'out/ji_full.txt'
+#ji_full_filename = 'out/jsd_full.txt'
 jf <- dm.parse.file(ji_full_filename)
 
 ji_path = 'out/ji'
+#ji_path = 'out/jsd'
 ji_tables <- dm.parse.dir(ji_path)
-
-#jsd_full_filename = 'jsd_matrix.txt'
 
 uu_tables <- lapply(uu_tables, dm.reformat, uf)
 ji_tables <- lapply(ji_tables, dm.reformat, uf)
@@ -25,6 +25,7 @@ rownames(jf) <- colnames(jf)
 
 # unifrac vs. jaccard
 dm.compare(uf, jf)
+dm.compare(uf, uf)
 
 
 source('jackknife.R')
