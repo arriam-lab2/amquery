@@ -19,6 +19,7 @@ def clear_dir(path):
     for f in files:
         os.remove(f)
 
+
 def write_distance_matrix(dmatrix, filename):
     with open(filename, 'w') as f:
         f.write('\t')
@@ -29,8 +30,3 @@ if __name__ == "__main__":
     filename = 'data/seqs.fna'
     data = load_seqs(filename)
     print(data['wood1']['wood1_8560'])
-
-    #a = [['a', 'b', 'c'], ['a', 1, 2, 3], ['b', 4, 5, 6], ['c', 7, 8, 9]] 
-    #write_distance_matrix(a, 'tmp.txt')
-
-    pass

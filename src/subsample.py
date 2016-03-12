@@ -42,7 +42,6 @@ def do_subsample(biom_table, seqs, so_map, out_path):
         f.write(s)
 
 
-
 @click.command()
 @click.option('--input_path', '-i', help='Input (rarefied) OTU table in biom format')
 @click.option('--fasta', '-f', help='Input .fasta file')
@@ -56,9 +55,8 @@ def subsample(input_path, fasta, seqs_otus, out_dir):
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
 
-    out_path = out_dir + '/' + os.path.splitext(os.path.basename(input_path))[0] + '.txt'
+    out_path = os.path.join(out_dir, os.path.splitext(os.path.basename(input_path))[0] + '.txt')
     do_subsample(biom_table, seqs, so_map, out_path)
-
 
 
 if __name__ == "__main__":
