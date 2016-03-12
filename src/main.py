@@ -35,11 +35,6 @@ def fulldata_distance(data, k, distance_func):
     return result
 
 
-def jackknifed_distance(data, k, jk_size, distance_func):
-    for subsample in jackknifed(data, jk_size):
-        yield fulldata_distance(subsample, k, distance_func)
-
-
 if __name__ == "__main__":
     iof.clear_dir('out/ji')
     

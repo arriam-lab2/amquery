@@ -10,6 +10,7 @@ def load_seqs(filename):
 
     return data
 
+
 def clear_dir(path):
     import os
     import glob
@@ -23,7 +24,6 @@ def write_distance_matrix(dmatrix, filename):
         f.write('\t')
         f.write('\n'.join('\t'.join(str(x) for x in line) for line in dmatrix))
 
-    #f.close()
 
 if __name__ == "__main__":
     filename = 'data/seqs.fna'
