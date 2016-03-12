@@ -16,22 +16,15 @@ def kmer_generator(string, k):
         yield kmer
 
 
-def hasher(string_set, k):
-    table = {}
-    for string in string_set:
-        for kmer in kmer_generator(string, k):
-            if kmer in table:
-                table[kmer] = table[kmer] + 1
-            else:
-                table[kmer] = 1
-
-    return table
+def kmer_counter(string_set, k):
+    return Counter([kmer for string in string_set.values()
+                         for kmer in kmer_generator(string, k)])
 
 
 def fulldata_distance(data, k, distance_func):
     tables = {}
     for sample in data.keys():
-        tables[sample] = hasher(data[sample], k)
+        tables[sample] = kmer_counter(data[sample], k)
 
     result = [tables.keys()]
     for key1 in tables:
@@ -57,9 +50,9 @@ if __name__ == "__main__":
     k = 200
     jk_size = 100
     filename = 'data/seqs.fna'
-    data = iof.read_fasta(filename)
+    seqs = iof.load_seqs(filename)
 
-    dmatrix = fulldata_distance(data, k, jaccard)
+    dmatrix = fulldata_distance(seqs, k, jaccard)
     iof.write_distance_matrix(dmatrix, 'out/ji_full.txt')
 
     #dmatrix = fulldata_distance(data, k, JSD)
