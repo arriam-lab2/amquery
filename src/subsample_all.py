@@ -25,7 +25,7 @@ def subsample_all(input_dir, fasta, seqs_otus, out_dir):
     for name in names:
         path = os.path.join(input_dir, name)
         biom_table = biom.load_table(path)
-        out_path = os.path.join(out_dir, os.path.splitext(os.path.basename(path))[0] + '.txt')
+        out_path = os.path.join(out_dir, os.path.splitext(os.path.basename(path))[0] + '.fna')
         subsample.do_subsample(biom_table, seqs, so_map, out_path)
 
 if __name__ == "__main__":

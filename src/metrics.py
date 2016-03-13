@@ -1,4 +1,5 @@
-from __future__ import division
+#from __future__ import division
+from collections import defaultdict
 
 def hash_to_set(x):
     return set(x.values())
@@ -24,38 +25,48 @@ def prepare(hx, hy):
     norm(hx)
     norm(hy)
 
+
 def extends(hx, hy):
     rest_keys = [key for key in hx if key not in hy]
     for key in rest_keys:
         hy[key] = 0
 
+
 def norm(hx):
-    xk = hx.keys()
-    xv = np.array(hx.values())
+    xk = np.array([k for k in hx.keys()])
+    xv = np.array([v for v in hx.values()])
     xv = xv / sum(xv)
     for (key, value) in zip(xk, xv):
         hx[key] = value
 
 
-# Jenson-Shanon divergence
-def JSD(hx, hy):
-    x = hx
-    y = hy
-    prepare(x, y)
-    x = sorted(x.items())
-    y = sorted(y.items())
+
+# Jenson-Shanon divergence    
+def JSD(hx: dict, hy: dict) -> float:
+    x = defaultdict(float, hx)
+    y = defaultdict(float, hy)
+
+    key_union = x.copy()
+    key_union.update(y)
+
+    x_array = np.array([x[key] for key in key_union])
+    y_array = np.array([y[key] for key in key_union])
+
+    x_array = x_array / sum(x_array)
+    y_array = y_array / sum(y_array)
+
+    x = x_array
+    y = y_array
 
     import warnings
-
     warnings.filterwarnings("ignore", category = RuntimeWarning)
-    x = np.array(hx.values())
-    y = np.array(hy.values())
 
-    d1 = x * np.log2(2*x/(x+y))
-    d2 = y * np.log2(2*y/(x+y))
+    d1 = x * np.log2(2 * x / (x + y))
+    d2 = y * np.log2(2 * y / (x + y))
     d1[np.isnan(d1)] = 0
     d2[np.isnan(d2)] = 0
     return np.sqrt(0.5 * np.sum(d1 + d2))
+
 
 
 if __name__ == "__main__":
@@ -67,12 +78,12 @@ if __name__ == "__main__":
     start = time()
 
     import random
-    N = 500000
-    [t1.update({random.randint(1, N): x}) for x in xrange(N)]
-    [t3.update({random.randint(1, N): x}) for x in xrange(N)]
+    random.seed(42)
+    #N = 1000000
+    #[t1.update({random.randint(1, N): x}) for x in range(N)]
+    #[t3.update({random.randint(1, N): x}) for x in range(N)]
 
-    import profile
-    profile.run('j = JSD(t1, t3)')
+    j = JSD(t1, t3)
     print(j)
 
     end = time()

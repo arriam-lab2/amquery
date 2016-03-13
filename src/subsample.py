@@ -55,7 +55,7 @@ def subsample(input_path, fasta, seqs_otus, out_dir):
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
 
-    out_path = os.path.join(out_dir, os.path.splitext(os.path.basename(input_path))[0] + '.txt')
+    out_path = os.path.join(out_dir, os.path.splitext(os.path.basename(input_path))[0] + '.fna')
     do_subsample(biom_table, seqs, so_map, out_path)
 
 

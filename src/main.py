@@ -6,7 +6,7 @@ from collections import Counter
 
 import iof
 from metrics import jaccard, JSD
-from subsampling import *
+from subsample import *
 
 def kmer_generator(string, k):
     kmer = string[:k]
@@ -21,10 +21,10 @@ def kmer_counter(string_set, k):
                          for kmer in kmer_generator(string, k)])
 
 
-def fulldata_distance(data, k, distance_func):
+def fulldata_distance(seqs, k, distance_func):
     tables = {}
-    for sample in data.keys():
-        tables[sample] = kmer_counter(data[sample], k)
+    for sample in seqs.keys():
+        tables[sample] = kmer_counter(seqs[sample], k)
 
     result = [tables.keys()]
     for key1 in tables:
@@ -47,11 +47,11 @@ if __name__ == "__main__":
     filename = 'data/seqs.fna'
     seqs = iof.load_seqs(filename)
 
-    dmatrix = fulldata_distance(seqs, k, jaccard)
-    iof.write_distance_matrix(dmatrix, 'out/ji_full.txt')
+    #dmatrix = fulldata_distance(seqs, k, jaccard)
+    #iof.write_distance_matrix(dmatrix, 'out/ji_full.txt')
 
-    #dmatrix = fulldata_distance(data, k, JSD)
-    #iof.write_distance_matrix(dmatrix, 'out/jsd_full.txt')
+    dmatrix = fulldata_distance(seqs, k, JSD)
+    iof.write_distance_matrix(dmatrix, 'out/jsd_full.txt')
 
     #import tempfile
     #for jk_result in jackknifed_distance(data, k, jk_size, jaccard):
