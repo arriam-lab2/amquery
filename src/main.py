@@ -28,8 +28,7 @@ def fulldata_distance(seqs, k, distance_func):
 
     result = [tables.keys()]
     for key1 in tables:
-        table1 = tables[key1].copy()
-        values = [distance_func(table1, tables[key2].copy()) for key2 in tables]
+        values = [distance_func(tables[key1], tables[key2]) for key2 in tables]
         result.append([key1] + values)
 
     return result
