@@ -17,7 +17,6 @@ def jaccard(hx, hy):
 #intersection = len(set.intersection(x, y))
 #pass
 
-
 import numpy as np
 
 # Jenson-Shanon divergence    

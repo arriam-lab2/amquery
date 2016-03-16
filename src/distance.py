@@ -44,17 +44,20 @@ def calc_distance_matrix(seqs, k, distance_func):
 
 distances = {'jaccard': jaccard, 'jsd': JSD}
 
+CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
-@click.command()
-@click.argument('fasta', type=click.Path(exists=True), nargs=-1)
+@click.command(context_settings=CONTEXT_SETTINGS)
+@click.argument('fasta', type=click.Path(exists=True), nargs=-1, required=True)
 @click.option('--kmer_size', '-k', type=int, help='K-mer size')
 @click.option('--distance', '-d', type=click.Choice(distances.keys()), help='A distance metric')
 @click.option('--out_dir', '-o', help='Output directory')
-def distance_matrix(fasta, kmer_size, distance, out_dir):
- 
+@click.option('--force', '-f', is_flag=True, help='Force overwrite output directory')
+def distance_matrix(fasta, kmer_size, distance, out_dir, force):
     start = time()
 
-    #iof.clear_dir('out/ji')
+    if (force):
+        iof.clear_dir(out_dir)
+
     for f in fasta:
         click.echo("Processing " + f + "...")
         seqs = iof.load_seqs(f)
