@@ -10,9 +10,13 @@ def load_seqs(filename):
 
     return data
 
+import os
+
+def create_dir(path):
+    if not os.path.exists(path):
+        os.makedirs(path)
 
 def clear_dir(path):
-    import os
     import glob
 
     files = glob.glob(path + '/*')

@@ -52,14 +52,19 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 @click.option('--distance', '-d', type=click.Choice(distances.keys()), help='A distance metric')
 @click.option('--out_dir', '-o', help='Output directory')
 @click.option('--force', '-f', is_flag=True, help='Force overwrite output directory')
-def distance_matrix(fasta, kmer_size, distance, out_dir, force):
-    start = time()
+@click.option('--quiet', '-q', is_flag=True, help='Be quiet')
+def distance_matrix(fasta, kmer_size, distance, out_dir, force, quiet):
 
+    iof.create_dir(out_dir)
     if (force):
         iof.clear_dir(out_dir)
 
+    start = time()
     for f in fasta:
-        click.echo("Processing " + f + "...")
+
+        if not quiet:
+            click.echo("Processing " + f + "...")
+
         seqs = iof.load_seqs(f)
         distance_func = distances[distance]
         dmatrix = calc_distance_matrix(seqs, kmer_size, distance_func)
@@ -68,7 +73,9 @@ def distance_matrix(fasta, kmer_size, distance, out_dir, force):
         iof.write_distance_matrix(dmatrix, out_path)
 
     end = time()
-    click.echo("Time: " + str(end - start))
+
+    if not quiet:
+        click.echo("Time: " + str(end - start))
 
 
 if __name__ == "__main__":
