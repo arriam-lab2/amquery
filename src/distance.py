@@ -37,7 +37,6 @@ def calc_distance_matrix(seqs, k, distance_func):
 
     for key1 in tables:
         values = [distance_func(tables[key1], tables[key2]) for key2 in tables]
-        print(len(tables[key1]))
         result.append([key1] + values)
 
     return result
@@ -47,7 +46,7 @@ distances = {'jaccard': jaccard, 'jsd': JSD}
 
 
 @click.command()
-@click.option('--fasta', '-f', help='Input .fasta file')
+@click.argument('fasta', type=click.Path(exists=True), nargs=-1)
 @click.option('--kmer_size', '-k', type=int, help='K-mer size')
 @click.option('--distance', '-d', type=click.Choice(distances.keys()), help='A distance metric')
 @click.option('--out_dir', '-o', help='Output directory')
@@ -56,12 +55,14 @@ def distance_matrix(fasta, kmer_size, distance, out_dir):
     start = time()
 
     #iof.clear_dir('out/ji')
-    seqs = iof.load_seqs(fasta)
-    distance_func = distances[distance]
-    dmatrix = calc_distance_matrix(seqs, kmer_size, distance_func)
+    for f in fasta:
+        click.echo("Processing " + f + "...")
+        seqs = iof.load_seqs(f)
+        distance_func = distances[distance]
+        dmatrix = calc_distance_matrix(seqs, kmer_size, distance_func)
 
-    out_path = os.path.join(out_dir, os.path.splitext(os.path.basename(fasta))[0] + '.txt')
-    iof.write_distance_matrix(dmatrix, out_path)
+        out_path = os.path.join(out_dir, os.path.splitext(os.path.basename(f))[0] + '.txt')
+        iof.write_distance_matrix(dmatrix, out_path)
 
     end = time()
     click.echo("Time: " + str(end - start))

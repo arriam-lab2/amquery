@@ -11,10 +11,12 @@ def jaccard(hx, hy):
     union = len(x) + len(y) - intersection
     return 1 - (intersection / float(union))
 
+
 # Bray-Curtis dissimilarity
 #def bray_curtis(x, y):
 #intersection = len(set.intersection(x, y))
 #pass
+
 
 import numpy as np
 
