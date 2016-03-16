@@ -43,20 +43,22 @@ def do_subsample(biom_table, seqs, so_map, out_path):
 
 
 @click.command()
-@click.option('--input_path', '-i', help='Input (rarefied) OTU table in biom format')
+@click.argument('biom_files', type=click.Path(exists=True), nargs=-1)
 @click.option('--fasta', '-f', help='Input .fasta file')
 @click.option('--seqs_otus', '-s', help='Input file mapping OTUs to the sequences')
 @click.option('--out_dir', '-o', help='Output directory')
-def subsample(input_path, fasta, seqs_otus, out_dir):
-    biom_table = biom.load_table(input_path)
-    seqs = iof.load_seqs(fasta)
-    so_map = load_seqs_otus_map(seqs_otus)
+def subsample(biom_files, fasta, seqs_otus, out_dir):
+    for biomf in biom_files:
+        click.echo("Processing " + biomf + "...")
+        biom_table = biom.load_table(biomf)
+        seqs = iof.load_seqs(fasta)
+        so_map = load_seqs_otus_map(seqs_otus)
 
-    if not os.path.exists(out_dir):
-        os.makedirs(out_dir)
+        if not os.path.exists(out_dir):
+            os.makedirs(out_dir)
 
-    out_path = os.path.join(out_dir, os.path.splitext(os.path.basename(input_path))[0] + '.fna')
-    do_subsample(biom_table, seqs, so_map, out_path)
+        out_path = os.path.join(out_dir, os.path.splitext(os.path.basename(biomf))[0] + '.fna')
+        do_subsample(biom_table, seqs, so_map, out_path)
 
 
 if __name__ == "__main__":
