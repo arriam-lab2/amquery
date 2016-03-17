@@ -1,32 +1,32 @@
 source('dm.R')
 
-uu_full_filename = '../../data/mikkele/full/uu_full.txt'
-uf <- dm.parse.file(uu_full_filename)
+uu.full_filename = '../../data/mikkele/full/uu_full.txt'
+uu.full <- dm.parse.file(uu.full_filename)
 
-uu_path = '../../out/un_unifrac'
-uu_tables <- dm.parse.dir(uu_path)
+uu.path = '../../out/un_unifrac'
+uu.tables <- dm.parse.dir(uu.path)
 
-ji_full_filename = '../../out/jaccard_50/seqs.txt'
-jf <- dm.parse.file(ji_full_filename)
+ji.full_filename = '../../out/jaccard_50/seqs.txt'
+ji.full <- dm.parse.file(ji.full_filename)
 
-ji_path = '../../out/jaccard_50'
-#ji_path = 'out/jsd'
-ji_tables <- dm.parse.dir(ji_path)
+ji.path = '../../out/jaccard_50'
+ji.tables <- dm.parse.dir(ji.path)
 
-uu_tables <- lapply(uu_tables, dm.reformat, uf)
-ji_tables <- lapply(ji_tables, dm.reformat, uf)
-jf <- dm.reformat(jf, uf)
-uf$X <- NULL
-rownames(uf) <- colnames(uf)
-rownames(jf) <- colnames(jf)
+uu.tables <- lapply(uu.tables, dm.reformat, uu.full)
+ji.tables <- lapply(ji.tables, dm.reformat, uu.full)
+
+ji.full <- dm.reformat(ji.full, uu.full)
+uu.full$X <- NULL
+rownames(uu.full) <- colnames(uu.full)
+rownames(ji.full) <- colnames(ji.full)
 
 
 # unifrac vs. jaccard
-dm.compare(uf, jf)
-dm.compare.all(ji_tables, uu_tables)
+dm.compare.cor(uu.full, ji.full)
+dm.compare.all(ji.tables, uu.tables)
 
-df <- melt(uf)
-df$jaccard <- melt(jf)$value
+df <- melt(uu.full)
+df$jaccard <- melt(ji.full)$value
 l <- lm(data=df, value ~ poly(jaccard, degree=2))
 summary(l)
 
