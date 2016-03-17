@@ -22,15 +22,7 @@ rownames(ji.full) <- colnames(ji.full)
 
 
 # unifrac vs. jaccard
-dm.compare.cor(uu.full, ji.full)
-dm.compare.all(ji.tables, uu.tables)
+dm.compare.cor(ji.full, uu.full)
+dm.compare.all(uu.tables, ji.tables)
+dm.compare.lm(ji.tables, uu.tables)
 
-df <- melt(uu.full)
-df$jaccard <- melt(ji.full)$value
-l <- lm(data=df, value ~ poly(jaccard, degree=2))
-summary(l)
-
-res <- residuals(l)
-ks.test(unique(res), "punif")
-
-#dm.compare.ci(uu_tables, ji_tables, uf)

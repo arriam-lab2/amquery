@@ -3,6 +3,9 @@
 library(ade4)
 library(corrplot)
 library(reshape2)
+library(lattice)
+library(phytools)
+#library(vegan)
 
 dm.parse.file <- function(filename) {
     #as.data.frame(read.table(filename, sep="\t", header=TRUE))
@@ -49,20 +52,48 @@ dm.compare.r2 <- function(x, y) {
 
 dm.compare.cor <- function(x, y) {
     corrplot(cor(x, y), method="color")
-    m <- mantel.rtest(as.dist(x), as.dist(y), nrepet=10000)
+    m <- mantel.rtest(as.dist(y), as.dist(x), nrepet=10000)
     print(m)
 
+    mm <- multi.mantel(as.dist(y), as.dist(x), nperm=1000)
+    #print(mm)
+    p <- xyplot(residuals(mm) ~ fitted(mm))
+    print(p)
 }
 
 dm.melt.all <- function(xx.tables) { 
-    as.vector(as.matrix(xx.tables))
+    sapply(xx.tables, function (x) { as.vector(as.matrix(x)) })
+}
+
+dm.vectorize.all <- function(xx.tables) {
+    res <- c()
+    for (xt in xx.tables) {
+        res <- c(res, as.vector(as.matrix(xt)))
+    }
+    res
+}
+
+dm.compare.lm <- function(xx.tables, yy.tables) {
+    x <- dm.vectorize.all(xx.tables) 
+    y <- dm.vectorize.all(yy.tables) 
+
+    df <- data.frame(y, x)
+    l <- lm(data=df, y ~ poly(x, degree=2))
+    print(summary(l))
+
+    res <- residuals(l)
+    stest <- shapiro.test(unique(res))
+    print(stest)
+
+    p <- xyplot(residuals(l) ~ fitted(l))
+    print(p)
 }
 
 dm.compare.all <- function(xx.tables, yy.tables) {
-    xx.melted <- sapply(xx.tables, dm.melt.all)
-    yy.melted <- sapply(yy.tables, dm.melt.all)
+    xx.melted <- dm.melt.all(xx.tables)
+    yy.melted <- dm.melt.all(yy.tables)
 
-    corr.matrix <- cor(t(xx.melted), t(yy.melted))
+    corr.matrix <- cor(t(yy.melted), t(xx.melted))
     corr.matrix[is.na(corr.matrix)] = 1
     corrplot(corr.matrix)
 }
