@@ -77,51 +77,15 @@ dm.compare <- function(x, y) {
 
 }
 
-dm.get <- function(x, i, j) { x[[i]][[j]] }
-
-dm.compare.ci <- function(x, y, zfull) {
-    tx <- dim(zfull)[2]
-    ty <- dim(zfull)[1]
-
-    ci <- 0.95
-    alpha <- 0.05
-    res <- c()
-    res2 <- c()
-    
-    for (i in 1:tx) {
-        for (j in 1:ty) {
-            xi <- sapply(x, dm.get, i, j)
-            yi <- sapply(y, dm.get, i, j)
-            pvalue <- round(t.test(xi, yi, conf.level=ci, var.equal=TRUE)$p.value, 4)
-            res <- c(pvalue, res)
-
-            cor2 <- round(cor(xi, yi)^2 , 4)
-            res2 <- c(cor2, res2)
-        }
-    }
-
-    resmat <- matrix(res, ncol=tx, nrow=ty)
-    rownames(resmat) <- names(zfull)
-    colnames(resmat) <- names(zfull)
-    print(resmat)
-
-    md <- melt(resmat)
-    md$pp <- md$value > alpha | is.na(md$value)
-    g <- ggplot(data = md, aes(x=Var1, y=Var2, fill=pp)) + geom_tile()
-    print(g)
-    g <- ggplot(data = md, aes(x=Var1, y=Var2, fill=value)) + geom_tile()
-    print(g)
-
-
-    cormat <- matrix(res2, ncol=tx, nrow=ty)
-    rownames(cormat) <- names(zfull)
-    colnames(cormat) <- names(zfull)
-    print(cormat)
-
-    md <- melt(cormat)
-    g <- ggplot(data = md, aes(x=Var1, y=Var2, fill=value)) + geom_tile()
-    print(g)
-
+dm.melt.all <- function(xx.tables) { 
+    sapply(xx.tables, melt(x)$value)
 }
 
+dm.compare.all <- function(xx.tables, yy.tables) {
+    xx.melted <- dm.melt.all(xx.tables)
+    yy.melted <- dm.melt.all(yy.tables)
+
+    corr.matrix <- cor(t(xx.melted), t(yy.melted))
+    corrplot(corr.matrix)
+}
 

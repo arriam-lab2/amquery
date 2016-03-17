@@ -1,10 +1,8 @@
 source('dm.R')
 
-uu_full_filename = 'data/unweighted_unifrac_otu_table.txt'
-#uu_full_filename = 'data/weighted_unifrac_otu_table.txt'
+uu_full_filename = 'data/uu_full.txt'
 uf <- dm.parse.file(uu_full_filename)
 
-#uu_path = 'data/out3/unweighted_unifrac/rare_dm/'
 uu_path = 'out/un_unifrac'
 uu_tables <- dm.parse.dir(uu_path)
 
@@ -25,7 +23,7 @@ rownames(jf) <- colnames(jf)
 
 # unifrac vs. jaccard
 dm.compare(uf, jf)
-dm.compare(uf, uf)
+dm.compare.all(ji_tables, uu_tables)
 
 df <- melt(uf)
 df$jaccard <- melt(jf)$value
