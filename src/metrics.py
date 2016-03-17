@@ -1,10 +1,10 @@
 from collections import defaultdict
 
-def hash_to_set(x):
+def hash_to_set(x: defaultdict) -> set:
     return set(x.values())
 
 # Jaccard index of similarity
-def jaccard(hx, hy):
+def jaccard(hx: defaultdict, hy: defaultdict) -> float:
     x = hash_to_set(hx)
     y = hash_to_set(hy)
     intersection = len(set.intersection(x, y))
@@ -12,15 +12,7 @@ def jaccard(hx, hy):
     return 1 - (intersection / float(union))
 
 
-# Bray-Curtis dissimilarity
-#def bray_curtis(x, y):
-#intersection = len(set.intersection(x, y))
-#pass
-
-import numpy as np
-
-# Jenson-Shanon divergence    
-def JSD(hx: defaultdict, hy: defaultdict) -> float:
+def normalize(hx: defaultdict, hy: defaultdict) -> float:
     key_union = hx.copy()
     key_union.update(hy)
 
@@ -30,6 +22,23 @@ def JSD(hx: defaultdict, hy: defaultdict) -> float:
     x = x / sum(x)
     y = y / sum(y)
 
+    return x, y
+
+
+# Bray-Curtis dissimilarity
+def bray_curtis(hx: defaultdict, hy: defaultdict) -> float:
+    x, y = normalize(hx, hy) 
+    d1 = sum([abs(xi - yi) for xi, yi in zip(x, y)])
+    d2 = sum([abs(xi + yi) for xi, yi in zip(x, y)])
+    return d1 / d2
+
+
+import numpy as np
+
+# Jenson-Shanon divergence    
+def JSD(hx: defaultdict, hy: defaultdict) -> float:
+    x, y = normalize(hx, hy) 
+    
     import warnings
     warnings.filterwarnings("ignore", category = RuntimeWarning)
 
@@ -56,8 +65,10 @@ if __name__ == "__main__":
     from time import time
     start = time()
 
-    j = JSD(t1, t3)
+    res = jaccard(t1, t3)
+    #res = JSD(t1, t3)
+    #res = bray_curtis(t1, t3)
 
     end = time()
     print("Time: " + str(end - start))
-    print(j)
+    print(res)
