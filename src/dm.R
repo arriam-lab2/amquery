@@ -1,9 +1,13 @@
 library(ggplot2)
 library(plyr)
 library(gridExtra)
+library(ade4)
+library(corrplot)
+library(ade4)
 
 dm.parse.file <- function(filename) {
-    as.data.frame(read.table(filename, sep="\t", header=TRUE))
+    #as.data.frame(read.table(filename, sep="\t", header=TRUE))
+    as.data.frame(read.table(filename))
 }
 
 # parse files containing distance matrixies
@@ -16,8 +20,7 @@ dm.parse.dir <- function(directory) {
 
 # reorder rows and cols as in sample
 dm.reformat <- function(dm, sample) {
-    m <- match(sample$X, dm$X)
-    dm$X <- NULL
+    m <- match(colnames(sample), colnames(dm))
     dm[m,m]
 }
 
@@ -61,8 +64,14 @@ dm.compare.r2 <- function(x, y) {
 dm.compare <- function(x, y) {
     #y <- dm.reformat(y, x)
     #x$X <- NULL
+
+    corrplot(cor(x, y), method="color")
+    m <- mantel.rtest(as.dist(x), as.dist(y), nrepet=10000)
+    print(m)
+
     g1 <- dm.compare.cor2(x, y)
     g2 <- dm.compare.r2(x, y)
+
     #grid.draw(rbind(ggplotGrob(g1), ggplotGrob(g2), size="last"))
     #grid.arrange(g1, g2, ncol=1)
 

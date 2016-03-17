@@ -1,4 +1,5 @@
 from collections import defaultdict
+import scipy.spatial.distance as dist
 
 def hash_to_set(x: defaultdict) -> set:
     return set(x.values())
@@ -28,9 +29,8 @@ def normalize(hx: defaultdict, hy: defaultdict) -> float:
 # Bray-Curtis dissimilarity
 def bray_curtis(hx: defaultdict, hy: defaultdict) -> float:
     x, y = normalize(hx, hy) 
-    d1 = sum([abs(xi - yi) for xi, yi in zip(x, y)])
-    d2 = sum([abs(xi + yi) for xi, yi in zip(x, y)])
-    return d1 / d2
+    return abs(x - y).sum() / abs(x + y).sum()
+    #return dist.braycurtis(x, y)
 
 
 import numpy as np
@@ -65,9 +65,9 @@ if __name__ == "__main__":
     from time import time
     start = time()
 
-    res = jaccard(t1, t3)
+    #res = jaccard(t1, t3)
     #res = JSD(t1, t3)
-    #res = bray_curtis(t1, t3)
+    res = bray_curtis(t1, t3)
 
     end = time()
     print("Time: " + str(end - start))
