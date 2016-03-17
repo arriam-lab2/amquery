@@ -1,9 +1,9 @@
 #!/bin/bash
 
-TREE='data/rep_set.tre'
+TREE='../../data/mikkele/rep_set.tre'
 
-UU_OUTPUT='out/un_unifrac/'
-WU_OUTPUT='out/w_unifrac/'
+UU_OUTPUT='../../out/un_unifrac/'
+WU_OUTPUT='../../out/w_unifrac/'
 
 
 [ -d $UU_OUTPUT ] || mkdir $UU_OUTPUT

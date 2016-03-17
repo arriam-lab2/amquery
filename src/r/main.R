@@ -1,15 +1,15 @@
 source('dm.R')
 
-uu_full_filename = 'data/uu_full.txt'
+uu_full_filename = '../../data/mikkele/full/uu_full.txt'
 uf <- dm.parse.file(uu_full_filename)
 
-uu_path = 'out/un_unifrac'
+uu_path = '../../out/un_unifrac'
 uu_tables <- dm.parse.dir(uu_path)
 
-ji_full_filename = 'out/jaccard_50/seqs.txt'
+ji_full_filename = '../../out/jaccard_50/seqs.txt'
 jf <- dm.parse.file(ji_full_filename)
 
-ji_path = 'out/jaccard_50'
+ji_path = '../../out/jaccard_50'
 #ji_path = 'out/jsd'
 ji_tables <- dm.parse.dir(ji_path)
 
