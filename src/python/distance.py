@@ -5,7 +5,7 @@ import iof
 
 from collections import Counter
 from time import time
-from metrics import jaccard, JSD
+from metrics import jaccard, JSD, bray_curtis
 from subsample import *
 
 
@@ -42,7 +42,7 @@ def calc_distance_matrix(seqs, k, distance_func):
     return result
 
 
-distances = {'jaccard': jaccard, 'jsd': JSD}
+distances = {'jaccard': jaccard, 'jsd': JSD, 'bc': bray_curtis}
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 

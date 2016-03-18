@@ -1,11 +1,11 @@
-#library(ggplot2)
-#library(plyr)
+library(ggplot2)
+library(gridExtra)
 library(ade4)
 library(corrplot)
 library(reshape2)
 library(lattice)
 library(phytools)
-#library(vegan)
+
 
 dm.parse.file <- function(filename) {
     #as.data.frame(read.table(filename, sep="\t", header=TRUE))
@@ -51,7 +51,11 @@ dm.compare.r2 <- function(x, y) {
 }
 
 dm.compare.cor <- function(x, y) {
+    par(mfrow = c(1, 2))
     corrplot(cor(x, y), method="color")
+    corrplot(cor(y, y), method="color")
+    par(mfrow = c(1, 1))
+
     m <- mantel.rtest(as.dist(y), as.dist(x), nrepet=10000)
     print(m)
 
@@ -85,8 +89,11 @@ dm.compare.lm <- function(xx.tables, yy.tables) {
     stest <- shapiro.test(unique(res))
     print(stest)
 
-    p <- xyplot(residuals(l) ~ fitted(l))
-    print(p)
+    p1 <- xyplot(residuals(l) ~ fitted(l))
+    print(p1)
+    p2 <- qplot(residuals(l))
+    print(p2)
+    #grid.arrange(p1, p2, ncol=2)
 }
 
 dm.compare.all <- function(xx.tables, yy.tables) {
