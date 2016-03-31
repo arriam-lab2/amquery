@@ -1,5 +1,8 @@
+from collections import Counter
 from collections import defaultdict
 import numpy as np
+import random
+import time
 
 
 def hash_to_set(x: defaultdict) -> set:
@@ -15,24 +18,20 @@ def jaccard(hx: defaultdict, hy: defaultdict) -> float:
     return 1 - (intersection / float(union))
 
 
-def normalize(hx: defaultdict, hy: defaultdict) -> float:
+def normalize(hx: defaultdict, hy: defaultdict) -> tuple:
     key_union = hx.copy()
     key_union.update(hy)
 
     x = np.array([hx[key] for key in key_union])
     y = np.array([hy[key] for key in key_union])
 
-    x = x / sum(x)
-    y = y / sum(y)
-
-    return x, y
+    return x / sum(x), y / sum(y)
 
 
 # Bray-Curtis dissimilarity
-def bray_curtis(hx: defaultdict, hy: defaultdict) -> float:
+def bray_curtis(hx: Counter, hy: defaultdict) -> float:
     x, y = normalize(hx, hy)
     return abs(x - y).sum() / abs(x + y).sum()
-    # return dist.braycurtis(x, y)
 
 
 # Jenson-Shanon divergence
@@ -51,23 +50,21 @@ def JSD(hx: defaultdict, hy: defaultdict) -> float:
 
 
 if __name__ == "__main__":
-    t1 = defaultdict(int, {1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 7})
-    t2 = defaultdict(int, {1: 1, 13: 9, 5: 5, 16: 3, 7: 10})
-    t3 = defaultdict(int, {1: 1, 2: 2, 3: 2, 4: 4, 5: 5, 6: 6, 7: 8})
+    t1 = defaultdict(int)
+    t2 = defaultdict(int)
 
-    import random
     random.seed(42)
-    N = 500000
-    [t1.update({random.randint(1, N): x}) for x in range(N)]
-    [t3.update({random.randint(1, N): x}) for x in range(N)]
+    N = 50000
+    for x in range(N):
+        t1[x] = random.randint(1, 100)
+        t2[x] = random.randint(1, 100)
 
-    from time import time
-    start = time()
+    start = time.time()
 
 #   res = jaccard(t1, t3)
 #   res = JSD(t1, t3)
-    res = bray_curtis(t1, t3)
+    res = bray_curtis(t1, t2)
 
-    end = time()
+    end = time.time()
     print("Time: " + str(end - start))
     print(res)
