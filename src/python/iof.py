@@ -1,20 +1,22 @@
 from Bio import SeqIO
 from collections import defaultdict
+import os
+
 
 def load_seqs(filename):
-    data = defaultdict(lambda : defaultdict(str))
-    fasta_sequences = SeqIO.parse(open(filename),'fasta')
+    data = defaultdict(lambda: defaultdict(str))
+    fasta_sequences = SeqIO.parse(open(filename), 'fasta')
     for fasta in fasta_sequences:
         name, sequence = fasta.id, str(fasta.seq)
         data[name.split('_')[0]][name] = sequence
 
     return data
 
-import os
 
 def create_dir(path):
     if not os.path.exists(path):
         os.makedirs(path)
+
 
 def clear_dir(path):
     import glob

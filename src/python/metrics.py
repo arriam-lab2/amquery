@@ -1,8 +1,12 @@
+#!/usr/bin/env python3
+
 from collections import defaultdict
-import scipy.spatial.distance as dist
+import numpy as np
+
 
 def hash_to_set(x: defaultdict) -> set:
     return set(x.values())
+
 
 # Jaccard index of similarity
 def jaccard(hx: defaultdict, hy: defaultdict) -> float:
@@ -28,19 +32,17 @@ def normalize(hx: defaultdict, hy: defaultdict) -> float:
 
 # Bray-Curtis dissimilarity
 def bray_curtis(hx: defaultdict, hy: defaultdict) -> float:
-    x, y = normalize(hx, hy) 
+    x, y = normalize(hx, hy)
     return abs(x - y).sum() / abs(x + y).sum()
-    #return dist.braycurtis(x, y)
+    # return dist.braycurtis(x, y)
 
 
-import numpy as np
-
-# Jenson-Shanon divergence    
+# Jenson-Shanon divergence
 def JSD(hx: defaultdict, hy: defaultdict) -> float:
-    x, y = normalize(hx, hy) 
-    
+    x, y = normalize(hx, hy)
+
     import warnings
-    warnings.filterwarnings("ignore", category = RuntimeWarning)
+    warnings.filterwarnings("ignore", category=RuntimeWarning)
 
     z = x + y
     d1 = x * np.log2(2 * x / z)
@@ -50,12 +52,11 @@ def JSD(hx: defaultdict, hy: defaultdict) -> float:
     return np.sqrt(0.5 * np.sum(d1 + d2))
 
 
-
 if __name__ == "__main__":
-    t1 = defaultdict(int, {1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7})
-    t2 = defaultdict(int, {1:1, 13:9, 5:5, 16:3, 7:10})
-    t3 = defaultdict(int, {1:1, 2:2, 3:2, 4:4, 5:5, 6:6, 7:8})
-    
+    t1 = defaultdict(int, {1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 7})
+    t2 = defaultdict(int, {1: 1, 13: 9, 5: 5, 16: 3, 7: 10})
+    t3 = defaultdict(int, {1: 1, 2: 2, 3: 2, 4: 4, 5: 5, 6: 6, 7: 8})
+
     import random
     random.seed(42)
     N = 500000
@@ -65,8 +66,8 @@ if __name__ == "__main__":
     from time import time
     start = time()
 
-    #res = jaccard(t1, t3)
-    #res = JSD(t1, t3)
+#   res = jaccard(t1, t3)
+#   res = JSD(t1, t3)
     res = bray_curtis(t1, t3)
 
     end = time()

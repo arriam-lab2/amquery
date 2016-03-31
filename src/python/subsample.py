@@ -7,6 +7,7 @@ import click
 import os
 from collections import defaultdict
 
+
 def get_class(read_id):
     return read_id.split('_')[0]
 
@@ -32,7 +33,8 @@ def do_subsample(biom_table, seqs, so_map, out_path):
     ids = biom_table.ids(axis="observation")
     reads = []
     for obs in ids:
-        read_map = zip(biom_table.ids(), biom_table.data(obs, axis="observation").astype(int))
+        read_map = zip(biom_table.ids(), biom_table.data(
+            obs, axis="observation").astype(int))
 
         for cls, count in read_map:
             reads.extend(random.sample(so_map[obs][cls], count))
@@ -45,7 +47,8 @@ def do_subsample(biom_table, seqs, so_map, out_path):
 @click.command()
 @click.argument('biom_files', type=click.Path(exists=True), nargs=-1)
 @click.option('--fasta', '-f', help='Input .fasta file')
-@click.option('--seqs_otus', '-s', help='Input file mapping OTUs to the sequences')
+@click.option('--seqs_otus', '-s',
+              help='Input file mapping OTUs to the sequences')
 @click.option('--out_dir', '-o', help='Output directory')
 def subsample(biom_files, fasta, seqs_otus, out_dir):
     for biomf in biom_files:
@@ -57,11 +60,10 @@ def subsample(biom_files, fasta, seqs_otus, out_dir):
         if not os.path.exists(out_dir):
             os.makedirs(out_dir)
 
-        out_path = os.path.join(out_dir, os.path.splitext(os.path.basename(biomf))[0] + '.fna')
+        out_path = os.path.join(out_dir, os.path.splitext(
+            os.path.basename(biomf))[0] + '.fna')
         do_subsample(biom_table, seqs, so_map, out_path)
 
 
 if __name__ == "__main__":
     subsample()
-
-

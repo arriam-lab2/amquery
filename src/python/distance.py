@@ -10,7 +10,7 @@ from subsample import *
 
 
 def kmer_generator(string, k):
-    kmer = string[:k]
+    kmer = string[1:k]
 
     for i in range(len(string) - k):
         kmer = kmer[1:] + string[i + k]
@@ -19,7 +19,7 @@ def kmer_generator(string, k):
 
 def kmer_counter(string_set, k):
     return Counter([kmer for string in string_set
-                         for kmer in kmer_generator(string, k)])
+                    for kmer in kmer_generator(string, k)])
 
 
 def kmerize(seqs, k):
@@ -32,7 +32,7 @@ def kmerize(seqs, k):
 
 
 def calc_distance_matrix(seqs, k, distance_func):
-    tables = kmerize(seqs, k) 
+    tables = kmerize(seqs, k)
     result = [tables.keys()]
 
     for key1 in tables:
@@ -46,12 +46,15 @@ distances = {'jaccard': jaccard, 'jsd': JSD, 'bc': bray_curtis}
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
+
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument('fasta', type=click.Path(exists=True), nargs=-1, required=True)
 @click.option('--kmer_size', '-k', type=int, help='K-mer size')
-@click.option('--distance', '-d', type=click.Choice(distances.keys()), help='A distance metric')
+@click.option('--distance', '-d', type=click.Choice(distances.keys()),
+              help='A distance metric')
 @click.option('--out_dir', '-o', help='Output directory')
-@click.option('--force', '-f', is_flag=True, help='Force overwrite output directory')
+@click.option('--force', '-f', is_flag=True,
+              help='Force overwrite output directory')
 @click.option('--quiet', '-q', is_flag=True, help='Be quiet')
 def distance_matrix(fasta, kmer_size, distance, out_dir, force, quiet):
 
@@ -69,7 +72,8 @@ def distance_matrix(fasta, kmer_size, distance, out_dir, force, quiet):
         distance_func = distances[distance]
         dmatrix = calc_distance_matrix(seqs, kmer_size, distance_func)
 
-        out_path = os.path.join(out_dir, os.path.splitext(os.path.basename(f))[0] + '.txt')
+        out_path = os.path.join(out_dir, os.path.splitext(
+            os.path.basename(f))[0] + '.txt')
         iof.write_distance_matrix(dmatrix, out_path)
 
     end = time()
