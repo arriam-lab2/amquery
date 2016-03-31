@@ -2,11 +2,11 @@
 
 import click
 import iof
+import os
 
 from collections import Counter
 from time import time
 from metrics import jaccard, JSD, bray_curtis
-from subsample import *
 
 
 def kmer_generator(string, k):
@@ -64,7 +64,6 @@ def distance_matrix(fasta, kmer_size, distance, out_dir, force, quiet):
 
     start = time()
     for f in fasta:
-
         if not quiet:
             click.echo("Processing " + f + "...")
 
