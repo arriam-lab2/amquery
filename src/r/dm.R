@@ -5,7 +5,9 @@ library(corrplot)
 library(reshape2)
 library(lattice)
 library(phytools)
+library(car)
 
+source('jackknife.R')
 
 dm.parse.file <- function(filename) {
     #as.data.frame(read.table(filename, sep="\t", header=TRUE))
@@ -15,7 +17,6 @@ dm.parse.file <- function(filename) {
 # parse files containing distance matrixies
 dm.parse.dir <- function(directory) {
     dir_files = list.files(directory, pattern='*.txt', full.names=TRUE)
-    #l <- lapply(dir_files, read.table, sep="\t", header=TRUE)
     lapply(dir_files, dm.parse.file)
 }
 
@@ -38,8 +39,8 @@ dm.compare.r2 <- function(x, y) {
     df <- rename(df, c("value"="R2"))
     df$mean_dist <- sapply(x, mean)
 
-    g <- ggplot(df, aes(x=factor(rownames(df)))) + 
-        geom_line(aes(y=R2, colour = "R-squared", group=1)) + 
+    g <- ggplot(df, aes(x=factor(rownames(df)))) +
+        geom_line(aes(y=R2, colour = "R-squared", group=1)) +
         geom_line(aes(y=mean_dist, colour = "mean Unifrac", group=1))
 
     print(g)
@@ -60,12 +61,11 @@ dm.compare.cor <- function(x, y) {
     print(m)
 
     mm <- multi.mantel(as.dist(y), as.dist(x), nperm=1000)
-    #print(mm)
-    p <- xyplot(residuals(mm) ~ fitted(mm))
+    p <- qqPlot(residuals(mm))
     print(p)
 }
 
-dm.melt.all <- function(xx.tables) { 
+dm.melt.all <- function(xx.tables) {
     sapply(xx.tables, function (x) { as.vector(as.matrix(x)) })
 }
 
@@ -77,31 +77,29 @@ dm.vectorize.all <- function(xx.tables) {
     res
 }
 
-dm.compare.lm <- function(xx.tables, yy.tables) {
-    x <- dm.vectorize.all(xx.tables) 
-    y <- dm.vectorize.all(yy.tables) 
-
-    df <- data.frame(y, x)
-    l <- lm(data=df, y ~ poly(x, degree=2))
-    print(summary(l))
-
-    res <- residuals(l)
-    stest <- shapiro.test(unique(res))
-    print(stest)
-
-    p1 <- xyplot(residuals(l) ~ fitted(l))
-    print(p1)
-    p2 <- qplot(residuals(l))
-    print(p2)
-    #grid.arrange(p1, p2, ncol=2)
-}
-
-dm.compare.all <- function(xx.tables, yy.tables) {
-    xx.melted <- dm.melt.all(xx.tables)
-    yy.melted <- dm.melt.all(yy.tables)
-
-    corr.matrix <- cor(t(yy.melted), t(xx.melted))
+dm.compare.fullagainst <- function(txx, tyy) {
+    corr.matrix <- cor(txx, tyy, method="spearman")
     corr.matrix[is.na(corr.matrix)] = 1
     corrplot(corr.matrix)
 }
 
+dm.compare.against.mean <- function(txx, tyy, yy.mean) {
+    dist.cor <- sapply(1:dim(txx)[2],
+        function(i) cor(txx[,i], tyy[,i], method="spearman"))
+    dist.cor[is.na(dist.cor)] = 0
+
+    df <- melt(yy.mean)
+    df$dist.cor <- dist.cor
+
+    g <- ggplot(data=df, aes(x=value, y=dist.cor, color=variable)) + geom_point()
+    print(g)
+}
+
+dm.compare.all <- function(xx.tables, yy.tables) {
+    xx.melted <- t(dm.melt.all(xx.tables))
+    yy.melted <- t(dm.melt.all(yy.tables))
+    yy.mean <- jk.mean(yy.tables)
+
+    #dm.compare.fullagainst(xx.melted, yy.melted)
+    dm.compare.against.mean(txx, tyy, yy.mean)
+}
