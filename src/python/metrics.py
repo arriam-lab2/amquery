@@ -1,4 +1,3 @@
-from collections import Counter
 from collections import defaultdict
 import numpy as np
 import random
@@ -18,6 +17,13 @@ def jaccard(hx: defaultdict, hy: defaultdict) -> float:
     return 1 - (intersection / float(union))
 
 
+def generalized_jaccard(hx: defaultdict, hy: defaultdict) -> float:
+    x, y = normalize(hx, hy)
+    l1 = [min(a, b) for a, b in zip(x, y)]
+    l2 = [max(a, b) for a, b in zip(x, y)]
+    return 1 - sum(l1) / sum(l2)
+
+
 def normalize(hx: defaultdict, hy: defaultdict) -> tuple:
     key_union = hx.copy()
     key_union.update(hy)
@@ -29,7 +35,7 @@ def normalize(hx: defaultdict, hy: defaultdict) -> tuple:
 
 
 # Bray-Curtis dissimilarity
-def bray_curtis(hx: Counter, hy: defaultdict) -> float:
+def bray_curtis(hx: defaultdict, hy: defaultdict) -> float:
     x, y = normalize(hx, hy)
     return abs(x - y).sum() / abs(x + y).sum()
 
@@ -61,10 +67,10 @@ if __name__ == "__main__":
 
     start = time.time()
 
-#   res = jaccard(t1, t3)
-#   res = JSD(t1, t3)
-    res = bray_curtis(t1, t2)
+    print(jaccard(t1, t2))
+    print(generalized_jaccard(t1, t2))
+    print(JSD(t1, t2))
+    print(bray_curtis(t1, t2))
 
     end = time.time()
     print("Time: " + str(end - start))
-    print(res)

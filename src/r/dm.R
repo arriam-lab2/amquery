@@ -100,6 +100,6 @@ dm.compare.all <- function(xx.tables, yy.tables) {
     yy.melted <- t(dm.melt.all(yy.tables))
     yy.mean <- jk.mean(yy.tables)
 
-    #dm.compare.fullagainst(xx.melted, yy.melted)
+    dm.compare.fullagainst(xx.melted, yy.melted)
     dm.compare.against.mean(txx, tyy, yy.mean)
 }

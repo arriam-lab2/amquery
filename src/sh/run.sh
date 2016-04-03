@@ -10,12 +10,12 @@ INPUT='../../data/mikkele/100/out_rarefied/*.fna'
 
 #metric=jaccard
 #metric=jsd
-metric=bc
+#metric=bc
+metric=gji
 
-for k in $(seq 20 5 100); do
-#k=50
+#for k in $(seq 20 5 100); do
+k=50
     out_dir=$OUTPUT_DIR$metric'_'$k
     echo $metric k = $k: $out_dir
     $PYTHON ../python/distance.py $INPUT -k $k -d $metric -o $out_dir --quiet
-done
-
+#done
