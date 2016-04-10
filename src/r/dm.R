@@ -20,7 +20,6 @@ dm.parse.dir <- function(directory) {
     lapply(dir_files, dm.parse.file)
 }
 
-
 # reorder rows and cols as in sample
 dm.reformat <- function(dm, sample) {
     m <- match(colnames(sample), colnames(dm))
@@ -77,21 +76,27 @@ dm.vectorize.all <- function(xx.tables) {
     res
 }
 
+# Spearman's corellation plot for all pairs (txx[i], tyy[j])
 dm.compare.fullagainst <- function(txx, tyy) {
     corr.matrix <- cor(txx, tyy, method="spearman")
     corr.matrix[is.na(corr.matrix)] = 1
     corrplot(corr.matrix)
 }
 
+# the dependence of Spearman's corellation on distance value
 dm.compare.against.mean <- function(txx, tyy, yy.mean) {
     dist.cor <- sapply(1:dim(txx)[2],
         function(i) cor(txx[,i], tyy[,i], method="spearman"))
-    dist.cor[is.na(dist.cor)] = 0
 
     df <- melt(yy.mean)
     df$dist.cor <- dist.cor
 
-    g <- ggplot(data=df, aes(x=value, y=dist.cor, color=variable)) + geom_point()
+    # Omit NA values
+    df <- df[complete.cases(df),]
+
+    g <- ggplot(data=df, aes(x=value, y=dist.cor, color=variable)) +
+        geom_point() +
+        labs(color="Sample", x="Distance value", y="Spearman corellation coefficient")
     print(g)
 }
 
@@ -100,6 +105,6 @@ dm.compare.all <- function(xx.tables, yy.tables) {
     yy.melted <- t(dm.melt.all(yy.tables))
     yy.mean <- jk.mean(yy.tables)
 
-    dm.compare.fullagainst(xx.melted, yy.melted)
-    dm.compare.against.mean(txx, tyy, yy.mean)
+    #dm.compare.fullagainst(xx.melted, yy.melted)
+    dm.compare.against.mean(xx.melted, yy.melted, yy.mean)
 }
