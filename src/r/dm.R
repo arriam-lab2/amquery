@@ -7,8 +7,6 @@ library(lattice)
 library(phytools)
 library(car)
 
-source('jackknife.R')
-
 dm.parse.file <- function(filename) {
     #as.data.frame(read.table(filename, sep="\t", header=TRUE))
     as.data.frame(read.table(filename))
@@ -44,7 +42,7 @@ dm.compare.r2 <- function(x, y) {
 
     print(g)
 
-    print("Mean distance vs. R-squared corellation:")
+    print("Mean distance vs. R-squared correlation:")
     print(cor(df$R2, df$mean_dist))
 
     return(df)
@@ -76,17 +74,17 @@ dm.vectorize.all <- function(xx.tables) {
     res
 }
 
-# Spearman's corellation plot for all pairs (txx[i], tyy[j])
+# Spearman's correlation plot for all pairs (txx[i], tyy[j])
 dm.compare.fullagainst <- function(txx, tyy) {
     corr.matrix <- cor(txx, tyy, method="spearman")
     corr.matrix[is.na(corr.matrix)] = 1
     corrplot(corr.matrix)
 }
 
-# the dependence of Spearman's corellation on distance value
+# the dependence of Spearman's correlation on mean Unifrac distance
 dm.compare.against.mean <- function(txx, tyy, yy.mean) {
-    dist.cor <- sapply(1:dim(txx)[2],
-        function(i) cor(txx[,i], tyy[,i], method="spearman"))
+    dist.cor <- suppressWarnings(sapply(1:dim(txx)[2],
+        function(i) cor(txx[,i], tyy[,i], method="spearman")))
 
     df <- melt(yy.mean)
     df$dist.cor <- dist.cor
@@ -96,15 +94,6 @@ dm.compare.against.mean <- function(txx, tyy, yy.mean) {
 
     g <- ggplot(data=df, aes(x=value, y=dist.cor, color=variable)) +
         geom_point() +
-        labs(color="Sample", x="Distance value", y="Spearman corellation coefficient")
-    print(g)
-}
-
-dm.compare.all <- function(xx.tables, yy.tables) {
-    xx.melted <- t(dm.melt.all(xx.tables))
-    yy.melted <- t(dm.melt.all(yy.tables))
-    yy.mean <- jk.mean(yy.tables)
-
-    #dm.compare.fullagainst(xx.melted, yy.melted)
-    dm.compare.against.mean(xx.melted, yy.melted, yy.mean)
+        labs(color="Sample", x="Mean Unifrac distance", y="Spearman correlation coefficient")
+    g
 }
