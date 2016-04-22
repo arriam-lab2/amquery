@@ -11,6 +11,7 @@
 %
 % # Weighted Unifrac & JSD
 % weighted.compare(basedir="../../out", distname="jsd")
+% weighted.compare2(basedir="../../out", distname="jsd")
 %
 %% end.rcode
 

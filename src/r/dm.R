@@ -26,7 +26,7 @@ dm.reformat <- function(dm, sample) {
 
 # R-squared function
 rsqured <- function(x, y) {
-    tss = sum((x - mean(x[[1]]))^2)
+    tss = sum((y - mean(y))^2)
     rss = sum((y - x)^2)
     return (1 - rss/tss)
 }
@@ -79,6 +79,16 @@ dm.compare.fullagainst <- function(txx, tyy) {
     corr.matrix <- cor(txx, tyy, method="spearman")
     corr.matrix[is.na(corr.matrix)] = 1
     corrplot(corr.matrix)
+}
+
+dm.compare.spearman2 <- function(xmean, ymean) {
+    df <- melt(xmean)
+    df$y <- melt(ymean)$value
+    df$variable <- NULL
+    df <- rename(df, c("value"="x"))
+
+    sp <- cor(df$x, df$y, method="spearman")
+    sp
 }
 
 # the dependence of Spearman's correlation on mean Unifrac distance

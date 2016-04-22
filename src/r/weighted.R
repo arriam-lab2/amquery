@@ -39,6 +39,7 @@ weighted.compare <- function(basedir, distname) {
     wu.full_filename <- sprintf("%s/wu_full.txt", wu.path)
     wu.full <- dm.parse.file(wu.full_filename)
     wu.tables <- dm.parse.dir(wu.path)
+    wu.dist < as.dist(wu.full)
 
     # Select all dirs starts with a distance name
     dist.pattern <- sprintf("%s_*", distname)
@@ -49,4 +50,29 @@ weighted.compare <- function(basedir, distname) {
     # Grouping plots
     groups <- matrix(plots, ncol=6, byrow=TRUE)
     apply(groups, 1, function(x) do.call(grid.arrange, c(x, ncol=2, nrow=3)))
+}
+
+weighted.collect <- function(xx.dirname, res) {
+    xx.tables <- dm.parse.dir(xx.dirname)
+    xx.mean <- jk.mean(xx.tables)
+    res <- append(res, xx.mean)
+    res
+}
+
+weighted.compare2 <- function(basedir, distname) {
+    wu.path <- sprintf("%s/w_unifrac", basedir)
+    wu.full_filename <- sprintf("%s/wu_full.txt", wu.path)
+    wu.full <- dm.parse.file(wu.full_filename)
+    wu.tables <- dm.parse.dir(wu.path)
+    wu.dist < as.dist(wu.full)
+
+    # Select all dirs starts with a distance name
+    dist.pattern <- sprintf("%s_*", distname)
+    xx.dirs <- dir(basedir, pattern=dist.pattern, full.names=TRUE)
+    xx.means <- lapply(xx.dirs, weighted.collect, list())
+    cor.list <- sapply(xx.means, dm.compare.spearman2, wu.mean)
+
+    df <- melt(cor.list)
+    g <- ggplot(data=df, aes(x=x, y=value)) + geom_point()
+    g
 }

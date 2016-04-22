@@ -3,12 +3,18 @@ library(ggplot2)
 library(ape)
 library(reshape2)
 
-scatter.plot <- function(dataset, dist1, dist2) {
-    x <- distance(gm, dist1)
+get.dists <- function(dataset, dist1, dist2) {
+    x <- distance(dataset, dist1)
+    y <- distance(dataset, dist2)
+    list(x, y)
+}
+
+scatter.plot <- function(v) {
+    x <- v[[1]]
     x.matrix <- as.matrix(x)
     x.melted <- melt(x.matrix)
 
-    y <- distance(gm, dist2)
+    y <- v[[2]]
     y.matrix <- as.matrix(y)
     y.melted <- melt(y.matrix)
 
@@ -17,6 +23,10 @@ scatter.plot <- function(dataset, dist1, dist2) {
 
     g <- ggplot(data=df, aes(x=x, y=value, color=Var2)) + geom_point()
     g
+}
+
+r.squared <- function(v) {
+    
 }
 
 read.qiime.data <- function(dir,
@@ -35,8 +45,8 @@ data(GlobalPatterns)
 
 mikkele <- read.qiime.data("../../data/mikkele")
 
-plot <- scatter.plot(mikkele, "jsd", "wunifrac")
+plot <- scatter.plot(get.dists(mikkele, "jsd", "wunifrac"))
 print(plot)
 
-plot <- scatter.plot(GlobalPatterns, "jsd", "wunifrac")
+plot <- scatter.plot(get.dists(GlobalPatterns, "jsd", "wunifrac"))
 print(plot)
