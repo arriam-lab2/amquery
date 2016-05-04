@@ -1,15 +1,11 @@
 #! /usr/bin/env python
 
-
-from __future__ import division, print_function
-from itertools import imap, izip
-from collections import Sequence, Callable
+from collections import Sequence
 import itertools
 import random
 import time
 import numpy as np
 import abc
-from abc import abstractmethod, abstractproperty
 
 
 class abstractstatic(staticmethod):
@@ -26,6 +22,9 @@ class Individual(object):
 
     def __hash__(self):
         return hash(self._chromosome)
+
+    def __lt__(self, other):
+        return self.chromosome < other.chromosome
 
     def __eq__(self, other):
         """
@@ -75,7 +74,7 @@ class Individual(object):
         return self._mutate(self._mutation_rate,
                             self._chromosome, self._engine)
 
-    @abstractmethod
+    @abc.abstractmethod
     def mate(self, other):
         """
         :return: the result of mating with other Individual object
@@ -108,7 +107,7 @@ class IndividualImpl(Individual):
                        Note: when `starting_chr` is `None` the first time
                        `engine` is used its callables get `None` as input,
                        which means they should return some starting value; this
-                       detail may not be important for your implementation,(e.g.
+                       detail may not be important for your implementation, (e.g.
                        if you don't have any special rules for starting values
                        and mutated values), but make sure the your callables
                        handle `None` inputs if you don't `starting_chr`
@@ -142,7 +141,6 @@ class IndividualImpl(Individual):
         self._chromosome = (tuple(starting_chr) if starting_chr else
                             tuple(gen(None) for gen in self._engine))
 
-
     @staticmethod
     def _mutate(mutation_rate, chromosome, engine):
         """
@@ -155,7 +153,7 @@ class IndividualImpl(Individual):
         """
         mutation_mask = np.random.binomial(1, mutation_rate, len(chromosome))
         return [generator(val) if mutate else val for val, mutate, generator in
-                izip(chromosome, mutation_mask, engine)]
+                list(zip(chromosome, mutation_mask, engine))]
 
     @staticmethod
     def _crossover(chr1, chr2):
@@ -166,11 +164,7 @@ class IndividualImpl(Individual):
             raise ValueError("Incompatible species can't mate")
         choice_mask = np.random.binomial(1, 0.5, len(chr1))
         return [gene1 if choice else gene2 for gene1, gene2, choice in
-                izip(chr1, chr2, choice_mask)]
-
-    def replicate_chr(self):
-        return self._mutate(self._mutation_rate,
-                            self._chromosome, self._engine)
+                list(zip(chr1, chr2, choice_mask))]
 
     def mate(self, other):
         offspring_chr = self._crossover(self.replicate_chr(),
@@ -236,8 +230,8 @@ class Population(object):
             raise ValueError("`fitness_function` must be a callable object,"
                              "that a single argument of type `Individual`")
         self._fitness_func = fitness_function
-        self._evaluated_ancestors = zip(imap(self._fitness_func, ancestors),
-                                        ancestors)
+        self._evaluated_ancestors = list(zip(map(self._fitness_func, ancestors),
+                                        ancestors))
 
     @property
     def legends(self):
@@ -257,11 +251,11 @@ class Population(object):
         individuals = [indiv for fitness, indiv in evaluated_ancestors]
         all_pairs = tuple(itertools.combinations(individuals, r=2))
         mating_pairs = (random.choice(all_pairs)
-                        for _ in xrange(self._size - len(evaluated_ancestors)))
+                        for _ in range(self._size - len(evaluated_ancestors)))
         offsprings = [indiv1.mate(indiv2) for indiv1, indiv2 in mating_pairs]
         # evaluate offsprings and merge the result with `evaluated_ancestors`
-        offspring_fitness = imap(self._fitness_func, offsprings)
-        return zip(offspring_fitness, offsprings) + evaluated_ancestors
+        offspring_fitness = map(self._fitness_func, offsprings)
+        return list(zip(offspring_fitness, offsprings)) + evaluated_ancestors
 
     def _select(self, evaluated_population, n_fittest, n_random_unfit):
         """
@@ -316,7 +310,7 @@ class Population(object):
         population = self._repopulate(evaluated_ancestors)
         selected_individuals = self._select(population, n_fittest, n_unfit)
         # note: since the list returned by `self._select` starts with the
-        #       fittest individuals we can pick contenders for the hall of fame
+        # fittest individuals we can pick contenders for the hall of fame
         # by slicing the first `self._n_legends` of `selected_individuals`
         self._update_legends(selected_individuals[:self._n_legends])
         return selected_individuals
@@ -332,8 +326,8 @@ class Population(object):
         :type n_gen: int
         :param n_gen: the number of generations
         :type n_fittest: int
-        :param n_fittest: the number of the most fittest individuals to pick for
-                          the next generation
+        :param n_fittest: the number of the most fittest individuals to pick
+                          for the next generation
         :type n_random_unfit: int
         :param n_random_unfit: the number of lesser fit individuals to pick at
                                random
@@ -348,7 +342,7 @@ class Population(object):
             raise ValueError("Population size is too small to fit "
                              "`n_fittest` + `n_unfit`")
         current_generation = self._evaluated_ancestors
-        for _ in xrange(n_gen):
+        for _ in range(n_gen):
             current_generation = self._run_generation(current_generation,
                                                       n_fittest,
                                                       n_random_unfit)
@@ -357,7 +351,7 @@ class Population(object):
 
 def test():
     engine = lambda x: random.randint(0, 50)
-    ancestors = [IndividualImpl(0.1, engine, 75) for _ in xrange(2)]
+    ancestors = [IndividualImpl(0.1, engine, 75) for _ in range(2)]
 
     fitness_func = lambda indiv: abs(200 - sum(indiv.chromosome))
     population = Population(ancestors, 100, fitness_func, mode="minimize")
