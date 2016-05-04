@@ -32,7 +32,26 @@ def write_distance_matrix(dmatrix, filename):
         f.write('\n'.join('\t'.join(str(x) for x in line) for line in dmatrix))
 
 
+def read_distance_matrix(filename):
+    dmatrix = []
+    with open(filename, 'r') as f:
+        keys = f.readline()[:-1].split('\t')[1:]
+
+        for line in f.readlines():
+            values = line[:-1].split('\t')[1:]
+            dmatrix.append(values)
+
+        dmatrix = [list(map(float, l)) for l in dmatrix]
+
+    return keys, dmatrix
+
+
 if __name__ == "__main__":
-    filename = 'data/seqs.fna'
-    data = load_seqs(filename)
-    print(data['wood1']['wood1_8560'])
+    #filename = 'data/seqs.fna'
+    #data = load_seqs(filename)
+    #print(data['wood1']['wood1_8560'])
+
+    filename = '../../out/w_unifrac/wu_full.txt'
+    keys, dmatrix = read_distance_matrix(filename)
+    print(keys)
+    print(dmatrix)

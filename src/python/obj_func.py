@@ -20,16 +20,8 @@ def get_total_partcorr(dmatrix, keys, keys_idx):
     total_pc = np.apply_along_axis(sum, 0, sums)
     return total_pc
 
-
-def simplex(keys, dmatrix):
-    sd = np.std(dmatrix, axis=0, ddof=1)
-    n = len(dmatrix) + 1
-    f = np.zeros((n, n))
-
-    print(f)
-    print(sd)
-    pass
-
+def objective_function(dmatrix, keys, keys_idx):
+    return get_total_partcorr(dmatrix, keys, keys_idx)
 
 if __name__ == "__main__":
     #filename = '../../out/w_unifrac/wu_full.txt'
@@ -40,5 +32,5 @@ if __name__ == "__main__":
 
     k = 3
     corrd_sys_idx = random.sample(range(len(keys)), k)
-    total_partcorr = get_total_partcorr(dmatrix, keys, corrd_sys_idx)
-    print(total_partcorr)
+    value = objective_function(dmatrix, keys, corrd_sys_idx)
+    print(value)
