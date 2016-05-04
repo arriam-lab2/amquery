@@ -3,8 +3,8 @@
 from iof import read_distance_matrix
 import numpy as np
 import random
-
 from partial_corr import partial_corr
+
 
 def choose(dmatrix, keys, keys_idx):
     outer_ix = list(set(np.arange(len(keys))) - set(keys_idx))
@@ -20,11 +20,12 @@ def get_total_partcorr(dmatrix, keys, keys_idx):
     total_pc = np.apply_along_axis(sum, 0, sums)
     return total_pc
 
+
 def objective_function(dmatrix, keys, keys_idx):
     return get_total_partcorr(dmatrix, keys, keys_idx)
 
 if __name__ == "__main__":
-    #filename = '../../out/w_unifrac/wu_full.txt'
+    # filename = '../../out/w_unifrac/wu_full.txt'
     filename = '../../out/jsd_50/seqs.txt'
 
     keys, dmatrix = read_distance_matrix(filename)

@@ -18,14 +18,15 @@ class Individual(object):
     :type _mutation_rate: float
     :type _chromosome: tuple
     """
+
     def __init__(self, mutation_rate, engine, l=None, starting_chr=None):
         # TODO add docs about starting_chromosome
         """
         :type mutation_rate: float
         :param mutation_rate: the binomial mutation success rate for each gene
         :type engine: Union[Sequence[Callable[Optional]], Callable[Optional]]
-        :param engine: an engine is used to mutate individual's features. It can
-                       be
+        :param engine: an engine is used to mutate individual's features.
+                       It can be:
                        - A single callable object that takes one argument
                          (current value of a feature) and returns an new value.
                          It must handle `None` inputs if `starting_chromosome`
@@ -61,9 +62,10 @@ class Individual(object):
         self._mutation_rate = mutation_rate
 
         if starting_chr and self._l != len(starting_chr):
-            raise ValueError("`starting_chr`'s length doesn't match the number "
-                             "of features specified by `l` (or inferred from "
-                             "`len(engine)`)")
+            raise ValueError(
+                "`starting_chr`'s length doesn't match the number "
+                "of features specified by `l` (or inferred from "
+                "`len(engine)`)")
         # chromosome is a sequence of genes (features)
         self._chromosome = (tuple(starting_chr) if starting_chr else
                             tuple(gen(None) for gen in self._engine))
@@ -121,7 +123,8 @@ class Individual(object):
                 izip(chr1, chr2, choice_mask)]
 
     def replicate_chr(self):
-        return self._mutate(self._mutation_rate, self._chromosome, self._engine)
+        return self._mutate(self._mutation_rate,
+                            self._chromosome, self._engine)
 
     def mate(self, other):
         offspring_chr = self._crossover(self.replicate_chr(),
@@ -180,8 +183,9 @@ class Population(object):
 
         try:
             if fitness_function(ancestors[0]) is None:
-                raise ValueError("`fitness_function` mustn't return `NoneType` "
-                                 "values")
+                raise ValueError(
+                    "`fitness_function` mustn't return `NoneType` "
+                    "values")
         except (TypeError, AttributeError):
             raise ValueError("`fitness_function` must be a callable object,"
                              "that a single argument of type `Individual`")
@@ -207,7 +211,7 @@ class Population(object):
         individuals = [indiv for fitness, indiv in evaluated_ancestors]
         all_pairs = tuple(itertools.combinations(individuals, r=2))
         mating_pairs = (random.choice(all_pairs)
-                        for _ in xrange(self._size-len(evaluated_ancestors)))
+                        for _ in xrange(self._size - len(evaluated_ancestors)))
         offsprings = [indiv1.mate(indiv2) for indiv1, indiv2 in mating_pairs]
         # evaluate offsprings and merge the result with `evaluated_ancestors`
         offspring_fitness = imap(self._fitness_func, offsprings)
@@ -250,7 +254,7 @@ class Population(object):
         #       `legends` (if they managed to survive through the generations)
         #       we need to remove obvious duplicates by checking object ids
         self._legends = sorted(
-            self._filter_duplicates_by_id(contenders+self._legends),
+            self._filter_duplicates_by_id(contenders + self._legends),
             reverse=self._maximize)[:self._n_legends]
 
     def _run_generation(self, evaluated_ancestors, n_fittest, n_unfit):
@@ -267,7 +271,7 @@ class Population(object):
         selected_individuals = self._select(population, n_fittest, n_unfit)
         # note: since the list returned by `self._select` starts with the
         #       fittest individuals we can pick contenders for the hall of fame
-        #       by slicing the first `self._n_legends` of `selected_individuals`
+        # by slicing the first `self._n_legends` of `selected_individuals`
         self._update_legends(selected_individuals[:self._n_legends])
         return selected_individuals
 
@@ -312,7 +316,7 @@ def test():
     start = time.time()
     for generation_legends in population.evolve(1000, 25, 10):
         print(*[fitness for fitness, indiv in generation_legends])
-    print(time.time()-start)
+    print(time.time() - start)
 
 
 if __name__ == "__main__":
