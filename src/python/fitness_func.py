@@ -21,7 +21,7 @@ def get_total_partcorr(dmatrix, keys, keys_idx):
     return total_pc
 
 
-def objective_function(dmatrix, keys, keys_idx):
+def fitness(dmatrix, keys, keys_idx):
     return get_total_partcorr(dmatrix, keys, keys_idx)
 
 if __name__ == "__main__":
@@ -33,5 +33,5 @@ if __name__ == "__main__":
 
     k = 3
     corrd_sys_idx = random.sample(range(len(keys)), k)
-    value = objective_function(dmatrix, keys, corrd_sys_idx)
+    value = fitness(dmatrix, keys, corrd_sys_idx)
     print(value)

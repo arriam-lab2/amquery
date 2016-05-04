@@ -7,11 +7,83 @@ from collections import Sequence, Callable
 import itertools
 import random
 import time
-
 import numpy as np
+import abc
+from abc import abstractmethod, abstractproperty
+
+
+class abstractstatic(staticmethod):
+    __slots__ = ()
+
+    def __init__(self, function):
+        super(abstractstatic, self).__init__(function)
+        function.__isabstractmethod__ = True
+    __isabstractmethod__ = True
 
 
 class Individual(object):
+    __metaclass__ = abc.ABCMeta
+
+    def __hash__(self):
+        return hash(self._chromosome)
+
+    def __eq__(self, other):
+        """
+        :type other: Individual
+        :rtype: bool
+        """
+        if not isinstance(other, Individual):
+            raise TypeError
+        return self.chromosome == other.chromosome
+
+    def __ne__(self, other):
+        """
+        :type other: Individual
+        :rtype: bool
+        """
+        return not self == other
+
+    @property
+    def engine(self):
+        return self._engine
+
+    @property
+    def chromosome(self):
+        return self._chromosome
+
+    @abstractstatic
+    def _mutate(mutation_rate, chromosome, engine):
+        """
+        :type mutation_rate: float
+        :param mutation_rate: the probability of mutation per gene
+        :type chromosome: Sequence
+        :param chromosome: a sequence of genes (features)
+        :rtype: list
+        :return: a mutated chromosome
+        """
+
+    @abstractstatic
+    def _crossover(chr1, chr2):
+        """
+        :param chr1: a chromosome type object
+        :param chr2: a chromosome type object
+        :rtype: list
+        :return: the result of crossover between chr1 and chr2
+        """
+
+    def replicate_chr(self):
+        return self._mutate(self._mutation_rate,
+                            self._chromosome, self._engine)
+
+    @abstractmethod
+    def mate(self, other):
+        """
+        :return: the result of mating with other Individual object
+        of the same type
+        """
+
+
+class IndividualImpl(Individual):
     """
     :type _l: int
     :type _engine: Sequence[Callable]
@@ -70,32 +142,6 @@ class Individual(object):
         self._chromosome = (tuple(starting_chr) if starting_chr else
                             tuple(gen(None) for gen in self._engine))
 
-    def __hash__(self):
-        return hash(self._chromosome)
-
-    def __eq__(self, other):
-        """
-        :type other: Individual
-        :rtype: bool
-        """
-        if not isinstance(other, Individual):
-            raise TypeError
-        return self.chromosome == other.chromosome
-
-    def __ne__(self, other):
-        """
-        :type other: Individual
-        :rtype: bool
-        """
-        return not self == other
-
-    @property
-    def engine(self):
-        return self._engine
-
-    @property
-    def chromosome(self):
-        return self._chromosome
 
     @staticmethod
     def _mutate(mutation_rate, chromosome, engine):
@@ -130,9 +176,9 @@ class Individual(object):
         offspring_chr = self._crossover(self.replicate_chr(),
                                         other.replicate_chr())
 
-        return Individual(mutation_rate=self._mutation_rate,
-                          engine=self._engine, l=self._l,
-                          starting_chr=offspring_chr)
+        return IndividualImpl(mutation_rate=self._mutation_rate,
+                              engine=self._engine, l=self._l,
+                              starting_chr=offspring_chr)
 
 
 class Population(object):
@@ -283,6 +329,8 @@ class Population(object):
 
     def evolve(self, n_gen, n_fittest, n_random_unfit):
         """
+        :type n_gen: int
+        :param n_gen: the number of generations
         :type n_fittest: int
         :param n_fittest: the number of the most fittest individuals to pick for
                           the next generation
@@ -309,7 +357,7 @@ class Population(object):
 
 def test():
     engine = lambda x: random.randint(0, 50)
-    ancestors = [Individual(0.1, engine, 75) for _ in xrange(2)]
+    ancestors = [IndividualImpl(0.1, engine, 75) for _ in xrange(2)]
 
     fitness_func = lambda indiv: abs(200 - sum(indiv.chromosome))
     population = Population(ancestors, 100, fitness_func, mode="minimize")
