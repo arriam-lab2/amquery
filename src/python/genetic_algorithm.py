@@ -17,9 +17,7 @@ class abstractstatic(staticmethod):
     __isabstractmethod__ = True
 
 
-class Individual(object):
-    __metaclass__ = abc.ABCMeta
-
+class BaseIndividual(metaclass=abc.ABCMeta):
     def __hash__(self):
         return hash(self._chromosome)
 
@@ -82,7 +80,7 @@ class Individual(object):
         """
 
 
-class IndividualImpl(Individual):
+class Individual(BaseIndividual):
     """
     :type _l: int
     :type _engine: Sequence[Callable]
@@ -170,7 +168,7 @@ class IndividualImpl(Individual):
         offspring_chr = self._crossover(self.replicate_chr(),
                                         other.replicate_chr())
 
-        return IndividualImpl(mutation_rate=self._mutation_rate,
+        return Individual(mutation_rate=self._mutation_rate,
                               engine=self._engine, l=self._l,
                               starting_chr=offspring_chr)
 
@@ -231,7 +229,7 @@ class Population(object):
                              "that a single argument of type `Individual`")
         self._fitness_func = fitness_function
         self._evaluated_ancestors = list(zip(map(self._fitness_func, ancestors),
-                                        ancestors))
+                                         ancestors))
 
     @property
     def legends(self):
@@ -351,7 +349,7 @@ class Population(object):
 
 def test():
     engine = lambda x: random.randint(0, 50)
-    ancestors = [IndividualImpl(0.1, engine, 75) for _ in range(2)]
+    ancestors = [Individual(0.1, engine, 75) for _ in range(2)]
 
     fitness_func = lambda indiv: abs(200 - sum(indiv.chromosome))
     population = Population(ancestors, 100, fitness_func, mode="minimize")

@@ -38,7 +38,6 @@ class CoordSystem(ga.Individual):
         self._chromosome = starting_chr if starting_chr is not None \
             else np.array([gen(None) for gen in self._engine])
 
-
     @staticmethod
     def _mutate(mutation_rate, chromosome, engine):
         """
@@ -71,21 +70,6 @@ class CoordSystem(ga.Individual):
                            starting_chr=offspring_chr)
 
 
-def choose(dmatrix, keys, keys_idx):
-    outer_ix = list(set(np.arange(len(keys))) - set(keys_idx))
-    dmx = np.delete(dmatrix, outer_ix, axis=1)
-    dmx = np.delete(dmx, keys_idx, axis=0)
-    return dmx
-
-
-def get_total_partcorr(dmatrix, keys, keys_idx):
-    dmx = choose(dmatrix, keys, keys_idx)
-    corrs = partial_corr(dmx)
-    sums = np.apply_along_axis(sum, 1, corrs)
-    total_pc = np.apply_along_axis(sum, 0, sums)
-    return float(total_pc)
-
-
 class Engine:
     def __init__(self, names):
         self.names = np.array(names)
@@ -103,7 +87,20 @@ class Fitness:
         self.names = names
 
     def __call__(self, indiv):
-        return get_total_partcorr(self.dmatrix, self.names, indiv.chromosome)
+        return self._total_partcorr(indiv.chromosome)
+
+    def _choose(self, names_idx):
+        outer_idx = list(set(np.arange(len(self.names))) - set(names_idx))
+        dmx = np.delete(self.dmatrix, outer_idx, axis=1)
+        dmx = np.delete(dmx, names_idx, axis=0)
+        return dmx
+
+    def _total_partcorr(self, names_idx):
+        dmx = self._choose(names_idx)
+        corrs = partial_corr(dmx)
+        sums = np.apply_along_axis(sum, 1, corrs)
+        total_pc = np.apply_along_axis(sum, 0, sums)
+        return float(total_pc)
 
 
 def random_chr(names, k):
