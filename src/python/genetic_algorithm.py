@@ -1,11 +1,13 @@
 #! /usr/bin/env python
 
-from collections import Sequence
+import abc
 import itertools
 import random
 import time
+from collections import Sequence, Callable
+
 import numpy as np
-import abc
+import joblib
 
 
 class abstractstatic(staticmethod):
@@ -19,7 +21,7 @@ class abstractstatic(staticmethod):
 
 class BaseIndividual(metaclass=abc.ABCMeta):
     def __hash__(self):
-        return hash(self._chromosome)
+        return hash(self.chromosome)
 
     def __lt__(self, other):
         return tuple(self.chromosome) < tuple(other.chromosome)
@@ -40,13 +42,17 @@ class BaseIndividual(metaclass=abc.ABCMeta):
         """
         return not self == other
 
-    @property
+    @abc.abstractproperty
     def engine(self):
-        return self._engine
+        pass
 
-    @property
+    @abc.abstractproperty
     def chromosome(self):
-        return self._chromosome
+        pass
+
+    @abc.abstractproperty
+    def mutation_rate(self):
+        pass
 
     @abstractstatic
     def _mutate(mutation_rate, chromosome, engine):
@@ -58,6 +64,7 @@ class BaseIndividual(metaclass=abc.ABCMeta):
         :rtype: list
         :return: a mutated chromosome
         """
+        pass
 
     @abstractstatic
     def _crossover(chr1, chr2):
@@ -67,10 +74,11 @@ class BaseIndividual(metaclass=abc.ABCMeta):
         :rtype: list
         :return: the result of crossover between chr1 and chr2
         """
+        pass
 
     def replicate_chr(self):
-        return self._mutate(self._mutation_rate,
-                            self._chromosome, self._engine)
+        return self._mutate(self.mutation_rate,
+                            self.chromosome, self.engine)
 
     @abc.abstractmethod
     def mate(self, other):
@@ -78,6 +86,7 @@ class BaseIndividual(metaclass=abc.ABCMeta):
         :return: the result of mating with other Individual object
         of the same type
         """
+        pass
 
 
 class Individual(BaseIndividual):
@@ -139,6 +148,27 @@ class Individual(BaseIndividual):
         self._chromosome = (tuple(starting_chr) if starting_chr else
                             tuple(gen(None) for gen in self._engine))
 
+    @property
+    def engine(self):
+        """
+        :rtype: Sequence[Callable]
+        """
+        return self._engine
+
+    @property
+    def chromosome(self):
+        """
+        :rtype: tuple
+        """
+        return self._chromosome
+
+    @property
+    def mutation_rate(self):
+        """
+        :rtype: float
+        """
+        return self._mutation_rate
+
     @staticmethod
     def _mutate(mutation_rate, chromosome, engine):
         """
@@ -168,9 +198,9 @@ class Individual(BaseIndividual):
         offspring_chr = self._crossover(self.replicate_chr(),
                                         other.replicate_chr())
 
-        return Individual(mutation_rate=self._mutation_rate,
-                              engine=self._engine, l=self._l,
-                              starting_chr=offspring_chr)
+        return type(self)(mutation_rate=self._mutation_rate,
+                          engine=self._engine, l=self._l,
+                          starting_chr=offspring_chr)
 
 
 class Population(object):

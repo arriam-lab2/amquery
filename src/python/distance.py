@@ -60,13 +60,13 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 def distance_matrix(fasta, kmer_size, distance, out_dir, force, quiet):
 
     iof.create_dir(out_dir)
-    if (force):
+    if force:
         iof.clear_dir(out_dir)
 
     start = time()
     for f in fasta:
         if not quiet:
-            click.echo("Processing " + f + "...")
+            click.echo("Processing "+f+"...")
 
         seqs = iof.load_seqs(f)
         distance_func = distances[distance]
@@ -79,7 +79,7 @@ def distance_matrix(fasta, kmer_size, distance, out_dir, force, quiet):
     end = time()
 
     if not quiet:
-        click.echo("Time: " + str(end - start))
+        click.echo("Time: " + str(end-start))
 
 
 if __name__ == "__main__":
