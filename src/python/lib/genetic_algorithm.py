@@ -4,6 +4,7 @@ import abc
 import itertools
 import random
 import time
+import functools
 from collections import Sequence, Callable
 
 import numpy as np
@@ -202,19 +203,19 @@ class Individual(BaseIndividual):
 
 class Population(object):
     """
-    :type _evaluated_ancestors: list[(object, Individual)]
-    :type _legends: list[(object, Individual)]
+    :type _evaluated_ancestors: list[(object, BaseIndividual)]
+    :type _legends: list[(object, BaseIndividual)]
     """
     modes = ("maximize", "minimize")
 
     def __init__(self, ancestors, size, fitness_function, mode="maximize",
                  n_legends=10):
         """
-        :type ancestors: Sequence[Individual]
+        :type ancestors: Sequence[BaseIndividual]
         :param ancestors: a bunch of individuals to begin with
         :type size: int
         :param size: population size
-        :type fitness_function: (Individual) -> object
+        :type fitness_function: (BaseIndividual) -> object
         :param fitness_function: a callable that requires one argument - an
                                  instance of Individual - and returns an
                                  instance of a class that supports comparison
@@ -234,11 +235,11 @@ class Population(object):
             raise ValueError("At least 2 ancestors are required to start a"
                              "population")
 
-        if not all(isinstance(indiv, Individual) for indiv in ancestors):
+        if not all(isinstance(indiv, BaseIndividual) for indiv in ancestors):
             raise ValueError("`ancestors` can only contain instances of"
                              "`Individual`")
-        if not isinstance(n_legends, int):
-            raise ValueError("`n_legends` must be a non-negative integer")
+        if not isinstance(n_legends, int) or n_legends <= 0:
+            raise ValueError("`n_legends` must be a positive integer")
 
         self._maximize = mode == "maximize"
         self._ancestors = list(ancestors)
@@ -252,9 +253,10 @@ class Population(object):
                     "`fitness_function` mustn't return `NoneType` "
                     "values")
         except (TypeError, AttributeError):
-            raise ValueError("`fitness_function` must be a callable object,"
-                             "that a single argument of type `Individual`")
+            raise ValueError("Your `fitness_function` doesn't suit your"
+                             "Idividuals")
         self._fitness_func = fitness_function
+        # TODO get rid of the `evaluated_ancestors` attribute
         self._evaluated_ancestors = list(zip(map(self._fitness_func, ancestors),
                                          ancestors))
 
@@ -282,18 +284,38 @@ class Population(object):
         offspring_fitness = map(self._fitness_func, offsprings)
         return list(zip(offspring_fitness, offsprings)) + evaluated_ancestors
 
+    def _repopulate_parallel(self, evaluated_ancestors, workers):
+        """
+        Mate ancestors to restore population size
+        :type evaluated_ancestors: list[(object, Individual)]
+        :type workers: joblib.Parallel
+        :rtype: list[(object, Individual)]
+        """
+        # generate all possible pairs of individuals and mate enough random
+        # pairs to reach the desired population size
+        individuals = [indiv for fitness, indiv in evaluated_ancestors]
+        all_pairs = tuple(itertools.combinations(individuals, r=2))
+        mating_pairs = (random.choice(all_pairs)
+                        for _ in range(self._size - len(evaluated_ancestors)))
+        offsprings = [indiv1.mate(indiv2) for indiv1, indiv2 in mating_pairs]
+        # evaluate offsprings and merge the result with `evaluated_ancestors`
+        offspring_fitness = workers(
+            joblib.delayed(self._fitness_func)(off) for off in offsprings)
+        return list(zip(offspring_fitness, offsprings)) + evaluated_ancestors
+
     def _select(self, evaluated_population, n_fittest, n_random_unfit):
         """
-        :type evaluated_population: list[(object, Individual)]
+        :type evaluated_population: list[(object, BaseIndividual)]
         :param evaluated_population:
         :type n_fittest: int
         :param n_fittest:
         :type n_random_unfit: int
         :param n_random_unfit:
-        :rtype: list[object, Individual)]
+        :rtype: list[object, BaseIndividual)]
         """
         # pick the most fittest and random lesser fit individuals
-        ranked_pop = sorted(evaluated_population, reverse=self._maximize)
+        ranked_pop = sorted(evaluated_population, reverse=self._maximize,
+                            key=lambda x: x[0])
         fittest_survivors = ranked_pop[:n_fittest]
         random_unfit_survivors = random.sample(ranked_pop[n_fittest:],
                                                n_random_unfit)
@@ -310,7 +332,7 @@ class Population(object):
 
     def _update_legends(self, contenders):
         """
-        :type contenders: list[(object, Individual)]
+        :type contenders: list[(object, BaseIndividual)]
         :rtype: None
         """
         # merge `contenders` with `self._legends`, sort again and strip to
@@ -320,7 +342,7 @@ class Population(object):
         #       we need to remove obvious duplicates by checking object ids
         self._legends = sorted(
             self._filter_duplicates_by_id(contenders + self._legends),
-            reverse=self._maximize)[:self._n_legends]
+            key=lambda x: x[0], reverse=self._maximize)[:self._n_legends]
 
     def _run_generation(self, evaluated_ancestors, n_fittest, n_unfit):
         """
@@ -341,12 +363,17 @@ class Population(object):
         return selected_individuals
 
     def _run_generation_parallel(self, evaluated_ancestors, n_fittest, n_unfit,
-                                 n_jobs):
-        # TODO
-        # import pathos.multiprocessing as mp
-        raise NotImplemented
+                                 workers):
+        # repopulate, apply selection and update the hall of fame (legends)
+        population = self._repopulate_parallel(evaluated_ancestors, workers)
+        selected_individuals = self._select(population, n_fittest, n_unfit)
+        # note: since the list returned by `self._select` starts with the
+        # fittest individuals we can pick contenders for the hall of fame
+        # by slicing the first `self._n_legends` of `selected_individuals`
+        self._update_legends(selected_individuals[:self._n_legends])
+        return selected_individuals
 
-    def evolve(self, n_gen, n_fittest, n_random_unfit):
+    def evolve(self, n_gen, n_fittest, n_random_unfit, n_jobs=1):
         """
         :type n_gen: int
         :param n_gen: the number of generations
@@ -367,22 +394,37 @@ class Population(object):
             raise ValueError("Population size is too small to fit "
                              "`n_fittest` + `n_unfit`")
         current_generation = self._evaluated_ancestors
-        for _ in range(n_gen):
-            current_generation = self._run_generation(current_generation,
-                                                      n_fittest,
-                                                      n_random_unfit)
-            yield self._legends
+        if n_jobs == 1:
+            for _ in range(n_gen):
+                current_generation = self._run_generation(
+                    current_generation, n_fittest, n_random_unfit)
+                yield self._legends
+            return
+        with joblib.Parallel(
+                n_jobs=n_jobs, batch_size=self._size//n_jobs) as workers:
+            for _ in range(n_gen):
+                current_generation = self._run_generation_parallel(
+                    current_generation, n_fittest, n_random_unfit, workers)
+                yield self._legends
+            return
+
+
+def engine(x):
+    return random.randint(0, 50)
+
+
+def fitness(x):
+    return abs(200 - sum(n ** 120 for n in x.chromosome) ** 0.05)
 
 
 def test():
-    engine = lambda x: random.randint(0, 50)
-    ancestors = [Individual(0.1, engine, 75) for _ in range(2)]
+    ancestors = [Individual(0.1, engine, 100) for _ in range(2)]
 
-    fitness_func = lambda indiv: abs(200 - sum(indiv.chromosome))
-    population = Population(ancestors, 100, fitness_func, mode="minimize")
+    population = Population(ancestors, 1000, fitness, mode="minimize")
     start = time.time()
-    for generation_legends in population.evolve(1000, 25, 10):
-        print(*[fitness for fitness, indiv in generation_legends])
+    for generation_legends in population.evolve(100, 25, 10, n_jobs=2):
+        pass
+        # print(*[fitness for fitness, indiv in generation_legends])
     print(time.time() - start)
 
 
