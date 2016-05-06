@@ -1,6 +1,7 @@
 from Bio import SeqIO
 from collections import defaultdict
 import os
+import numpy as np
 
 
 def load_seqs(filename):
@@ -43,7 +44,7 @@ def read_distance_matrix(filename):
 
         dmatrix = [list(map(float, l)) for l in dmatrix]
 
-    return keys, dmatrix
+    return keys, np.matrix(dmatrix)
 
 
 if __name__ == "__main__":

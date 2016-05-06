@@ -24,7 +24,7 @@ class Individual(object):
         return hash(self._chromosome)
 
     def __lt__(self, other):
-        return self.chromosome < other.chromosome
+        return tuple(self.chromosome) < tuple(other.chromosome)
 
     def __eq__(self, other):
         """
