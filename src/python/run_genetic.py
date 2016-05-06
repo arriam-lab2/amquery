@@ -130,8 +130,10 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 @click.option('--random_select_size', '-r', type=int,
               help='Number of random individuals to select on each generation',
               default=10)
+@click.option('--idle_threshold', '-i', type=int, help='Number of iterations to \
+              continue the evolution at local minimum', default=5)
 def run(distance_matrix, cs_size, generations, mutation_rate, population_size,
-        select_size, random_select_size):
+        select_size, random_select_size, idle_threshold):
     names, dmatrix = read_distance_matrix(distance_matrix)
     dmatrix = np.matrix(dmatrix)
 
@@ -146,8 +148,23 @@ def run(distance_matrix, cs_size, generations, mutation_rate, population_size,
     legends = population.evolve(generations,
                                 select_size,
                                 random_select_size)
+
+    eps = 1e-20
+    last = None
+    locality_count = 0
+    n = 1
     for legend in legends:
-        print(*[fitness for fitness, indiv in legend])
+        best = legend[np.argmin([fitness for fitness, indiv in legend])]
+        print("Round ", n, " best solution:", best[0], best[1].chromosome)
+        n += 1
+
+        if last and abs(best[0] - last) < eps:
+            locality_count += 1
+
+        if locality_count > idle_threshold:
+            break
+
+        last = best[0]
 
 
 if __name__ == "__main__":
