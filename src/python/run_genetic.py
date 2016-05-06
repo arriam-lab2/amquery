@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 
-import click
-from iof import read_distance_matrix
-import numpy as np
 import random
-from partial_corr import partial_corr
-import genetic_algorithm as ga
+import itertools
 from collections import Sequence
+
+import click
+import numpy as np
+
+from iof import read_distance_matrix
+from lib import genetic_algorithm as ga
+from partial_corr import partial_corr
 
 
 class CoordSystem(ga.Individual):
@@ -19,30 +22,15 @@ class CoordSystem(ga.Individual):
 
     def __init__(self, mutation_rate, engine, l=None,
                  starting_chr=None):
-        if l and isinstance(engine, Sequence) and len(engine) != l:
-            raise ValueError("len(engine) != l, while l is not None")
-        elif l is None and not isinstance(engine, Sequence):
-            raise ValueError("`l` is not specified, while `engine` is not a "
-                             "sequence, hence `l` cannot be be inferred")
+        super().__init__(mutation_rate, engine, l, starting_chr)
 
-        self._l = l if l else len(engine)
-        self._engine = (engine if isinstance(engine, Sequence) else
-                        [engine] * self._l)
-        self._mutation_rate = mutation_rate
-
-        if (starting_chr is not None) and (self._l != len(starting_chr)):
-            raise ValueError(
-                "`starting_chr`'s length doesn't match the number "
-                "of features specified by `l` (or inferred from "
-                "`len(engine)`)")
-        # chromosome is a sequence of genes (features)
-        self._chromosome = starting_chr if starting_chr is not None \
-            else np.array([gen(None) for gen in self._engine])
+        self._chromosome = (starting_chr if starting_chr is not None
+                            else tuple(gen(None) for gen in self._engine))
 
     @staticmethod
     def _mutate(mutation_rate, chromosome, engine):
         """
-        :ty pe mutation_rate: float
+        :type mutation_rate: float
         :param mutation_rate: the probability of mutation per gene
         :type chromosome: Sequence
         :param chromosome: a sequence of genes (features)
@@ -50,8 +38,8 @@ class CoordSystem(ga.Individual):
         :return: a mutated chromosome
         """
         mutation_mask = np.random.binomial(1, mutation_rate, len(chromosome))
-        return [generator(val, chromosome) if mutate else val for val, mutate, generator in
-                zip(chromosome, mutation_mask, engine)]
+        return [generator(val, chromosome) if mutate else val for
+                val, mutate, generator in zip(chromosome, mutation_mask, engine)]
 
     @staticmethod
     def _crossover(chr1, chr2):
@@ -60,19 +48,13 @@ class CoordSystem(ga.Individual):
         """
         if len(chr1) != len(chr2):
             raise ValueError("Incompatible species can't mate")
-        joined = np.union1d(chr1, chr2)
-        return tuple(joined[random.sample(range(len(joined)), len(chr1))])
-
-    def mate(self, other):
-        offspring_chr = self._crossover(self.replicate_chr(),
-                                        other.replicate_chr())
-        return CoordSystem(mutation_rate=self._mutation_rate,
-                           engine=self._engine, l=self._l,
-                           starting_chr=offspring_chr)
+        unique = list(set(itertools.chain(chr1, chr2)))
+        # note: it's a bit faster to use `unique = set(chr1);
+        #       unique.update(chr2)`, though not as functionally pure.
+        return tuple(random.sample(unique, len(chr1)))
 
 
 class Engine:
-
     def __init__(self, names):
         self.names = np.array(names)
 
@@ -84,7 +66,6 @@ class Engine:
 
 
 class Fitness:
-
     def __init__(self, dmatrix, names):
         self.dmatrix = dmatrix
         self.names = names

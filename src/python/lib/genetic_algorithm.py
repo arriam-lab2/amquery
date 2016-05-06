@@ -23,9 +23,6 @@ class BaseIndividual(metaclass=abc.ABCMeta):
     def __hash__(self):
         return hash(self.chromosome)
 
-    def __lt__(self, other):
-        return tuple(self.chromosome) < tuple(other.chromosome)
-
     def __eq__(self, other):
         """
         :type other: Individual
