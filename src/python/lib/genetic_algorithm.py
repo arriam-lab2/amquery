@@ -8,7 +8,7 @@ import functools
 from collections import Sequence, Callable
 
 import numpy as np
-import joblib
+import joblib.pool
 
 
 class abstractstatic(staticmethod):
@@ -284,11 +284,11 @@ class Population(object):
         offspring_fitness = map(self._fitness_func, offsprings)
         return list(zip(offspring_fitness, offsprings)) + evaluated_ancestors
 
-    def _repopulate_parallel(self, evaluated_ancestors, workers):
+    def _repopulate_parallel(self, evaluated_ancestors, workers, chunksize):
         """
         Mate ancestors to restore population size
         :type evaluated_ancestors: list[(object, Individual)]
-        :type workers: joblib.Parallel
+        :type workers: joblib.pool.Pool
         :rtype: list[(object, Individual)]
         """
         # generate all possible pairs of individuals and mate enough random
@@ -299,8 +299,7 @@ class Population(object):
                         for _ in range(self._size - len(evaluated_ancestors)))
         offsprings = [indiv1.mate(indiv2) for indiv1, indiv2 in mating_pairs]
         # evaluate offsprings and merge the result with `evaluated_ancestors`
-        offspring_fitness = workers(
-            joblib.delayed(self._fitness_func)(off) for off in offsprings)
+        offspring_fitness = workers.map(self._fitness_func, offsprings)
         return list(zip(offspring_fitness, offsprings)) + evaluated_ancestors
 
     def _select(self, evaluated_population, n_fittest, n_random_unfit):
@@ -363,9 +362,10 @@ class Population(object):
         return selected_individuals
 
     def _run_generation_parallel(self, evaluated_ancestors, n_fittest, n_unfit,
-                                 workers):
+                                 workers, chunksize):
         # repopulate, apply selection and update the hall of fame (legends)
-        population = self._repopulate_parallel(evaluated_ancestors, workers)
+        population = self._repopulate_parallel(evaluated_ancestors, workers,
+                                               chunksize)
         selected_individuals = self._select(population, n_fittest, n_unfit)
         # note: since the list returned by `self._select` starts with the
         # fittest individuals we can pick contenders for the hall of fame
@@ -400,13 +400,13 @@ class Population(object):
                     current_generation, n_fittest, n_random_unfit)
                 yield self._legends
             return
-        with joblib.Parallel(
-                n_jobs=n_jobs, batch_size=self._size//n_jobs) as workers:
-            for _ in range(n_gen):
-                current_generation = self._run_generation_parallel(
-                    current_generation, n_fittest, n_random_unfit, workers)
-                yield self._legends
-            return
+        pool = joblib.pool.Pool(n_jobs)
+        chunksize = self._size // n_jobs
+        for _ in range(n_gen):
+            current_generation = self._run_generation_parallel(
+                current_generation, n_fittest, n_random_unfit, pool, chunksize)
+            yield self._legends
+        return
 
 
 def engine(x):
@@ -421,6 +421,12 @@ def test():
     ancestors = [Individual(0.1, engine, 100) for _ in range(2)]
 
     population = Population(ancestors, 1000, fitness, mode="minimize")
+    start = time.time()
+    for generation_legends in population.evolve(100, 25, 10, n_jobs=1):
+        pass
+        # print(*[fitness for fitness, indiv in generation_legends])
+    print(time.time() - start)
+
     start = time.time()
     for generation_legends in population.evolve(100, 25, 10, n_jobs=2):
         pass
