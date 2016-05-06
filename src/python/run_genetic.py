@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import click
 from iof import read_distance_matrix
 import numpy as np
 import random
@@ -71,6 +72,7 @@ class CoordSystem(ga.Individual):
 
 
 class Engine:
+
     def __init__(self, names):
         self.names = np.array(names)
 
@@ -82,6 +84,7 @@ class Engine:
 
 
 class Fitness:
+
     def __init__(self, dmatrix, names):
         self.dmatrix = dmatrix
         self.names = names
@@ -107,23 +110,45 @@ def random_chr(names, k):
     return random.sample(range(len(names)), k)
 
 
-def test():
-    filename = '../../out/jsd_50/seqs.txt'
+CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
-    names, dmatrix = read_distance_matrix(filename)
+
+@click.command(context_settings=CONTEXT_SETTINGS)
+@click.option('--distance_matrix', '-f', type=click.Path(exists=True),
+              required=True)
+@click.option('--cs_size', '-k', type=int, help='Coord system size',
+              required=True)
+@click.option('--generations', '-n', type=int, help='Number of generations',
+              default=1000)
+@click.option('--mutation_rate', '-m', type=float, help='Mutation rate',
+              default=0.1)
+@click.option('--population_size', '-p', type=int, help='Population size',
+              default=100)
+@click.option('--select_size', '-s', type=int,
+              help='Number of best individuals to select on each generation',
+              default=25)
+@click.option('--random_select_size', '-r', type=int,
+              help='Number of random individuals to select on each generation',
+              default=10)
+def run(distance_matrix, cs_size, generations, mutation_rate, population_size,
+        select_size, random_select_size):
+    names, dmatrix = read_distance_matrix(distance_matrix)
     dmatrix = np.matrix(dmatrix)
 
-    k = 3
     engine = Engine(names)
     fitness = Fitness(dmatrix, names)
-    ancestors = [CoordSystem(0.1, engine, k, random_chr(names, k))
-                 for _ in range(2)]
+    ancestors = [CoordSystem(mutation_rate, engine, cs_size,
+                             random_chr(names, cs_size)) for _ in range(2)]
 
-    population = ga.Population(ancestors, 100, fitness, mode="minimize")
+    population = ga.Population(ancestors, population_size, fitness,
+                               mode="minimize")
 
-    for generation_legends in population.evolve(1000, 25, 10):
-        print(*[fitness for fitness, indiv in generation_legends])
+    legends = population.evolve(generations,
+                                select_size,
+                                random_select_size)
+    for legend in legends:
+        print(*[fitness for fitness, indiv in legend])
 
 
 if __name__ == "__main__":
-    test()
+    run()
