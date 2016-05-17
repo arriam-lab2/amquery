@@ -12,11 +12,11 @@ def read_lengths(filename):
     name, extension = os.path.splitext(filename)
     extension = extension[1:]
 
-    length_list = []
+    length_list = set()
     for seq_record in SeqIO.parse(filename, extension):
-        length_list.append(len(seq_record))
+        length_list.add(len(seq_record))
 
-    return length_list
+    return list(length_list)
 
 
 def plot(length_list, plot_output_file):
@@ -30,8 +30,9 @@ def plot(length_list, plot_output_file):
     plt.savefig(plot_output_file)
 
 
-def run_for_dir(dirname, txt_output_file, plot_output_file):
-    files = [os.path.join(dirname, f) for f in os.listdir(dirname)
+def run_for_dirlist(dirlist, txt_output_file, plot_output_file):
+    files = [os.path.join(dirname, f) for dirname in dirlist
+             for f in os.listdir(dirname)
              if os.path.isfile(os.path.join(dirname, f))]
 
     all_lengths = []
@@ -44,25 +45,25 @@ def run_for_dir(dirname, txt_output_file, plot_output_file):
     plot(all_lengths, plot_output_file)
 
 
-# def run_for_dirs(dirlist, txt_output_file, plot_output_file):
-# pass
-
-
 @click.command()
-@click.option('--input_dir', '-i', help='Input directory')
+@click.argument('input_dirs', type=click.Path(exists=True), nargs=-1,
+                required=True)
 @click.option('--output_dir', '-o', help='Output directory')
-def run(input_dir, output_dir):
-    input_dir = os.path.join(input_dir, '')
+def run(input_dirs, output_dir):
+    input_dirs = [os.path.join(x, '') for x in input_dirs]
     output_dir = os.path.join(output_dir, '')
 
-    iof.create_dir(output_dir)
+    if len(input_dirs) > 1:
+        base_name = "length_summary"
+    else:
+        input_dirname = os.path.dirname(input_dirs[0])
+        path, base_name = os.path.split(input_dirname)
 
-    input_dirname = os.path.dirname(input_dir)
-    path, base_name = os.path.split(input_dirname)
     txt_output_file = os.path.join(output_dir, base_name + ".txt")
     plot_output_file = os.path.join(output_dir, base_name + ".png")
 
-    run_for_dir(input_dir, txt_output_file, plot_output_file)
+    iof.create_dir(output_dir)
+    run_for_dirlist(input_dirs, txt_output_file, plot_output_file)
 
 
 if __name__ == "__main__":
