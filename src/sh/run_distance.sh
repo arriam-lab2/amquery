@@ -23,8 +23,11 @@ if [ "$#" == 4 ]; then
     k=$4
     out_dir=$OUTPUT_DIR$metric'_'$k
 
+    SCRIPT=`realpath $0`
+    SCRIPTPATH=`dirname $SCRIPT`
+
     echo $metric k = $k: $out_dir
-    $PYTHON ../python/distance.py $INPUT -k $k -d $metric -o $out_dir --quiet
+    $PYTHON $SCRIPTPATH/../python/distance.py $INPUT -k $k -d $metric -o $out_dir --quiet
 else
     echo "Usage: ./run_distance.sh <fasta> <output_dir> <metric> <kmer-size>"
     exit
