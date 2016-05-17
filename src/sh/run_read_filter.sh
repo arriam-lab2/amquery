@@ -10,7 +10,13 @@ directories=(
 "~/storage/metagen/IPY_Toolik_Metagenomics"
 )
 
-NUM_THREADS=4
+PYTHON=python2
+NUM_THREADS=2
 chmod +x read_filter.sh
+<<<<<<< Updated upstream
 parallel --no-notice --ungroup -j $NUM_THREADS ./read_filter.sh ::: "${directories[@]}"
 #parallel -j $NUM_THREADS ./read_filter.sh ::: "${directories[@]}"
+=======
+#parallel --ungroup --will-cite -j$NUM_THREADS ./read_filter.sh ::: "${directories[@]}"
+parallel --no-notice --ungroup -j $NUM_THREADS $PYTHON read_filter.sh ::: "${directories[@]}"
+>>>>>>> Stashed changes

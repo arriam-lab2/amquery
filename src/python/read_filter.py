@@ -39,7 +39,8 @@ def filter_file(input_file, output_file, min, max):
 @click.command()
 @click.option('--input_dir', '-i', help='Input directory',
               required=True)
-@click.option('--output_dir', '-o', help='Output directory')
+@click.option('--output_dir', '-o', help='Output directory',
+              required=True)
 @click.option('--min', type=int, help='Minimal read length',
               required=True)
 @click.option('--max', type=int, help='Maximal read length')
