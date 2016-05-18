@@ -1,32 +1,19 @@
-from collections import defaultdict
-import numpy as np
 import random
 import time
+import warnings
+from collections import Counter
+
+import numpy as np
+
+warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 
-def hash_to_set(x: defaultdict) -> set:
+def hash_to_set(x: Counter) -> set:
     return set(x.values())
 
 
-# Jaccard index of similarity
-def jaccard(hx: defaultdict, hy: defaultdict) -> float:
-    x = hash_to_set(hx)
-    y = hash_to_set(hy)
-    intersection = len(set.intersection(x, y))
-    union = len(x) + len(y) - intersection
-    return 1 - (intersection / float(union))
-
-
-def generalized_jaccard(hx: defaultdict, hy: defaultdict) -> float:
-    x, y = normalize(hx, hy)
-    l1 = [min(a, b) for a, b in zip(x, y)]
-    l2 = [max(a, b) for a, b in zip(x, y)]
-    return 1 - sum(l1) / sum(l2)
-
-
-def normalize(hx: defaultdict, hy: defaultdict) -> tuple:
-    key_union = hx.copy()
-    key_union.update(hy)
+def normalize(hx: Counter, hy: Counter) -> tuple:
+    key_union = hx.keys() | hy.keys()
 
     x = np.array([hx[key] for key in key_union])
     y = np.array([hy[key] for key in key_union])
@@ -34,18 +21,31 @@ def normalize(hx: defaultdict, hy: defaultdict) -> tuple:
     return x / sum(x), y / sum(y)
 
 
+# Jaccard index of similarity
+def jaccard(hx: Counter, hy: Counter) -> float:
+    x = hash_to_set(hx)
+    y = hash_to_set(hy)
+    intersection = len(x & y)
+    union = len(x) + len(y) - intersection
+    return 1 - (intersection / float(union))
+
+
+def generalized_jaccard(hx: Counter, hy: Counter) -> float:
+    x, y = normalize(hx, hy)
+    l1 = [min(a, b) for a, b in zip(x, y)]
+    l2 = [max(a, b) for a, b in zip(x, y)]
+    return 1 - sum(l1) / sum(l2)
+
+
 # Bray-Curtis dissimilarity
-def bray_curtis(hx: defaultdict, hy: defaultdict) -> float:
+def bray_curtis(hx: Counter, hy: Counter) -> float:
     x, y = normalize(hx, hy)
     return abs(x - y).sum() / abs(x + y).sum()
 
 
 # Jenson-Shanon divergence
-def JSD(hx: defaultdict, hy: defaultdict) -> float:
+def jsd(hx: Counter, hy: Counter) -> float:
     x, y = normalize(hx, hy)
-
-    import warnings
-    warnings.filterwarnings("ignore", category=RuntimeWarning)
 
     z = x + y
     d1 = x * np.log2(2 * x / z)
@@ -56,8 +56,10 @@ def JSD(hx: defaultdict, hy: defaultdict) -> float:
 
 
 if __name__ == "__main__":
-    t1 = defaultdict(int)
-    t2 = defaultdict(int)
+    # TODO create normal unit-tests
+
+    t1 = Counter()
+    t2 = Counter()
 
     random.seed(42)
     N = 50000
@@ -69,7 +71,7 @@ if __name__ == "__main__":
 
     print(jaccard(t1, t2))
     print(generalized_jaccard(t1, t2))
-    print(JSD(t1, t2))
+    print(jsd(t1, t2))
     print(bray_curtis(t1, t2))
 
     end = time.time()
