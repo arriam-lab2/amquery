@@ -1,39 +1,18 @@
 #!/usr/bin/env python3
 
 import os
-from collections import Counter
 from time import time
 
 import click
 
 import iof
-from src.lib import jaccard, generalized_jaccard, jsd, bray_curtis
+from src.lib.metrics import jaccard, generalized_jaccard, jsd, bray_curtis
+from src.lib.dist import kmerize_samples
 
 
-def kmer_generator(string, k):
-    kmer = string[1:k]
-
-    for i in range(len(string) - k):
-        kmer = kmer[1:] + string[i + k]
-        yield kmer
-
-
-def kmer_counter(string_set, k):
-    return Counter([kmer for string in string_set
-                    for kmer in kmer_generator(string, k)])
-
-
-def kmerize(seqs, k):
-    tables = {}
-
-    for sample in seqs.keys():
-        tables[sample] = kmer_counter(seqs[sample].values(), k)
-
-    return tables
-
-
+# TODO Replace this with a multiprocessing version from src.lib.pwcomp
 def calc_distance_matrix(seqs, k, distance_func):
-    tables = kmerize(seqs, k)
+    tables = kmerize_samples(seqs, k)
     result = [tables.keys()]
 
     for key1 in tables:
