@@ -57,15 +57,11 @@ def jsd(hx: Counter, hy: Counter) -> float:
 
 if __name__ == "__main__":
     # TODO create normal unit-test
-
-    t1 = Counter()
-    t2 = Counter()
-
     random.seed(42)
-    N = 50000
-    for x in range(N):
-        t1[x] = random.randint(1, 100)
-        t2[x] = random.randint(1, 100)
+    n = 50000
+
+    t1 = Counter((x, random.randint(1, 100)) for x in range(n))
+    t2 = Counter((x, random.randint(1, 100)) for x in range(n))
 
     start = time.time()
 
