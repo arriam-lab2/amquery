@@ -7,9 +7,9 @@ from collections import Sequence
 import click
 import numpy as np
 
-from iof import read_distance_matrix
 from partial_corr import partial_corr
 from src.lib import genetic_algorithm as ga
+from src.lib.iof import read_distance_matrix
 
 
 class CoordSystem(ga.Individual):

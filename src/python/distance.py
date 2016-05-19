@@ -2,25 +2,25 @@
 
 import os
 from time import time
+from typing import List, Callable, Mapping
 
 import click
+import numpy as np
 
-import iof
-from src.lib.metrics import jaccard, generalized_jaccard, jsd, bray_curtis
+from src.lib import iof
 from src.lib.dist import kmerize_samples
+from src.lib.metrics import jaccard, generalized_jaccard, jsd, bray_curtis
+from src.lib.pwcomp import pwmatrix
 
 
-# TODO Replace this with a multiprocessing version from src.lib.pwcomp
-def calc_distance_matrix(seqs, k, distance_func):
-    tables = kmerize_samples(seqs, k)
-    result = [tables.keys()]
+# TODO Replace this with the multiprocessing version from src.lib.pwcomp
+def calc_distance_matrix(samples: Mapping, k: int,
+                         distance_func: Callable) -> (List[str], np.ndarray):
 
-    for key1 in tables:
-        values = [distance_func(tables[key1], tables[key2]) for key2 in tables]
-        result.append([key1] + values)
+    tables = kmerize_samples(samples, k)
+    labels = list(tables.keys())
 
-    return result
-
+    return labels, pwmatrix(distance_func, tables)
 
 distances = {'jaccard': jaccard, 'jsd': jsd, 'bc': bray_curtis,
              'gji': generalized_jaccard}
@@ -50,11 +50,11 @@ def distance_matrix(fasta, kmer_size, distance, out_dir, force, quiet):
 
         seqs = iof.load_seqs(f)
         distance_func = distances[distance]
-        dmatrix = calc_distance_matrix(seqs, kmer_size, distance_func)
+        labels, dmatrix = calc_distance_matrix(seqs, kmer_size, distance_func)
 
         out_path = os.path.join(out_dir, os.path.splitext(
             os.path.basename(f))[0] + '.txt')
-        iof.write_distance_matrix(dmatrix, out_path)
+        iof.write_distance_matrix(labels, dmatrix, out_path)
 
     end = time()
 
