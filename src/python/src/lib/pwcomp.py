@@ -33,10 +33,3 @@ def pwmatrix(func: Callable, data: Sequence, dist=True) -> np.ndarray:
 N_JOBS = int(os.getenv("PWM_JOBS", 1))
 # WORKERS = joblib.Parallel(n_jobs=N_JOBS, pre_dispatch=1, batch_size=1)
 WORKERKS = mp.Pool(processes=N_JOBS)
-
-
-if __name__ == "__main__":
-    # TODO write a proper unit-test
-    fn = scipy.spatial.distance.correlation
-    data = np.repeat(np.arange(100), 1000).reshape((100, 1000)).T
-    print(pwmatrix(fn, data, dist=False))

@@ -56,7 +56,7 @@ def jsd(hx: Counter, hy: Counter) -> float:
 
 
 if __name__ == "__main__":
-    # TODO create normal unit-tests
+    # TODO create normal unit-test
 
     t1 = Counter()
     t2 = Counter()
