@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 
-import random
-import biom
-import iof
-import click
 import os
+import random
 from collections import defaultdict
+
+import biom
+import click
+
+from src.lib import iof
 
 
 def get_class(read_id):

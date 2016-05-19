@@ -8,5 +8,5 @@ from ..lib import pwcomp
 
 
 fn = correlation
-data = np.repeat(np.arange(100), 1000).reshape((100, 1000)).T
+data = np.repeat(np.arange(100), 100).reshape((100, 100)).T
 print(pwcomp.pwmatrix(fn, data, dist=False))
