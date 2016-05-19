@@ -1,7 +1,5 @@
-import random
-import time
-import warnings
 from collections import Counter
+import warnings
 
 import numpy as np
 
@@ -56,19 +54,4 @@ def jsd(hx: Counter, hy: Counter) -> float:
 
 
 if __name__ == "__main__":
-    # TODO create normal unit-test
-    random.seed(42)
-    n = 50000
-
-    t1 = Counter((x, random.randint(1, 100)) for x in range(n))
-    t2 = Counter((x, random.randint(1, 100)) for x in range(n))
-
-    start = time.time()
-
-    print(jaccard(t1, t2))
-    print(generalized_jaccard(t1, t2))
-    print(jsd(t1, t2))
-    print(bray_curtis(t1, t2))
-
-    end = time.time()
-    print("Time: " + str(end - start))
+    pass
