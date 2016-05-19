@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 
-import os
 from collections import Counter
-from time import time
 import zlib
 
 
