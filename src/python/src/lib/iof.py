@@ -1,17 +1,23 @@
 from collections import defaultdict
 import glob
 import os
-
 import numpy as np
 from Bio import SeqIO
+from typing import Mapping
 
 
-def load_seqs(fname):
-    data = defaultdict(lambda: defaultdict(str))
-    fasta_sequences = SeqIO.parse(open(fname), "fasta")
-    for fasta in fasta_sequences:
-        name, sequence = fasta.id, str(fasta.seq)
-        data[name.split("_")[0]][name] = sequence
+def load_seqs(filename: str, named: bool=False) -> Mapping:
+    data = defaultdict(lambda: defaultdict(str)) if named else defaultdict(list)
+
+    fasta_sequences = SeqIO.parse(open(filename), "fasta")
+    for seq_record in fasta_sequences:
+        read_id, sequence = seq_record.id, str(seq_record.seq)
+
+        sample_name = read_id.split("_")[0]
+        if named:
+            data[sample_name][read_id] = sequence
+        else:
+            data[sample_name].append(sequence)
 
     return data
 

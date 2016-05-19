@@ -1,20 +1,16 @@
 from typing import Sequence, Callable
-from functools import reduce
 import multiprocessing as mp
-import operator as op
 import itertools
 
 import numpy as np
 import scipy.spatial.distance
 
-from .work import task, to_batches, N_JOBS
+from .work import N_JOBS
 
 
 def pwmatrix(func: Callable, data: Sequence, dist=True) -> np.ndarray:
     pairs = list(itertools.combinations(data, 2))
-    batches = list(zip(itertools.repeat(func), to_batches(pairs, N_JOBS)))
-    results = scipy.spatial.distance.squareform(
-        reduce(op.iadd, workers.starmap(task, batches)))
+    results = scipy.spatial.distance.squareform(workers.starmap(func, pairs))
     return results if dist else results + np.identity(len(data))
 
 
