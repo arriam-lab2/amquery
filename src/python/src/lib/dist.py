@@ -7,7 +7,7 @@ import multiprocessing as mp
 import itertools
 import zlib
 
-from .work import task, to_batches, N_JOBS
+from .work import N_JOBS
 
 
 def kmerize_string(string: str, k: int, compression=9) -> Generator:
@@ -22,11 +22,8 @@ def count_kmers(strings: Iterable, k: int) -> Counter:
 
 
 def kmerize_samples(samples: Mapping, k: int) -> dict:
-    batches = list(zip(
-        itertools.repeat(count_kmers),
-        to_batches(list(zip(samples.values(), itertools.repeat(k))), N_JOBS)
-    ))
-    kmerised_seqs = workers.starmap(task, batches)
+    batches = list(zip(samples.values(), itertools.repeat(k)))
+    kmerised_seqs = workers.starmap(count_kmers, batches)
     return dict(zip(samples.keys(), kmerised_seqs))
 
 
