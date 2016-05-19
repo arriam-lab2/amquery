@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 
-import random
 import itertools
+import random
 from collections import Sequence
 
 import click
 import numpy as np
 
 from iof import read_distance_matrix
-from lib import genetic_algorithm as ga
 from partial_corr import partial_corr
+from src.lib import genetic_algorithm as ga
 
 
 class CoordSystem(ga.Individual):

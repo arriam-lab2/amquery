@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 
-import click
-import iof
 import os
-
 from collections import Counter
 from time import time
-from metrics import jaccard, generalized_jaccard, JSD, bray_curtis
+
+import click
+
+import iof
+from src.lib import jaccard, generalized_jaccard, jsd, bray_curtis
 
 
 def kmer_generator(string, k):
@@ -42,7 +43,7 @@ def calc_distance_matrix(seqs, k, distance_func):
     return result
 
 
-distances = {'jaccard': jaccard, 'jsd': JSD, 'bc': bray_curtis,
+distances = {'jaccard': jaccard, 'jsd': jsd, 'bc': bray_curtis,
              'gji': generalized_jaccard}
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])

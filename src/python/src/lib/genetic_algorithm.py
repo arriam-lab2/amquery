@@ -284,7 +284,10 @@ class Population(object):
         offspring_fitness = map(self._fitness_func, offsprings)
         return list(zip(offspring_fitness, offsprings)) + evaluated_ancestors
 
-    def _repopulate_parallel(self, evaluated_ancestors, workers, chunksize):
+    def _mate_and_evaluate(self, mating_pairs, fitness_func):
+        pass
+
+    def _repopulate_parallel(self, evaluated_ancestors, workers):
         """
         Mate ancestors to restore population size
         :type evaluated_ancestors: list[(object, Individual)]
@@ -293,7 +296,7 @@ class Population(object):
         """
         # generate all possible pairs of individuals and mate enough random
         # pairs to reach the desired population size
-        individuals = [indiv for fitness, indiv in evaluated_ancestors]
+        individuals = [indiv for _, indiv in evaluated_ancestors]
         all_pairs = tuple(itertools.combinations(individuals, r=2))
         mating_pairs = (random.choice(all_pairs)
                         for _ in range(self._size - len(evaluated_ancestors)))
