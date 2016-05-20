@@ -1,33 +1,69 @@
 #!/usr/bin/env python3
 
-
-from typing import Iterable, Generator, Mapping
+from subprocess import call
+import os
+from Bio import SeqIO
 from collections import Counter
-import multiprocessing as mp
-import itertools
-import zlib
+from typing import Mapping
 
 from .work import N_JOBS
 
 
-def kmerize_string(string: str, k: int, compression=9) -> Generator:
-    byte_string = bytes(string, encoding="utf8")
-    return (zlib.compress(byte_string[i:i+k], compression)
-            for i in range(len(string)-k+1))
+def jellyfish_count(sample_file: str, kmer_size: int, tables_count: int,
+                    hash_size: str, thread_num: int, output_file: str):
+    call(["jellyfish", "count",
+          "-C",
+          "-m", str(kmer_size),
+          "-c", str(tables_count),
+          "-s", hash_size,
+          "-t", str(thread_num),
+          "-o", output_file,
+          sample_file
+          ])
 
 
-def count_kmers(strings: Iterable, k: int) -> Counter:
-    return Counter(
-        kmer for string in strings for kmer in kmerize_string(string, k))
+def jellyfish_dump(index_file: str, output_file: str):
+    call(["jellyfish", "dump",
+          index_file,
+          "-o", output_file
+          ])
 
 
-def kmerize_samples(samples: Mapping, k: int) -> dict:
-    batches = list(zip(samples.values(), itertools.repeat(k)))
-    kmerised_seqs = workers.starmap(count_kmers, batches)
-    return dict(zip(samples.keys(), kmerised_seqs))
+def read_counter(counter_file: str) -> Counter:
+    counter = Counter()
+    seqs = SeqIO.parse(open(counter_file), "fasta")
+    for seq_record in seqs:
+        count, sequence = seq_record.id, str(seq_record.seq)
+        counter[sequence] = count
+
+    return counter
+
+
+def kmerize_samples(sample_files: list, tempdir: str,
+                    kmer_size: int) -> Mapping:
+
+    mapping = dict()
+    for sample_file in sample_files:
+        print("Processing", sample_file, "...")
+        shortname = os.path.split(sample_file)[1]
+        sample_name, _ = os.path.splitext(shortname)
+
+        # Jellyfish count
+        tables_count = 5
+        hash_size = "10M"
+        thread_num = N_JOBS
+        output_jf_file = os.path.join(tempdir, sample_name + ".jf")
+        jellyfish_count(sample_file, kmer_size, tables_count, hash_size,
+                        thread_num, output_jf_file)
+
+        # Jellyfish dump
+        output_counter_file = os.path.join(tempdir, sample_name + ".counter")
+        jellyfish_dump(output_jf_file, output_counter_file)
+
+        mapping[sample_name] = read_counter(output_counter_file)
+
+    return mapping
 
 
 if __name__ == "__main__":
-    raise RuntimeError
-else:
-    workers = mp.Pool(processes=N_JOBS)
+    pass
