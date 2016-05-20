@@ -80,9 +80,11 @@ def distance_matrix(input_dirs, kmer_size, distance, output_dir, force, quiet):
                                           kmer_size, quiet)
 
     distance_func = distances[distance]
-    labels, pwmatrix = calc_distance_matrix(kmer_mapping, kmer_size, distance_func)
+    labels, pwmatrix = calc_distance_matrix(kmer_mapping, kmer_size,
+                                            distance_func)
 
-    out_path = os.path.join(output_dir, distance, '_', kmer_size, '.txt')
+    out_path = os.path.join(output_dir,
+                            distance + '_' + str(kmer_size) + '.txt')
     iof.write_distance_matrix(labels, pwmatrix, out_path)
 
     end = time()

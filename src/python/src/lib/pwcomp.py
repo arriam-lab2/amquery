@@ -11,7 +11,6 @@ from .work import N_JOBS
 def pwmatrix(func: Callable, data: Sequence) -> np.ndarray:
     pairs = list(itertools.combinations(data, 2))
     results = scipy.spatial.distance.squareform(workers.starmap(func, pairs))
-    results = scipy.spatial.distance.squareform(map(func, pairs))
     return results
 
 
