@@ -40,8 +40,8 @@ def filter_file(input_file: str, output_file: str,
 
 
 @click.command()
-@click.option('--input_dir', '-i', help='Input directory',
-              required=True)
+@click.argument('input_dirs', type=click.Path(exists=True), nargs=-1,
+                required=True)
 @click.option('--output_dir', '-o', help='Output directory',
               required=True)
 @click.option('--min', type=int, help='Minimal read length',
@@ -49,14 +49,16 @@ def filter_file(input_file: str, output_file: str,
 @click.option('--max', type=int, help='Maximal read length')
 @click.option('--threshold', type=int, help='Minimal read count per sample',
               required=True)
-def run(input_dir, output_dir, min, max, threshold):
-    input_dir = os.path.join(input_dir, '')
+def run(input_dirs, output_dir, min, max, threshold):
+    input_dirs = [os.path.join(dirname, '') for dirname in input_dirs]
     output_dir = os.path.join(output_dir, '')
-    input_shortname = (os.path.split(os.path.split(input_dir)[0]))[1]
-    output_dir += input_shortname + ".filtered"
 
-    iof.create_dir(output_dir)
-    run_filter(input_dir, output_dir, min, max, threshold)
+    for dirname in input_dirs:
+        input_shortname = (os.path.split(os.path.split(dirname)[0]))[1]
+        output_dir += input_shortname + ".filtered"
+
+        iof.create_dir(output_dir)
+        run_filter(dirname, output_dir, min, max, threshold)
 
 
 if __name__ == "__main__":
