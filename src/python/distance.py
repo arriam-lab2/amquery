@@ -8,19 +8,41 @@ import click
 import numpy as np
 
 from src.lib import iof
-from src.lib.dist import kmerize_samples
+from src.lib.dist import kmerize_samples, LoadApply
 from src.lib.metrics import jaccard, generalized_jaccard, jsd, bray_curtis
 from src.lib.pwcomp import pwmatrix
 
 
 # TODO Replace this with the multiprocessing version from src.lib.pwcomp
-def calc_distance_matrix(samples: Mapping, k: int,
+def calc_distance_matrix(kmer_mapping: Mapping, k: int,
                          distance_func: Callable) -> (List[str], np.ndarray):
 
-    tables = kmerize_samples(samples, k)
-    labels = list(tables.keys())
+    labels = list(kmer_mapping.keys())
+    func = LoadApply(distance_func)
+    return labels, pwmatrix(func, kmer_mapping.values())
 
-    return labels, pwmatrix(distance_func, tables.values())
+
+def make_kmer_data_mapping(input_dirs: str, output_dir: str,
+                           k: int, quiet: bool) -> dict:
+
+    kmer_mapping = dict()
+    for dirname in input_dirs:
+        if not quiet:
+            print("Processing", dirname, "...")
+
+        input_basename = (os.path.basename(os.path.split(dirname)[0]))
+        kmer_output_dir = os.path.join(output_dir,
+                                       input_basename + ".kmers." +
+                                       str(k))
+        iof.create_dir(kmer_output_dir)
+
+        sample_files = [os.path.join(dirname, f)
+                        for f in os.listdir(dirname)
+                        if os.path.isfile(os.path.join(dirname, f))]
+
+        kmer_mapping.update(kmerize_samples(sample_files, kmer_output_dir, k))
+
+    return kmer_mapping
 
 
 def pathnames_check(input_dirs, output_dir, force):
@@ -54,25 +76,14 @@ def distance_matrix(input_dirs, kmer_size, distance, output_dir, force, quiet):
     start = time()
     input_dirs, output_dir = pathnames_check(input_dirs, output_dir, force)
 
-    print("GO")
-    print(input_dirs)
-    for dirname in input_dirs:
-        if not quiet:
-            print("Processing", dirname, "...")
+    kmer_mapping = make_kmer_data_mapping(input_dirs, output_dir,
+                                          kmer_size, quiet)
 
-        sample_files = [os.path.join(dirname, f)
-                        for f in os.listdir(dirname)
-                        if os.path.isfile(os.path.join(dirname, f))]
-        #print(sample_files)
-        kmerize_samples(sample_files, output_dir, kmer_size)
+    distance_func = distances[distance]
+    labels, pwmatrix = calc_distance_matrix(kmer_mapping, kmer_size, distance_func)
 
-        #seqs = iof.load_seqs(f)
-        #distance_func = distances[distance]
-        #labels, dmatrix = calc_distance_matrix(seqs, kmer_size, distance_func)
-
-        #out_path = os.path.join(output_dir, os.path.splitext(
-        #    os.path.basename(idir))[0] + '.txt')
-        #iof.write_distance_matrix(labels, dmatrix, out_path)
+    out_path = os.path.join(output_dir, distance, '_', kmer_size, '.txt')
+    iof.write_distance_matrix(labels, pwmatrix, out_path)
 
     end = time()
 

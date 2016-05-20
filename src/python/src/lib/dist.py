@@ -5,8 +5,19 @@ import os
 from Bio import SeqIO
 from collections import Counter
 from typing import Mapping
+import functools
 
 from .work import N_JOBS
+
+
+class LoadApply:
+    def __init__(self, func):
+        self.func = func
+
+    def __call__(self, x_kmer_file, y_kmer_file):
+        xcounter = load_kmer_index(x_kmer_file)
+        ycounter = load_kmer_index(y_kmer_file)
+        return self.func(xcounter, ycounter)
 
 
 def jellyfish_count(sample_file: str, kmer_size: int, tables_count: int,
@@ -29,12 +40,14 @@ def jellyfish_dump(index_file: str, output_file: str):
           ])
 
 
-def read_counter(counter_file: str) -> Counter:
+@functools.lru_cache(maxsize=32)
+def load_kmer_index(counter_file: str) -> Counter:
+    # print("Loading", counter_file)
     counter = Counter()
     seqs = SeqIO.parse(open(counter_file), "fasta")
     for seq_record in seqs:
         count, sequence = seq_record.id, str(seq_record.seq)
-        counter[sequence] = count
+        counter[sequence] = int(count)
 
     return counter
 
@@ -44,23 +57,24 @@ def kmerize_samples(sample_files: list, tempdir: str,
 
     mapping = dict()
     for sample_file in sample_files:
-        print("Processing", sample_file, "...")
         shortname = os.path.split(sample_file)[1]
         sample_name, _ = os.path.splitext(shortname)
-
-        # Jellyfish count
-        tables_count = 5
-        hash_size = "10M"
-        thread_num = N_JOBS
         output_jf_file = os.path.join(tempdir, sample_name + ".jf")
-        jellyfish_count(sample_file, kmer_size, tables_count, hash_size,
-                        thread_num, output_jf_file)
 
-        # Jellyfish dump
+        if not os.path.exists(output_jf_file):
+            # Jellyfish count
+            tables_count = 5
+            hash_size = "10M"
+            thread_num = N_JOBS
+            jellyfish_count(sample_file, kmer_size, tables_count, hash_size,
+                            thread_num, output_jf_file)
+
         output_counter_file = os.path.join(tempdir, sample_name + ".counter")
-        jellyfish_dump(output_jf_file, output_counter_file)
+        if not os.path.exists(output_jf_file):
+            # Jellyfish dump
+            jellyfish_dump(output_jf_file, output_counter_file)
 
-        mapping[sample_name] = read_counter(output_counter_file)
+        mapping[sample_name] = output_counter_file
 
     return mapping
 
