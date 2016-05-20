@@ -5,7 +5,7 @@ from Bio import SeqIO
 import os
 import os.path
 import matplotlib.pyplot as plt
-import iof
+from src.lib import iof
 
 
 def read_lengths(filename):

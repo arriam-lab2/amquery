@@ -33,8 +33,9 @@ def filter_file(input_file: str, output_file: str,
             # renaming a seq record
             seq_record.id = sample_id + "_" + str(count)
             count += 1
-            seq_record.letter_annotations = {}
-            seq_record.seq = Seq.Seq(str(seq_record.seq)[:cut])
+            if cut > 0:
+                seq_record.letter_annotations = {}
+                seq_record.seq = Seq.Seq(str(seq_record.seq)[:cut])
             sequences.append(seq_record)
 
     if len(sequences) >= threshold:
@@ -50,14 +51,13 @@ def filter_file(input_file: str, output_file: str,
 @click.option('--min', type=int, help='Minimal read length',
               required=True)
 @click.option('--max', type=int, help='Maximal read length')
-@click.option('--cut', type=int, required=True,
+@click.option('--cut', type=int, default=0,
               help='Right-hand side cut point for read clipping')
 @click.option('--threshold', type=int, help='Minimal read count per sample',
               required=True)
 def run(input_dirs, output_dir, min, max, cut, threshold):
     input_dirs = [os.path.join(dirname, '') for dirname in input_dirs]
     output_dir = os.path.join(output_dir, '')
-
     for dirname in input_dirs:
         input_shortname = (os.path.split(os.path.split(dirname)[0]))[1]
         lib_output_dir = os.path.join(output_dir,
