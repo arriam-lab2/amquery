@@ -10,8 +10,6 @@ directories=(
 "../../data/IPY_Toolik_Metagenomics"
 )
 
-PYTHON=python2
-NUM_THREADS=2
-chmod +x read_filter.sh
-#parallel --ungroup --will-cite -j$NUM_THREADS ./read_filter.sh ::: "${directories[@]}"
-parallel --no-notice --ungroup -j $NUM_THREADS read_filter.sh ::: "${directories[@]}"
+NUM_THREADS=4
+chmod +x src/read_filter.sh
+parallel --no-notice --ungroup -j $NUM_THREADS src/read_filter.sh ::: "${directories[@]}"

@@ -2,20 +2,22 @@ import click
 from Bio import SeqIO
 import os
 import os.path
-import iof
+from src.lib import iof
 
 
-def run_filter(input_dir, output_dir, min, max):
+def run_filter(input_dir: str, output_dir: str,
+               min: int, max: int, threshold: int):
     files = [f for f in os.listdir(input_dir)
              if os.path.isfile(os.path.join(input_dir, f))]
 
     for f in files:
         input_file = os.path.join(input_dir, f)
         output_file = os.path.join(output_dir, f)
-        filter_file(input_file, output_file, min, max)
+        filter_file(input_file, output_file, min, max, threshold)
 
 
-def filter_file(input_file, output_file, min, max):
+def filter_file(input_file: str, output_file: str,
+                min: int, max: int, threshold: int):
     print(input_file)
 
     leftside, extension = os.path.splitext(input_file)
@@ -32,8 +34,9 @@ def filter_file(input_file, output_file, min, max):
             count += 1
             sequences.append(seq_record)
 
-    output_handle = open(output_file, "w")
-    SeqIO.write(sequences, output_handle, "fasta")
+    if len(sequences) >= threshold:
+        output_handle = open(output_file, "w")
+        SeqIO.write(sequences, output_handle, "fasta")
 
 
 @click.command()
@@ -44,14 +47,16 @@ def filter_file(input_file, output_file, min, max):
 @click.option('--min', type=int, help='Minimal read length',
               required=True)
 @click.option('--max', type=int, help='Maximal read length')
-def run(input_dir, output_dir, min, max):
+@click.option('--threshold', type=int, help='Minimal read count per sample',
+              required=True)
+def run(input_dir, output_dir, min, max, threshold):
     input_dir = os.path.join(input_dir, '')
     output_dir = os.path.join(output_dir, '')
     input_shortname = (os.path.split(os.path.split(input_dir)[0]))[1]
     output_dir += input_shortname + ".filtered"
 
     iof.create_dir(output_dir)
-    run_filter(input_dir, output_dir, min, max)
+    run_filter(input_dir, output_dir, min, max, threshold)
 
 
 if __name__ == "__main__":
