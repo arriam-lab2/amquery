@@ -20,25 +20,28 @@ def calc_distance_matrix(samples: Mapping, k: int,
     tables = kmerize_samples(samples, k)
     labels = list(tables.keys())
 
-    return labels, pwmatrix(distance_func, tables)
+    return labels, pwmatrix(distance_func, tables.values())
 
 distances = {'jaccard': jaccard, 'jsd': jsd, 'bc': bray_curtis,
              'gji': generalized_jaccard}
+
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument('fasta', type=click.Path(exists=True), nargs=-1, required=True)
-@click.option('--kmer_size', '-k', type=int, help='K-mer size')
+@click.option('--kmer_size', '-k', type=int, help='K-mer size',
+              required=True)
 @click.option('--distance', '-d', type=click.Choice(distances.keys()),
-              help='A distance metric')
-@click.option('--out_dir', '-o', help='Output directory')
+              help='A distance metric', required=True)
+@click.option('--out_dir', '-o', help='Output directory',
+              required=True)
 @click.option('--force', '-f', is_flag=True,
               help='Force overwrite output directory')
 @click.option('--quiet', '-q', is_flag=True, help='Be quiet')
 def distance_matrix(fasta, kmer_size, distance, out_dir, force, quiet):
-
+    out_dir = os.path.join(out_dir, '')
     iof.create_dir(out_dir)
     if force:
         iof.clear_dir(out_dir)
@@ -46,7 +49,7 @@ def distance_matrix(fasta, kmer_size, distance, out_dir, force, quiet):
     start = time()
     for f in fasta:
         if not quiet:
-            click.echo("Processing "+f+"...")
+            click.echo("Processing " + f + "...")
 
         seqs = iof.load_seqs(f)
         distance_func = distances[distance]
@@ -59,7 +62,7 @@ def distance_matrix(fasta, kmer_size, distance, out_dir, force, quiet):
     end = time()
 
     if not quiet:
-        click.echo("Time: " + str(end-start))
+        click.echo("Time: " + str(end - start))
 
 
 if __name__ == "__main__":
