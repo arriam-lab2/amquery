@@ -1,5 +1,6 @@
 import click
 from Bio import SeqIO
+from Bio import Seq
 import os
 import os.path
 from src.lib import iof
@@ -28,11 +29,12 @@ def filter_file(input_file: str, output_file: str,
     sequences = []
     for seq_record in SeqIO.parse(input_file, extension):
         # filter by read length
-        if len(seq_record.seq) >= min and len(seq_record.seq) <= max:
+        if len(seq_record.seq) >= min:
             # renaming a seq record
             seq_record.id = sample_id + "_" + str(count)
             count += 1
-            seq_record.seq = seq_record.seq[:cut]
+            seq_record.letter_annotations = {}
+            seq_record.seq = Seq.Seq(str(seq_record.seq)[:cut])
             sequences.append(seq_record)
 
     if len(sequences) >= threshold:
