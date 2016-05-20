@@ -2,6 +2,9 @@ import random
 
 from ..lib.dist import kmerize_samples
 
+
+print("dist test: ", end="")
+
 ids = ["1", "2"]
 samples = {}
 for id in ids:
@@ -14,3 +17,6 @@ kmerized = kmerize_samples(samples, 10)
 for id in ids:
     assert id in kmerized.keys()
     assert len(kmerized[id]) > 0
+
+
+print("passed")

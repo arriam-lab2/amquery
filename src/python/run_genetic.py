@@ -8,7 +8,7 @@ import click
 import numpy as np
 
 from partial_corr import partial_corr
-from src.lib import genetic_algorithm as ga
+from src.lib import ga as ga
 from src.lib.iof import read_distance_matrix
 
 

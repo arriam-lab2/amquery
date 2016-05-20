@@ -10,7 +10,8 @@ from .work import N_JOBS
 
 def pwmatrix(func: Callable, data: Sequence, dist=True) -> np.ndarray:
     pairs = list(itertools.combinations(data, 2))
-    results = scipy.spatial.distance.squareform(workers.starmap(func, pairs))
+    results = scipy.spatial.distance.squareform(
+        workers.starmap(func, pairs))
     return results if dist else results + np.identity(len(data))
 
 
