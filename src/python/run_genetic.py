@@ -2,12 +2,11 @@
 
 import itertools
 import random
-from collections import Sequence
 
 import click
 import numpy as np
 
-from partial_corr import partial_corr
+from src.lib.partial_corr import partial_corr
 from src.lib import genetic_algorithm as ga
 from src.lib.iof import read_distance_matrix
 
@@ -55,6 +54,7 @@ class CoordSystem(ga.Individual):
 
 
 class Engine:
+
     def __init__(self, names):
         self.names = np.array(names)
 
@@ -66,6 +66,7 @@ class Engine:
 
 
 class Fitness:
+
     def __init__(self, dmatrix, names):
         self.dmatrix = dmatrix
         self.names = names
