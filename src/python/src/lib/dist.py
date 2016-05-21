@@ -70,7 +70,7 @@ def kmerize_samples(sample_files: list, tempdir: str,
                             thread_num, output_jf_file)
 
         output_counter_file = os.path.join(tempdir, sample_name + ".counter")
-        if not os.path.exists(output_jf_file):
+        if not os.path.exists(output_counter_file):
             # Jellyfish dump
             jellyfish_dump(output_jf_file, output_counter_file)
 
