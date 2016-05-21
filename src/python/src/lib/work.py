@@ -1,10 +1,10 @@
 from typing import Callable, Iterable, List, Sequence
 import itertools
 import os
+import multiprocessing as mp
 
 
 N_JOBS = int(os.getenv("PWM_JOBS", 1))
-print("Running", N_JOBS, "threads in parallel")
 
 
 def task(fn: Callable, data: Iterable) -> List:

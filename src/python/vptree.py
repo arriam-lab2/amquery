@@ -72,6 +72,10 @@ def euclidian(a: np.ndarray, b: np.ndarray):
     return np.linalg.norm(a - b)
 
 
+def run(*args):
+    raise NotImplementedError("Not implemented yet")
+
+
 if __name__ == "__main__":
     n = 1000
     x = np.random.uniform(0, 10, n)

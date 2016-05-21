@@ -6,6 +6,17 @@ from Bio import SeqIO
 from typing import Mapping
 
 
+def normalize(path: str):
+    return os.path.join(path, '')
+
+
+def make_sure_exists(path: str):
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+    return normalize(path)
+
+
 def load_seqs(filename: str, named: bool=False) -> Mapping:
     data = defaultdict(lambda: defaultdict(str)) if named else defaultdict(list)
 
@@ -22,12 +33,7 @@ def load_seqs(filename: str, named: bool=False) -> Mapping:
     return data
 
 
-def create_dir(path):
-    if not os.path.exists(path):
-        os.makedirs(path)
-
-
-def clear_dir(path):
+def clear(path):
     files = glob.glob(path + "/*")
     for f in files:
         os.remove(f)

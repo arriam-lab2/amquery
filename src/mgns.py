@@ -2,11 +2,27 @@
 
 import click
 import python.distance as dist
+import python.src.lib.prebuild as pre
+import python.src.lib.iof as iof
+
+
+class Config(object):
+    def __init__(self):
+        pass
+
+pass_config = click.make_pass_decorator(Config, ensure=True)
 
 
 @click.group()
-def cli():
-    pass
+@click.option('--working-directory', default='./mgns_out/')
+@click.option('--force', '-f', is_flag=True,
+              help='Force overwrite output directory')
+@click.option('--quiet', '-q', is_flag=True, help='Be quiet')
+@pass_config
+def cli(config, working_directory, force, quiet):
+    config.working_directory = iof.make_sure_exists(working_directory)
+    config.force = force
+    config.quiet = quiet
 
 
 @cli.command()
@@ -18,15 +34,12 @@ def cli():
               default=50, required=True)
 @click.option('--distance', '-d', type=click.Choice(dist.distances.keys()),
               default='jsd', help='A distance metric')
-@click.option('--output_dir', '-o', help='Output directory',
-              default='./nns_output/', required=True)
-@click.option('--force', '-f', is_flag=True,
-              help='Force overwrite output directory')
-@click.option('--quiet', '-q', is_flag=True, help='Be quiet')
-def build(input_dirs, kmer_size, distance, output_dir, force, quiet):
+@pass_config
+def build(config, input_dirs, single_file,
+          kmer_size, distance):
 
     # TODO:
-    # 1. prepare reads:
+    # 1. prebuild:
     #   1.1 split fasta file if neccessary
     #   1.2 merge fasta files if neccesary
     #   1.3 read_filter.py
@@ -34,11 +47,17 @@ def build(input_dirs, kmer_size, distance, output_dir, force, quiet):
     # 2. make a pwmatrix file (distance.py)
     # 3. build a tree (vptree.py build)
 
-    dist.run(input_dirs, kmer_size, distance, output_dir, force, quiet)
+    if single_file:
+        pass
+    else:
+        pre.prebuild(config, input_dirs, single_file)
+
+    dist.run(config, input_dirs, kmer_size, distance)
 
 
 @cli.command()
-def learn():
+@pass_config
+def learn(config):
     # TODO:
     # 1. make sure there is proper qiime output files
     # 2. make sure there is a pwmatrix file
@@ -48,7 +67,8 @@ def learn():
 
 
 @cli.command()
-def search():
+@pass_config
+def search(config):
     # TODO:
     # 1. make sure there is a pwmatrix file (result of nns build)
     # 2. make sure there is a result from nns learn (k value)
@@ -57,7 +77,8 @@ def search():
 
 
 @cli.command()
-def stats():
+@pass_config
+def stats(config):
     # TODO:
     # parse arguments, run length/count.py
     raise NotImplementedError("Not implemented yet")
