@@ -20,7 +20,7 @@ def calc_distance_matrix(samples: Mapping, k: int,
     tables = kmerize_samples(samples, k)
     labels = list(tables.keys())
 
-    return labels, pwmatrix(distance_func, tables)
+    return labels, pwmatrix(distance_func, tables.values())
 
 distances = {'jaccard': jaccard, 'jsd': jsd, 'bc': bray_curtis,
              'gji': generalized_jaccard}
