@@ -8,19 +8,51 @@ import click
 import numpy as np
 
 from .src.lib import iof
-from .src.lib.dist import kmerize_samples
+from .src.lib.dist import kmerize_samples, LoadApply
 from .src.lib.metrics import jaccard, generalized_jaccard, jsd, bray_curtis
 from .src.lib.pwcomp import pwmatrix
 
 
 # TODO Replace this with the multiprocessing version from src.lib.pwcomp
-def calc_distance_matrix(samples: Mapping, k: int,
+def calc_distance_matrix(kmer_mapping: Mapping, k: int,
                          distance_func: Callable) -> (List[str], np.ndarray):
 
-    tables = kmerize_samples(samples, k)
-    labels = list(tables.keys())
+    labels = list(kmer_mapping.keys())
+    func = LoadApply(distance_func)
+    return labels, pwmatrix(func, kmer_mapping.values())
 
-    return labels, pwmatrix(distance_func, tables.values())
+
+def make_kmer_data_mapping(input_dirs: str, output_dir: str,
+                           k: int, quiet: bool) -> dict:
+
+    kmer_mapping = dict()
+    for dirname in input_dirs:
+        if not quiet:
+            print("Processing", dirname, "...")
+
+        input_basename = (os.path.basename(os.path.split(dirname)[0]))
+        kmer_output_dir = os.path.join(output_dir,
+                                       input_basename + ".kmers." +
+                                       str(k))
+        iof.create_dir(kmer_output_dir)
+
+        sample_files = [os.path.join(dirname, f)
+                        for f in os.listdir(dirname)
+                        if os.path.isfile(os.path.join(dirname, f))]
+
+        kmer_mapping.update(kmerize_samples(sample_files, kmer_output_dir, k))
+
+    return kmer_mapping
+
+
+def pathnames_check(input_dirs, output_dir, force):
+    input_dirs = [os.path.join(x, '') for x in input_dirs]
+    output_dir = os.path.join(output_dir, '')
+    iof.create_dir(output_dir)
+    if force:
+        iof.clear_dir(output_dir)
+
+    return input_dirs, output_dir
 
 distances = {'jaccard': jaccard, 'jsd': jsd, 'bc': bray_curtis,
              'gji': generalized_jaccard}
@@ -29,34 +61,31 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.argument('fasta', type=click.Path(exists=True), nargs=-1, required=True)
-@click.option('--kmer_size', '-k', type=int, default=50,
-              help='K-mer size')
+@click.argument('input_dirs', type=click.Path(exists=True), nargs=-1,
+                required=True)
+@click.option('--kmer_size', '-k', type=int, help='K-mer size',
+              default=50, required=True)
 @click.option('--distance', '-d', type=click.Choice(distances.keys()),
               default='jsd', help='A distance metric')
-@click.option('--out_dir', '-o', default='./nns_output/',
-              help='Output directory')
+@click.option('--output_dir', '-o', help='Output directory',
+              default='./nns_output/', required=True)
 @click.option('--force', '-f', is_flag=True,
               help='Force overwrite output directory')
 @click.option('--quiet', '-q', is_flag=True, help='Be quiet')
-def run(fasta, kmer_size, distance, out_dir, force, quiet):
-
-    iof.create_dir(out_dir)
-    if force:
-        iof.clear_dir(out_dir)
-
+def run(input_dirs, kmer_size, distance, output_dir, force, quiet):
     start = time()
-    for f in fasta:
-        if not quiet:
-            click.echo("Processing " + f + "...")
+    input_dirs, output_dir = pathnames_check(input_dirs, output_dir, force)
 
-        seqs = iof.load_seqs(f)
-        distance_func = distances[distance]
-        labels, dmatrix = calc_distance_matrix(seqs, kmer_size, distance_func)
+    kmer_mapping = make_kmer_data_mapping(input_dirs, output_dir,
+                                          kmer_size, quiet)
 
-        out_path = os.path.join(out_dir, os.path.splitext(
-            os.path.basename(f))[0] + '.txt')
-        iof.write_distance_matrix(labels, dmatrix, out_path)
+    distance_func = distances[distance]
+    labels, pwmatrix = calc_distance_matrix(kmer_mapping, kmer_size,
+                                            distance_func)
+
+    out_path = os.path.join(output_dir,
+                            distance + '_' + str(kmer_size) + '.txt')
+    iof.write_distance_matrix(labels, pwmatrix, out_path)
 
     end = time()
 
