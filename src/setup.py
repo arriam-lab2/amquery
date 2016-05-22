@@ -10,7 +10,8 @@ setup(
         'scipy',
         'click',
         'biopython',
-        'joblib'
+        'joblib',
+        'tqdm'
     ],
     entry_points='''
         [console_scripts]
