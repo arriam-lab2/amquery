@@ -1,13 +1,9 @@
-from typing import Sequence, Callable, Union, Any, Tuple, List
-import operator as op
-import itertools
-import random
 import abc
+import operator as op
+import random
+from typing import Sequence, Callable, Union
 
-import multiprocess.pool
 import numpy as np
-
-from .work import N_JOBS
 
 
 class BaseIndividual(metaclass=abc.ABCMeta):
@@ -110,7 +106,7 @@ class Individual(BaseIndividual):
                 "of features specified by `l` (or inferred from "
                 "`len(engine)`)")
         # chromosome is a sequence of genes (features)
-        self._chromosome = (starting_chr if starting_chr else
+        self._chromosome = (tuple(starting_chr) if starting_chr else
                             tuple(gen(None) for gen in self._engine))
 
     def __eq__(self, other):
@@ -215,11 +211,14 @@ class Population(object):
         if mode not in Population.modes:
             raise ValueError('`mode` must be `"maximize"` or `"minimize"`')
 
+        if not isinstance(size, int) or size <= 0:
+            raise ValueError("`size` must be a positive integer")
+
         if not isinstance(ancestors, Sequence) or not ancestors:
             raise ValueError("`ancestors` must be a nonempty sequence")
 
-        if len(ancestors) < 2:
-            raise ValueError("At least 2 ancestors are required to start a"
+        if len(ancestors) < size:
+            raise ValueError("At least `size` ancestors are required to start a"
                              "population")
 
         if not all(isinstance(indiv, BaseIndividual) for indiv in ancestors):
@@ -263,9 +262,8 @@ class Population(object):
         # generate all possible pairs of individuals and mate enough random
         # pairs to reach the desired population size
         individuals = [indiv for fitness, indiv in evaluated_ancestors]
-        all_pairs = tuple(itertools.combinations(individuals, r=2))
-        mating_pairs = (random.choice(all_pairs)
-                        for _ in range(self._size - len(evaluated_ancestors)))
+        n_pairs = self._size - len(evaluated_ancestors)
+        mating_pairs = random_pairs(individuals, n_pairs)
         evaluated_offsprings = map(self._mate_and_evaluate, mating_pairs)
         # evaluate offsprings and merge the result with `evaluated_ancestors`
         return op.iadd(list(evaluated_offsprings), evaluated_ancestors)
@@ -362,9 +360,16 @@ class Population(object):
             yield self._legends
 
 
+def random_pairs(sequence: Sequence, n: int):
+    pairs = set()
+    indices = list(range(len(sequence)))
+    while len(pairs) != n:
+        i, j = tuple(random.sample(indices, 2))
+        if (i, j) in pairs or (j, i) in pairs:
+            continue
+        pairs.add((i, j))
+    yield from ((sequence[i], sequence[j]) for i, j in pairs)
+
+
 if __name__ == "__main__":
     raise RuntimeError
-else:
-    print("hello")
-    workers = multiprocess.pool.Pool(processes=N_JOBS)
-    print("goodbye")

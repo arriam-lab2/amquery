@@ -8,13 +8,13 @@ def engine(_):
 
 
 def fitness(x):
-    return abs(200 - sum(n ** 10 for n in x.chromosome) ** 0.5)
+    return abs(200 - sum(x.chromosome))
 
 
-ancestors = [Individual(0.1, engine, 10) for _ in range(2)]
-#
-population = Population(ancestors, 50, fitness, mode="minimize")
-for generation_legends in population.evolve(10, 25, 10):
+pop_size = 500
+ancestors = [Individual(0.1, engine, 50) for _ in range(pop_size)]
+population = Population(ancestors, pop_size, fitness, mode="minimize")
+for generation_legends in population.evolve(100, 100, 50):
     # print(*[fitness for fitness, indiv in generation_legends])
     pass
 
