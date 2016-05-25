@@ -47,8 +47,8 @@ def make_kmer_data_mapping(config, input_dirs: str, k: int) -> dict:
 
 def run(config, input_dirs, kmer_size, distance):
     input_dirs = [iof.normalize(d) for d in input_dirs]
-    if config.force:
-        iof.clear_dir(config.working_directory)
+    #if config.force:
+    #    iof.clear_dir(config.working_directory)
 
     kmer_mapping = make_kmer_data_mapping(config, input_dirs,
                                           kmer_size)
