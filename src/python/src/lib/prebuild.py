@@ -7,6 +7,7 @@ from Bio import Seq
 from typing import Sequence
 from .iof import make_sure_exists
 import random
+import collections
 
 
 def rarefy(config, dirlist: Sequence, max_samples: int):
@@ -42,7 +43,8 @@ def merge_fasta_files(files: Sequence, output_file: str):
     print("Merged to", output_file, ".")
 
 
-def merge_fasta_from_dirs(dirlist: Sequence, output_file: str):
+# Merge all fasta from directories
+def merge(dirlist: Sequence, output_file: str):
     files = [os.path.join(dirname, f) for dirname in dirlist
              for f in os.listdir(dirname)
              if os.path.isfile(os.path.join(dirname, f))]
@@ -50,8 +52,31 @@ def merge_fasta_from_dirs(dirlist: Sequence, output_file: str):
     merge_fasta_files(files)
 
 
-def split_fasta(dirlist, output_file):
-    raise NotImplementedError("Not implemented yet")
+# Split a fasta by sample names
+def split(config, input_file):
+    print("Splitting", input_file)
+    read_mapping = collections.defaultdict(list)
+    with open(input_file, 'r') as infile:
+        for seq_record in SeqIO.parse(infile, "fasta"):
+            sample_name = seq_record.id.split(" ")[0]
+            sample_name = sample_name.split("_")[0]
+            read_mapping[sample_name].append(seq_record)
+
+    # creating a folder for splitted files
+    output_dir = os.path.join(config.working_directory,
+                              "splitted")
+    output_dir = make_sure_exists(output_dir)
+
+    # writing splitted files
+    for sample in read_mapping.keys():
+        output_file = os.path.join(output_dir,
+                                   sample + ".fasta")
+        print(output_file)
+        SeqIO.write(read_mapping[sample], output_file, "fasta")
+
+    output_file = os.path.join(config.working_directory,
+                               "rarefied.fasta")
+    return output_dir
 
 
 def filter_reads(config, input_dirs, min, max, cut, threshold):

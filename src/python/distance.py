@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import click
 import os
 import numpy as np
 from typing import List, Callable, Mapping

@@ -41,24 +41,22 @@ def build(config, input_dirs, single_file, kmer_size, distance):
     #   1.1 split fasta file if neccessary
     #   1.3 read_filter.py
 
-    input_dirs = [iof.normalize(d) for d in input_dirs]
-
-    raise NotImplementedError("Not implemented yet")
-
     #if not single_file:
         #pre.merge_fasta(config, input_dirs)
 
+
+    if single_file:
+        input_file = input_dirs[0]
+        input_dir = pre.split(config, input_file)
+    else:
+        input_dirs = [iof.normalize(d) for d in input_dirs]
+
+    return
     # TODO:
     # 2. make a pwmatrix file (distance.py)
     # 3. build a tree (vptree.py build)
 
-    if single_file:
-        raise NotImplementedError(
-            "--single-file is not implemented yet")
-    else:
-        pre.prebuild(config, input_dirs, single_file)
-
-    dist.run(config, input_dirs, kmer_size, distance)
+    dist.run(config, input_dir, kmer_size, distance)
 
 
 @cli.command()
