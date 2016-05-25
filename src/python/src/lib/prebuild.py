@@ -71,11 +71,9 @@ def split(config, input_file):
     for sample in read_mapping.keys():
         output_file = os.path.join(output_dir,
                                    sample + ".fasta")
-        print(output_file)
+        # print(output_file)
         SeqIO.write(read_mapping[sample], output_file, "fasta")
 
-    output_file = os.path.join(config.working_directory,
-                               "rarefied.fasta")
     return output_dir
 
 

@@ -36,27 +36,17 @@ def cli(config, working_directory, force, quiet):
               default='jsd', help='A distance metric')
 @pass_config
 def build(config, input_dirs, single_file, kmer_size, distance):
-
-    # 1. prebuild:
-    #   1.1 split fasta file if neccessary
-    #   1.3 read_filter.py
-
-    #if not single_file:
-        #pre.merge_fasta(config, input_dirs)
-
-
     if single_file:
         input_file = input_dirs[0]
         input_dir = pre.split(config, input_file)
+        input_dirs = [input_dir]
     else:
         input_dirs = [iof.normalize(d) for d in input_dirs]
 
-    return
-    # TODO:
-    # 2. make a pwmatrix file (distance.py)
-    # 3. build a tree (vptree.py build)
+    dist.run(config, input_dirs, kmer_size, distance)
 
-    dist.run(config, input_dir, kmer_size, distance)
+    # TODO:
+    # 3. build a tree (vptree.py build)
 
 
 @cli.command()
