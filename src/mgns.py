@@ -89,9 +89,8 @@ def filter(config, input_dirs, single_file, max_samples,
 @cli.command()
 @click.option('--dist', type=click.Choice(dist.distances.keys()),
               default='jsd')
-@click.option('-k', type=int, required=True)
 @pass_config
-def test(config, dist, k):
+def test(config, dist):
     tree_file = os.path.join(config.working_directory,
                              dist + '_tree.p')
     train_file = os.path.join(config.working_directory,
@@ -108,8 +107,9 @@ def test(config, dist, k):
     with open(unifrac_file, 'rb') as unif:
         unif_tree = pickle.load(unif)
 
-    testing.run(config, dist_tree, train_labels, unif_tree, k)
-    testing.baseline(config, dist_tree, train_labels, unif_tree, k)
+    k_values = range(3, len(dist_tree.func.map.keys()))
+    testing.run(config, dist_tree, train_labels, unif_tree, k_values)
+    testing.baseline(config, dist_tree, train_labels, unif_tree, k_values)
 
 
 @cli.command()

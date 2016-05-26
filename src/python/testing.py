@@ -2,6 +2,7 @@
 
 import numpy as np
 import random
+import os
 import python.vptree as vptree
 
 
@@ -25,26 +26,31 @@ def _precision_recall(y_true, y_pred):
     return precision, recall, f1
 
 
-def run(config, dist_tree, train_labels, unif_tree, k):
+def run(config, dist_tree, train_labels, unif_tree, k_values):
     labels = dist_tree.func.map.keys()
     test_labels = list(set(labels) - set(train_labels))
 
-    results = []
-    for label in test_labels:
-        dist_subt = vptree.nearest_neighbors(dist_tree, label, k)
-        y_pred = dist_subt.dfs()
+    result = []
+    for k in k_values:
+        stats = []
+        for label in test_labels:
+            dist_subt = vptree.nearest_neighbors(dist_tree, label, k)
+            y_pred = dist_subt.dfs()
 
-        unif_subt = vptree.nearest_neighbors(unif_tree, label, k)
-        y_true = unif_subt.dfs()
+            unif_subt = vptree.nearest_neighbors(unif_tree, label, k)
+            y_true = unif_subt.dfs()
 
-        precision, recall, f1 = _precision_recall(y_true, y_pred)
-        # print(precision, recall, f1)
-        results.append([precision, recall, f1])
+            precision, recall, f1 = _precision_recall(y_true, y_pred)
+            stats.append([precision, recall, f1])
 
-    results = np.array(results, dtype=np.float)
-    results = np.mean(results, axis=0)
-    # print(results)
-    return results
+        stats = np.array(stats, dtype=np.float)
+        stats = np.nanmean(stats, axis=0)
+        result.append(list(stats))
+
+    output_file = os.path.join(config.working_directory,
+                               'dist.txt')
+    with open(output_file, 'w') as f:
+        f.write('\n'.join(str(f1) for p, r, f1 in result))
 
 
 class RandomNeighbors:
@@ -55,25 +61,32 @@ class RandomNeighbors:
         return random.sample(self.labels, k)
 
 
-def baseline(config, dist_tree, train_labels, unif_tree, k):
+def baseline(config, dist_tree, train_labels, unif_tree, k_values):
     labels = dist_tree.func.map.keys()
     test_labels = list(set(labels) - set(train_labels))
 
     rn = RandomNeighbors(labels)
-    results = []
-    for label in test_labels:
-        y_pred = rn(k)
 
-        unif_subt = vptree.nearest_neighbors(unif_tree, label, k)
-        y_true = unif_subt.dfs()
+    result = []
+    for k in k_values:
+        stats = []
+        for label in test_labels:
+            y_pred = rn(k)
 
-        precision, recall, f1 = _precision_recall(y_true, y_pred)
-        results.append([precision, recall, f1])
+            unif_subt = vptree.nearest_neighbors(unif_tree, label, k)
+            y_true = unif_subt.dfs()
 
-    results = np.array(results, dtype=np.float)
-    results = np.nanmean(results, axis=0)
-    # print(results)
-    return results
+            precision, recall, f1 = _precision_recall(y_true, y_pred)
+            stats.append([precision, recall, f1])
+
+        stats = np.array(stats, dtype=np.float)
+        stats = np.nanmean(stats, axis=0)
+        result.append(list(stats))
+
+    output_file = os.path.join(config.working_directory,
+                               'baseline.txt')
+    with open(output_file, 'w') as f:
+        f.write('\n'.join(str(f1) for p, r, f1 in result))
 
 
 if __name__ == "__main__":
