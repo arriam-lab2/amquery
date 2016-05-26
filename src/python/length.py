@@ -37,6 +37,7 @@ def run_for_dirlist(dirlist, txt_output_file, plot_output_file):
 
     all_lengths = []
     for f in files:
+        print(f)
         all_lengths.extend(read_lengths(f))
 
     out = open(txt_output_file, 'w')
@@ -62,7 +63,7 @@ def run(input_dirs, output_dir):
     txt_output_file = os.path.join(output_dir, base_name + ".txt")
     plot_output_file = os.path.join(output_dir, base_name + ".png")
 
-    iof.create_dir(output_dir)
+    iof.make_sure_exists(output_dir)
     run_for_dirlist(input_dirs, txt_output_file, plot_output_file)
 
 
