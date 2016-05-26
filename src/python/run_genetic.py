@@ -7,24 +7,14 @@ import click
 import numpy as np
 
 from src.lib.partial_corr import partial_corr
-from src.lib import genetic_algorithm as ga
+from src.lib import ga
 from src.lib.iof import read_distance_matrix
 
 
 class CoordSystem(ga.Individual):
-    """
-    :type _l: int
-    :type _engine: Sequence[Callable]
-    :type _mutation_rate: float
-    :type _chromosome: tuple
-    """
-
     def __init__(self, mutation_rate, engine, l=None,
                  starting_chr=None):
         super().__init__(mutation_rate, engine, l, starting_chr)
-
-        self._chromosome = (starting_chr if starting_chr is not None
-                            else tuple(gen(None) for gen in self._engine))
 
     @staticmethod
     def _mutate(mutation_rate, chromosome, engine):
@@ -122,7 +112,8 @@ def run(distance_matrix, cs_size, generations, mutation_rate, population_size,
     engine = Engine(names)
     fitness = Fitness(dmatrix, names)
     ancestors = [CoordSystem(mutation_rate, engine, cs_size,
-                             random_chr(names, cs_size)) for _ in range(2)]
+                             random_chr(names, cs_size))
+                 for _ in range(population_size)]
 
     population = ga.Population(ancestors, population_size, fitness,
                                mode="minimize")

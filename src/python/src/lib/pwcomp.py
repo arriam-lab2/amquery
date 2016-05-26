@@ -45,6 +45,11 @@ def pwmatrix(func: Callable, data: Sequence) -> np.ndarray:
 
     return scipy.spatial.distance.squareform(result.get())
 
+    #results = scipy.spatial.distance.squareform(
+    #    workers.starmap(func, pairs))
+    #return results if dist else results + np.identity(len(data))
+
+
 
 if __name__ == "__main__":
     raise RuntimeError

@@ -3,3 +3,5 @@ scipy>=0.17.0
 click>=6.6
 biopython>=1.66
 joblib>=0.9.4
+multiprocess>=0.70.4
+Comparable>=1.0
