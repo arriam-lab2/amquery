@@ -125,7 +125,11 @@ def _filter_file(input_file: str, output_file: str,
             if cut > 0:
                 seq_record.letter_annotations = {}
                 seq_record.seq = Seq.Seq(str(seq_record.seq)[:cut])
-            sequences.append(seq_record)
+
+            if '-' not in seq_record.seq:
+                sequences.append(seq_record)
+            else:
+                print("Omitting", seq_record.id)
 
     if len(sequences) >= threshold:
         output_handle = open(output_file, "w")
