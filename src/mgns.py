@@ -2,8 +2,10 @@
 
 import click
 import python.distance as dist
+import python.vptree as vptree
 import python.src.lib.prebuild as pre
 import python.src.lib.iof as iof
+
 
 
 class Config(object):
@@ -43,10 +45,8 @@ def build(config, input_dirs, single_file, kmer_size, distance):
     else:
         input_dirs = [iof.normalize(d) for d in input_dirs]
 
-    dist.run(config, input_dirs, kmer_size, distance)
-
-    # TODO:
-    # 3. build a tree (vptree.py build)
+    labels, pwmatrix = dist.run(config, input_dirs, kmer_size, distance)
+    tree = vptree.run(config, labels, pwmatrix)
 
 
 @cli.command()

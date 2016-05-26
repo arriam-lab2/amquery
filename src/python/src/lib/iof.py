@@ -46,7 +46,7 @@ def write_distance_matrix(labels, dmatrix, fname):
             print(label, *map(str, row), sep="\t", file=f)
 
 
-def read_distance_matrix(filename):
+def read_distance_matrix(filename: str):
     dmatrix = []
     with open(filename) as f:
         keys = f.readline()[:-1].split("\t")[1:]

@@ -46,19 +46,21 @@ def make_kmer_data_mapping(config, input_dirs: str, k: int) -> dict:
 
 def run(config, input_dirs, kmer_size, distance):
     input_dirs = [iof.normalize(d) for d in input_dirs]
-    #if config.force:
-    #    iof.clear_dir(config.working_directory)
+    output_file = os.path.join(config.working_directory,
+                               distance + '_' + str(kmer_size) + '.txt')
 
-    kmer_mapping = make_kmer_data_mapping(config, input_dirs,
-                                          kmer_size)
+    if (not os.path.isfile(output_file)) or config.force:
+        kmer_mapping = make_kmer_data_mapping(config, input_dirs,
+                                              kmer_size)
 
-    distance_func = distances[distance]
-    labels, pwmatrix = calc_distance_matrix(kmer_mapping, kmer_size,
-                                            distance_func)
+        distance_func = distances[distance]
+        labels, pwmatrix = calc_distance_matrix(kmer_mapping, kmer_size,
+                                                distance_func)
+        iof.write_distance_matrix(labels, pwmatrix, output_file)
+    else:
+        labels, pwmatrix = iof.read_distance_matrix(output_file)
 
-    out_path = os.path.join(config.working_directory,
-                            distance + '_' + str(kmer_size) + '.txt')
-    iof.write_distance_matrix(labels, pwmatrix, out_path)
+    return labels, pwmatrix
 
 
 if __name__ == "__main__":
