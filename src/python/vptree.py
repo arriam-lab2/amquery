@@ -93,14 +93,22 @@ def euclidian(a: np.ndarray, b: np.ndarray):
     return np.linalg.norm(a - b)
 
 
-def run(config, labels, pwmatrix):
+def run(config, labels, pwmatrix, test_size):
     labels_map = dict(zip(labels, range(len(labels))))
+    lables_idx = list(range(len(labels)))
+    train_size = int(len(lables_idx) * (1 - test_size))
+    train_idx = random.sample(lables_idx, train_size)
+    train = [labels[i] for i in train_idx]
+
     distance = Distance(labels_map, pwmatrix)
-    vptree = VpTree(labels, distance)
+    vptree = VpTree(train, distance)
 
     output_file = os.path.join(config.working_directory, 'tree.pickle')
     pickle.dump(vptree, open(output_file, "wb"))
-    return vptree
+
+    train_output = os.path.join(config.working_directory, 'train.pickle')
+    pickle.dump(train, open(train_output, "wb"))
+    return vptree, train
 
 
 if __name__ == "__main__":

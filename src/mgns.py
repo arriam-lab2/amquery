@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 
 import click
+import os
+import pickle
 import python.distance as dist
 import python.vptree as vptree
+import python.testing as testing
 import python.src.lib.prebuild as pre
 import python.src.lib.iof as iof
-
 
 
 class Config(object):
@@ -36,8 +38,9 @@ def cli(config, working_directory, force, quiet):
               default=50, required=True)
 @click.option('--distance', '-d', type=click.Choice(dist.distances.keys()),
               default='jsd', help='A distance metric')
+@click.option('--test-size', type=float, default=0.0)
 @pass_config
-def build(config, input_dirs, single_file, kmer_size, distance):
+def build(config, input_dirs, single_file, kmer_size, distance, test_size):
     if single_file:
         input_file = input_dirs[0]
         input_dir = pre.split(config, input_file)
@@ -46,7 +49,7 @@ def build(config, input_dirs, single_file, kmer_size, distance):
         input_dirs = [iof.normalize(d) for d in input_dirs]
 
     labels, pwmatrix = dist.run(config, input_dirs, kmer_size, distance)
-    tree = vptree.run(config, labels, pwmatrix)
+    vptree.run(config, labels, pwmatrix, test_size)
 
 
 @cli.command()
@@ -76,6 +79,32 @@ def filter(config, input_dirs, single_file, max_samples,
                 "--single-file is not implemented yet")
         else:
             pre.rarefy(config, filtered_dirs, max_samples)
+
+
+@cli.command()
+@click.option('--tree-file', type=click.Path(),
+              default='tree.pickle')
+@click.option('--train-file', type=click.Path(),
+              default='train.pickle')
+@click.option('--unifrac-file', type=click.Path(),
+              default='unifrac.txt')
+@click.option('--dist-file', type=click.Path(),
+              default='jsd_50.txt')
+@click.option('-k', type=int)
+@pass_config
+def test(config, tree_file, train_file, unifrac_file, dist_file, k):
+    tree_file = os.path.join(config.working_directory, tree_file)
+    train_file = os.path.join(config.working_directory, train_file)
+    unifrac_file = os.path.join(config.working_directory, unifrac_file)
+    dist_file = os.path.join(config.working_directory, dist_file)
+
+    labels, pwmatrix = iof.read_distance_matrix(dist_file)
+    un_labels, unifrac = iof.read_distance_matrix(unifrac_file)
+    tree = pickle.load(tree_file)
+    train_labels = pickle.load(train_file)
+
+    testing.run(config, labels, pwmatrix, un_labels, unifrac,
+                tree, train_labels)
 
 
 @cli.command()
