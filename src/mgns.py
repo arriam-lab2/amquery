@@ -38,9 +38,11 @@ def cli(config, working_directory, force, quiet):
               default=50, required=True)
 @click.option('--distance', '-d', type=click.Choice(dist.distances.keys()),
               default='jsd', help='A distance metric')
+@click.option('--unifrac-file', type=click.Path())
 @click.option('--test-size', type=float, default=0.0)
 @pass_config
-def build(config, input_dirs, single_file, kmer_size, distance, test_size):
+def build(config, input_dirs, single_file, kmer_size,
+          distance, unifrac_file, test_size):
     if single_file:
         input_file = input_dirs[0]
         input_dir = pre.split(config, input_file)
@@ -49,7 +51,10 @@ def build(config, input_dirs, single_file, kmer_size, distance, test_size):
         input_dirs = [iof.normalize(d) for d in input_dirs]
 
     labels, pwmatrix = dist.run(config, input_dirs, kmer_size, distance)
-    vptree.run(config, labels, pwmatrix, test_size)
+    vptree.run(config, labels, pwmatrix, test_size, distance)
+
+    if unifrac_file:
+        vptree.run(config, labels, pwmatrix, 0.0, 'unifrac')
 
 
 @cli.command()
@@ -82,29 +87,28 @@ def filter(config, input_dirs, single_file, max_samples,
 
 
 @cli.command()
-@click.option('--tree-file', type=click.Path(),
-              default='tree.pickle')
-@click.option('--train-file', type=click.Path(),
-              default='train.pickle')
-@click.option('--unifrac-file', type=click.Path(),
-              default='unifrac.txt')
-@click.option('--dist-file', type=click.Path(),
-              default='jsd_50.txt')
+@click.option('--dist', type=click.Choice(dist.distances.keys()),
+              default='jsd')
 @click.option('-k', type=int)
 @pass_config
-def test(config, tree_file, train_file, unifrac_file, dist_file, k):
-    tree_file = os.path.join(config.working_directory, tree_file)
-    train_file = os.path.join(config.working_directory, train_file)
-    unifrac_file = os.path.join(config.working_directory, unifrac_file)
-    dist_file = os.path.join(config.working_directory, dist_file)
+def test(config, dist, k):
+    tree_file = os.path.join(config.working_directory,
+                             dist + '_tree.p')
+    train_file = os.path.join(config.working_directory,
+                              dist + '_train.p')
+    unifrac_file = os.path.join(config.working_directory,
+                                'unifrac_tree.p')
 
-    labels, pwmatrix = iof.read_distance_matrix(dist_file)
-    un_labels, unifrac = iof.read_distance_matrix(unifrac_file)
-    tree = pickle.load(tree_file)
-    train_labels = pickle.load(train_file)
+    with open(tree_file, 'rb') as treef:
+        dist_tree = pickle.load(treef)
 
-    testing.run(config, labels, pwmatrix, un_labels, unifrac,
-                tree, train_labels)
+    with open(train_file, 'rb') as trainf:
+        train_labels = pickle.load(trainf)
+
+    with open(unifrac_file, 'rb') as unif:
+        unif_tree = pickle.load(unif)
+
+    testing.run(config, dist_tree, train_labels, unif_tree)
 
 
 @cli.command()

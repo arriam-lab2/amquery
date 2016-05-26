@@ -63,8 +63,8 @@ def kmerize_samples(sample_files: list, tempdir: str,
 
         if not os.path.exists(output_jf_file):
             # Jellyfish count
-            tables_count = 5
-            hash_size = "10M"
+            tables_count = 10
+            hash_size = "100M"
             thread_num = N_JOBS
             jellyfish_count(sample_file, kmer_size, tables_count, hash_size,
                             thread_num, output_jf_file)

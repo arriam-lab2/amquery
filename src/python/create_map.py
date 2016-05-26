@@ -3,7 +3,7 @@
 import click
 import os
 import os.path
-import iof
+import src.lib.iof as iof
 import random
 
 
@@ -69,7 +69,7 @@ def run(input_dirs, output_dir):
     input_dirs = [os.path.join(x, '') for x in input_dirs]
     output_dir = os.path.join(output_dir, '')
     output_file = os.path.join(output_dir, "map.txt")
-    iof.create_dir(output_dir)
+    iof.make_sure_exists(output_dir)
     create_map(input_dirs, output_file)
 
 
