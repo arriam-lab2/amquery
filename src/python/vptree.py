@@ -80,8 +80,12 @@ def nearest_neighbors(vptree: VpTree, x: Point, k: int) -> list:
     while tree.size > k:
         dist = func(tree.vp, x)
         if tree.median and dist <= tree.median:
+            if tree.left.size < k:
+                return tree
             tree = tree.left
         elif tree.median and dist > tree.median:
+            if tree.right.size < k:
+                return tree
             tree = tree.right
         else:
             return tree

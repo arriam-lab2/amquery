@@ -108,7 +108,8 @@ def test(config, dist, k):
     with open(unifrac_file, 'rb') as unif:
         unif_tree = pickle.load(unif)
 
-    testing.run(config, dist_tree, train_labels, unif_tree)
+    k = 7
+    testing.run(config, dist_tree, train_labels, unif_tree, k)
 
 
 @cli.command()
