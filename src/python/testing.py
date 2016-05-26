@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 
 import numpy as np
+import random
 import python.vptree as vptree
 
 
-def _stats(y_true, y_pred):
+def _precision_recall(y_true, y_pred):
     precision = 0
     recall = 0
 
@@ -36,13 +37,44 @@ def run(config, dist_tree, train_labels, unif_tree, k):
         unif_subt = vptree.nearest_neighbors(unif_tree, label, k)
         y_true = unif_subt.dfs()
 
-        precision, recall, f1 = _stats(y_true, y_pred)
-        #print(precision, recall, f1)
+        precision, recall, f1 = _precision_recall(y_true, y_pred)
+        # print(precision, recall, f1)
         results.append([precision, recall, f1])
 
     results = np.array(results, dtype=np.float)
     results = np.mean(results, axis=0)
+    # print(results)
     return results
+
+
+class RandomNeighbors:
+    def __init__(self, labels):
+        self.labels = labels
+
+    def __call__(self, k):
+        return random.sample(self.labels, k)
+
+
+def baseline(config, dist_tree, train_labels, unif_tree, k):
+    labels = dist_tree.func.map.keys()
+    test_labels = list(set(labels) - set(train_labels))
+
+    rn = RandomNeighbors(labels)
+    results = []
+    for label in test_labels:
+        y_pred = rn(k)
+
+        unif_subt = vptree.nearest_neighbors(unif_tree, label, k)
+        y_true = unif_subt.dfs()
+
+        precision, recall, f1 = _precision_recall(y_true, y_pred)
+        results.append([precision, recall, f1])
+
+    results = np.array(results, dtype=np.float)
+    results = np.nanmean(results, axis=0)
+    # print(results)
+    return results
+
 
 if __name__ == "__main__":
     pass
