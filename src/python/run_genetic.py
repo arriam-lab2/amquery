@@ -27,7 +27,8 @@ class CoordSystem(ga.Individual):
         """
         mutation_mask = np.random.binomial(1, mutation_rate, len(chromosome))
         return [generator(val, chromosome) if mutate else val for
-                val, mutate, generator in zip(chromosome, mutation_mask, engine)]
+                val, mutate, generator in
+                zip(chromosome, mutation_mask, engine)]
 
     @staticmethod
     def _crossover(chr1, chr2):
@@ -96,11 +97,11 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 @click.option('--population_size', '-p', type=int, help='Population size',
               default=100)
 @click.option('--select_size', '-s', type=int,
-              help='Number of best individuals to select on each generation',
+              help='Fraction of best individuals to select on each generation',
               default=25)
 @click.option('--random_select_size', '-r', type=int,
-              help='Number of random individuals to select on each generation',
-              default=10)
+              help='Fraction of random individuals to select \
+              on each generation', default=10)
 @click.option('--idle_threshold', '-i', type=int, help='Number of iterations to \
               continue the evolution at local minimum', default=5)
 @click.option('--quiet', '-q', is_flag=True, help='Be quiet')
@@ -109,6 +110,8 @@ def run(distance_matrix, cs_size, generations, mutation_rate, population_size,
     names, dmatrix = read_distance_matrix(distance_matrix)
     dmatrix = np.matrix(dmatrix)
 
+    select_size = int(select_size / 100 * population_size)
+    random_select_size = int(random_select_size / 100 * population_size)
     engine = Engine(names)
     fitness = Fitness(dmatrix, names)
     ancestors = [CoordSystem(mutation_rate, engine, cs_size,
@@ -130,7 +133,8 @@ def run(distance_matrix, cs_size, generations, mutation_rate, population_size,
         best = legend[np.argmin([fitness for fitness, indiv in legend])]
 
         if not quiet:
-            print("Round ", n, " best solution:", best[0], best[1].chromosome)
+            print("\rRound", n, "of", generations,
+                  "best solution:", best[0], end="")
         n += 1
 
         if last and abs(best[0] - last) < eps:
@@ -140,6 +144,9 @@ def run(distance_matrix, cs_size, generations, mutation_rate, population_size,
             break
 
         last = best[0]
+
+    print()
+    print(best[1].chromosome)
 
     solution = [names[i] for i in best[1].chromosome]
     with open("coord_system.txt", "w") as f:
