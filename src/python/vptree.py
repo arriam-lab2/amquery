@@ -5,7 +5,7 @@ import numpy as np
 import itertools
 import pickle
 import os
-from typing import Callable, Mapping
+from typing import Callable, Mapping, List
 
 
 class Point:
@@ -25,6 +25,22 @@ class Distance:
 
     def __call__(self, a: Point, b: Point):
         return self.matrix[self.map[a], self.map[b]]
+
+
+def euclidian(a: np.ndarray, b: np.ndarray):
+    return np.linalg.norm(a - b)
+
+
+class CsDistance:
+    def __init__(self, labels_map: Mapping, coord_system: List[str],
+                 matrix: np.ndarray):
+        self.coord_system = coord_system
+        self.dist = Distance(labels_map, matrix)
+
+    def __call__(self, a: Point, b: Point):
+        x = np.array([self.dist(a, c) for c in self.coord_system])
+        y = np.array([self.dist(b, c) for c in self.coord_system])
+        return euclidian(x, y)
 
 
 class VpTree:
@@ -94,18 +110,12 @@ def nearest_neighbors(vptree: VpTree, x: Point, k: int) -> list:
     return tree
 
 
-def euclidian(a: np.ndarray, b: np.ndarray):
-    return np.linalg.norm(a - b)
-
-
-def run(config, labels, pwmatrix, test_size, output_prefix):
-    labels_map = dict(zip(labels, range(len(labels))))
+def build(config, distance, labels, pwmatrix, test_size, output_prefix):
     lables_idx = list(range(len(labels)))
     train_size = int(len(lables_idx) * (1 - test_size))
     train_idx = random.sample(lables_idx, train_size)
     train = [labels[i] for i in train_idx]
 
-    distance = Distance(labels_map, pwmatrix)
     vptree = VpTree(train, distance)
 
     output_file = os.path.join(config.working_directory,
@@ -116,6 +126,18 @@ def run(config, labels, pwmatrix, test_size, output_prefix):
                                 output_prefix + '_train.p')
     pickle.dump(train, open(train_output, "wb"))
     return vptree, train
+
+
+def dist(config, labels, pwmatrix, test_size, output_prefix):
+    labels_map = dict(zip(labels, range(len(labels))))
+    distance = Distance(labels_map, pwmatrix)
+    return build(config, distance, labels, pwmatrix, test_size, output_prefix)
+
+
+def csdist(config, coord_system, labels, pwmatrix, test_size, output_prefix):
+    labels_map = dict(zip(labels, range(len(labels))))
+    distance = CsDistance(labels_map, coord_system, pwmatrix)
+    return build(config, distance, labels, pwmatrix, test_size, output_prefix)
 
 
 if __name__ == "__main__":

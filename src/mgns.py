@@ -39,9 +39,11 @@ def cli(config, working_directory, force, quiet):
 @click.option('--distance', '-d', type=click.Choice(dist.distances.keys()),
               default='jsd', help='A distance metric')
 @click.option('--test-size', type=float, default=0.0)
+@click.option('--coord-system', '-c', type=click.Path(exists=True),
+              required=True)
 @pass_config
 def build(config, input_dirs, single_file, kmer_size,
-          distance, unifrac_file, test_size):
+          distance, test_size, coord_system):
     if single_file:
         input_file = input_dirs[0]
         input_dir = pre.split(config, input_file)
@@ -50,7 +52,11 @@ def build(config, input_dirs, single_file, kmer_size,
         input_dirs = [iof.normalize(d) for d in input_dirs]
 
     labels, pwmatrix = dist.run(config, input_dirs, kmer_size, distance)
-    vptree.run(config, labels, pwmatrix, test_size, distance)
+
+    cs_system = iof.read_coords(coord_system)
+    vptree.dist(config, labels, pwmatrix, test_size, distance)
+    vptree.csdist(config, cs_system, labels, pwmatrix,
+                  test_size, 'cs_' + distance)
 
 
 @cli.command()
