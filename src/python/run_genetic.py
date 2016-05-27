@@ -103,8 +103,9 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
               default=10)
 @click.option('--idle_threshold', '-i', type=int, help='Number of iterations to \
               continue the evolution at local minimum', default=5)
+@click.option('--quiet', '-q', is_flag=True, help='Be quiet')
 def run(distance_matrix, cs_size, generations, mutation_rate, population_size,
-        select_size, random_select_size, idle_threshold):
+        select_size, random_select_size, idle_threshold, quiet):
     names, dmatrix = read_distance_matrix(distance_matrix)
     dmatrix = np.matrix(dmatrix)
 
@@ -127,7 +128,9 @@ def run(distance_matrix, cs_size, generations, mutation_rate, population_size,
     n = 1
     for legend in legends:
         best = legend[np.argmin([fitness for fitness, indiv in legend])]
-        print("Round ", n, " best solution:", best[0], best[1].chromosome)
+
+        if not quiet:
+            print("Round ", n, " best solution:", best[0], best[1].chromosome)
         n += 1
 
         if last and abs(best[0] - last) < eps:
