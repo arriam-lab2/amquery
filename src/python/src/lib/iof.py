@@ -3,11 +3,17 @@ import glob
 import os
 import numpy as np
 from Bio import SeqIO
-from typing import Mapping
+from typing import Mapping, List
 
 
 def normalize(path: str):
     return os.path.join(path, '')
+
+
+def all_files(dirlist: List[str]) -> List[str]:
+    return [os.path.join(dirname, f) for dirname in dirlist
+            for f in os.listdir(dirname)
+            if os.path.isfile(os.path.join(dirname, f))]
 
 
 def make_sure_exists(path: str):
