@@ -20,7 +20,7 @@ def _precision_recall(y_true, y_pred):
 
     precision = precision / len(y_pred)
     recall = recall / len(y_true)
-    f1 = None
+    f1 = 0
     if precision + recall > 0:
         f1 = 2 * (precision * recall) / (precision + recall)
     return precision, recall, f1
