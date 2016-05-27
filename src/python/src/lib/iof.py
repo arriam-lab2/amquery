@@ -66,6 +66,10 @@ def read_distance_matrix(filename: str):
     return keys, np.matrix(dmatrix)
 
 
+def read_coords(filename: str) -> List[str]:
+    return [line.rstrip('\n') for line in open(filename)]
+
+
 if __name__ == "__main__":
     # TODO tests
     #filename = 'data/seqs.fna'
