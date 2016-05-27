@@ -4,7 +4,7 @@ import os
 import os.path
 from Bio import SeqIO
 from Bio import Seq
-from typing import Sequence
+from typing import Sequence, List
 from .iof import make_sure_exists
 import random
 import collections
@@ -53,7 +53,7 @@ def merge(dirlist: Sequence, output_file: str):
 
 
 # Split a fasta by sample names
-def split(config, input_file):
+def split(config, input_file: str):
     print("Splitting", input_file)
     read_mapping = collections.defaultdict(list)
     with open(input_file, 'r') as infile:
@@ -77,7 +77,8 @@ def split(config, input_file):
     return output_dir
 
 
-def filter_reads(config, input_dirs, min, max, cut, threshold):
+def filter_reads(config, input_dirs: List[str], min: int, max: int,
+                 cut: int, threshold: int):
     input_dirs = [os.path.join(dirname, '') for dirname in input_dirs]
     output_dir = os.path.join(config.working_directory, '')
     result_dirs = []
@@ -117,6 +118,9 @@ def _filter_file(input_file: str, output_file: str,
     count = 0
     sequences = []
     for seq_record in SeqIO.parse(input_file, extension):
+        if len(sequences) >= threshold:
+            break
+
         # filter by read length
         if len(seq_record.seq) >= min:
             # renaming a seq record
@@ -128,8 +132,6 @@ def _filter_file(input_file: str, output_file: str,
 
             if '-' not in seq_record.seq:
                 sequences.append(seq_record)
-            else:
-                print("Omitting", seq_record.id)
 
     if len(sequences) >= threshold:
         output_handle = open(output_file, "w")
