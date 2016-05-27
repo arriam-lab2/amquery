@@ -64,12 +64,13 @@ class VpTree:
 
     # depth-first search
     def dfs(self) -> list:
-        result = [self.vp]
+        result = []
         if self.left:
             result.extend(self.left.dfs())
         if self.right:
             result.extend(self.right.dfs())
 
+        result.append(self.vp)
         return result
 
 

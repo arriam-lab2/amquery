@@ -38,7 +38,6 @@ def cli(config, working_directory, force, quiet):
               default=50, required=True)
 @click.option('--distance', '-d', type=click.Choice(dist.distances.keys()),
               default='jsd', help='A distance metric')
-@click.option('--unifrac-file', type=click.Path())
 @click.option('--test-size', type=float, default=0.0)
 @pass_config
 def build(config, input_dirs, single_file, kmer_size,
@@ -52,9 +51,6 @@ def build(config, input_dirs, single_file, kmer_size,
 
     labels, pwmatrix = dist.run(config, input_dirs, kmer_size, distance)
     vptree.run(config, labels, pwmatrix, test_size, distance)
-
-    if unifrac_file:
-        vptree.run(config, labels, pwmatrix, 0.0, 'unifrac')
 
 
 @cli.command()
@@ -87,16 +83,16 @@ def filter(config, input_dirs, single_file, max_samples,
 
 
 @cli.command()
-@click.option('--dist', type=click.Choice(dist.distances.keys()),
+@click.option('--dist', '-d', type=click.Choice(dist.distances.keys()),
               default='jsd')
+@click.option('--unifrac-file', '-f', type=click.Path(exists=True),
+              required=True)
 @pass_config
-def test(config, dist):
+def test(config, dist, unifrac_file):
     tree_file = os.path.join(config.working_directory,
                              dist + '_tree.p')
     train_file = os.path.join(config.working_directory,
                               dist + '_train.p')
-    unifrac_file = os.path.join(config.working_directory,
-                                'unifrac_tree.p')
 
     with open(tree_file, 'rb') as treef:
         dist_tree = pickle.load(treef)
@@ -104,12 +100,11 @@ def test(config, dist):
     with open(train_file, 'rb') as trainf:
         train_labels = pickle.load(trainf)
 
-    with open(unifrac_file, 'rb') as unif:
-        unif_tree = pickle.load(unif)
-
-    k_values = range(3, len(dist_tree.func.map.keys()))
-    testing.run(config, dist_tree, train_labels, unif_tree, k_values)
-    testing.baseline(config, dist_tree, train_labels, unif_tree, k_values)
+    labels, pwmatrix = iof.read_distance_matrix(unifrac_file)
+    k_values = range(3, len(train_labels))
+    testing.dist(config, dist_tree, train_labels, labels, pwmatrix, k_values)
+    testing.baseline(config, dist_tree, train_labels,
+                     labels, pwmatrix, k_values)
 
 
 @cli.command()

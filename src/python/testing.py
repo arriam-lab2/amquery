@@ -26,20 +26,35 @@ def _precision_recall(y_true, y_pred):
     return precision, recall, f1
 
 
-def run(config, dist_tree, train_labels, unif_tree, k_values):
-    labels = dist_tree.func.map.keys()
+def best(solutions, k, exclude_labels):
+    solutions = sorted(solutions, key=lambda tup: tup[1])
+    solutions = [(x, y) for x, y in solutions if x not in exclude_labels]
+    return solutions[:k]
+
+
+def test(config, proxy, dist_tree, train_labels, labels, pwmatrix, k_values):
     test_labels = list(set(labels) - set(train_labels))
+    dist_matrix = dist_tree.func.matrix
+    dist_labels_map = dist_tree.func.map
 
     result = []
     for k in k_values:
         stats = []
         for label in test_labels:
-            dist_subt = vptree.nearest_neighbors(dist_tree, label, k)
-            y_pred = dist_subt.dfs()
+            y_pred = proxy(label, k)
+            pred_values = [(y,
+                           list(np.array(dist_matrix[dist_labels_map[y]])[0]))
+                           for y in y_pred]
+            pred_values = [(p[0], p[1][dist_labels_map[label]])
+                           for p in pred_values]
+            pred_values = best(pred_values, k, test_labels + [label])
 
-            unif_subt = vptree.nearest_neighbors(unif_tree, label, k)
-            y_true = unif_subt.dfs()
+            true_values = list(zip(labels,
+                                   np.array(pwmatrix[labels.index(label)])[0]))
+            true_values = best(true_values, k, test_labels + [label])
 
+            y_pred = [x for x, _ in pred_values]
+            y_true = [x for x, _ in true_values]
             precision, recall, f1 = _precision_recall(y_true, y_pred)
             stats.append([precision, recall, f1])
 
@@ -47,10 +62,7 @@ def run(config, dist_tree, train_labels, unif_tree, k_values):
         stats = np.nanmean(stats, axis=0)
         result.append(list(stats))
 
-    output_file = os.path.join(config.working_directory,
-                               'dist.txt')
-    with open(output_file, 'w') as f:
-        f.write('\n'.join(str(f1) for p, r, f1 in result))
+    return result
 
 
 class RandomNeighbors:
@@ -61,27 +73,36 @@ class RandomNeighbors:
         return random.sample(self.labels, k)
 
 
-def baseline(config, dist_tree, train_labels, unif_tree, k_values):
-    labels = dist_tree.func.map.keys()
-    test_labels = list(set(labels) - set(train_labels))
+class DistProxy:
+    def __init__(self, dist_tree):
+        self.tree = dist_tree
 
-    rn = RandomNeighbors(labels)
+    def __call__(self, label, k):
+        subtree = vptree.nearest_neighbors(self.tree, label, k)
+        return subtree.dfs()
 
-    result = []
-    for k in k_values:
-        stats = []
-        for label in test_labels:
-            y_pred = rn(k)
 
-            unif_subt = vptree.nearest_neighbors(unif_tree, label, k)
-            y_true = unif_subt.dfs()
+class BaselineProxy:
+    def __init__(self, labels):
+        self.rn = RandomNeighbors(labels)
 
-            precision, recall, f1 = _precision_recall(y_true, y_pred)
-            stats.append([precision, recall, f1])
+    def __call__(self, label, k):
+        return self.rn(k)
 
-        stats = np.array(stats, dtype=np.float)
-        stats = np.nanmean(stats, axis=0)
-        result.append(list(stats))
+
+def dist(config, dist_tree, train_labels, labels, pwmatrix, k_values):
+    result = test(config, DistProxy(dist_tree), dist_tree, train_labels,
+                  labels, pwmatrix, k_values)
+
+    output_file = os.path.join(config.working_directory,
+                               'dist.txt')
+    with open(output_file, 'w') as f:
+        f.write('\n'.join(str(f1) for p, r, f1 in result))
+
+
+def baseline(config, dist_tree, train_labels, labels, pwmatrix, k_values):
+    result = test(config, BaselineProxy(labels), dist_tree, train_labels,
+                  labels, pwmatrix, k_values)
 
     output_file = os.path.join(config.working_directory,
                                'baseline.txt')
