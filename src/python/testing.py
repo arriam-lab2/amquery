@@ -90,12 +90,12 @@ class BaselineProxy:
         return self.rn(k)
 
 
-def dist(config, dist_tree, train_labels, labels, pwmatrix, k_values):
+def dist(config, dist_tree, train_labels, labels, pwmatrix,
+         k_values, output_file):
     result = test(config, DistProxy(dist_tree), dist_tree, train_labels,
                   labels, pwmatrix, k_values)
 
-    output_file = os.path.join(config.working_directory,
-                               'dist.txt')
+    output_file = os.path.join(config.working_directory, output_file)
     with open(output_file, 'w') as f:
         f.write('\n'.join(str(f1) for p, r, f1 in result))
 

@@ -95,20 +95,35 @@ def filter(config, input_dirs, single_file, max_samples,
               required=True)
 @pass_config
 def test(config, dist, unifrac_file):
-    tree_file = os.path.join(config.working_directory,
-                             dist + '_tree.p')
-    train_file = os.path.join(config.working_directory,
-                              dist + '_train.p')
+    dist_tree_file = os.path.join(config.working_directory,
+                                  dist + '_tree.p')
+    dist_train_file = os.path.join(config.working_directory,
+                                   dist + '_train.p')
 
-    with open(tree_file, 'rb') as treef:
+    with open(dist_tree_file, 'rb') as treef:
         dist_tree = pickle.load(treef)
 
-    with open(train_file, 'rb') as trainf:
+    with open(dist_train_file, 'rb') as trainf:
         train_labels = pickle.load(trainf)
+
+    cs_tree_file = os.path.join(config.working_directory,
+                                'cs_' + dist + '_tree.p')
+    cs_train_file = os.path.join(config.working_directory,
+                                 'cs_' + dist + '_train.p')
+
+    with open(cs_tree_file, 'rb') as treef:
+        cs_tree = pickle.load(treef)
+
+    with open(cs_train_file, 'rb') as trainf:
+        cs_train_labels = pickle.load(trainf)
 
     labels, pwmatrix = iof.read_distance_matrix(unifrac_file)
     k_values = range(3, len(train_labels))
-    testing.dist(config, dist_tree, train_labels, labels, pwmatrix, k_values)
+
+    testing.dist(config, dist_tree, train_labels, labels,
+                 pwmatrix, k_values, 'dist.txt')
+    testing.dist(config, cs_tree, cs_train_labels,
+                 labels, pwmatrix, k_values, 'cs_dist.txt')
     testing.baseline(config, dist_tree, train_labels,
                      labels, pwmatrix, k_values)
 

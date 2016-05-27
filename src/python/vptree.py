@@ -34,6 +34,8 @@ def euclidian(a: np.ndarray, b: np.ndarray):
 class CsDistance:
     def __init__(self, labels_map: Mapping, coord_system: List[str],
                  matrix: np.ndarray):
+        self.map = labels_map
+        self.matrix = matrix
         self.coord_system = coord_system
         self.dist = Distance(labels_map, matrix)
 
