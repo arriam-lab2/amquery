@@ -101,7 +101,7 @@ def dist(config, dist_tree, train_labels, labels, pwmatrix,
 
 
 def baseline(config, dist_tree, train_labels, labels, pwmatrix, k_values):
-    result = test(config, BaselineProxy(labels), dist_tree, train_labels,
+    result = test(config, BaselineProxy(train_labels), dist_tree, train_labels,
                   labels, pwmatrix, k_values)
 
     output_file = os.path.join(config.working_directory,
