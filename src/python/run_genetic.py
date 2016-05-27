@@ -6,7 +6,6 @@ import random
 import click
 import numpy as np
 
-from src.lib.partial_corr import partial_corr
 from src.lib import ga
 from src.lib.iof import read_distance_matrix
 
@@ -72,7 +71,7 @@ class Fitness:
 
     def _total_partcorr(self, names_idx):
         dmx = self._choose(names_idx)
-        corrs = partial_corr(dmx)
+        corrs = np.corrcoef(dmx)
         sums = np.apply_along_axis(sum, 1, corrs)
         total_pc = np.apply_along_axis(sum, 0, sums)
         return float(total_pc)
@@ -138,6 +137,10 @@ def run(distance_matrix, cs_size, generations, mutation_rate, population_size,
             break
 
         last = best[0]
+
+    solution = [names[i] for i in best[1].chromosome]
+    with open("coord_system.txt", "w") as f:
+        f.write('\n'.join(x for x in solution))
 
 
 if __name__ == "__main__":
