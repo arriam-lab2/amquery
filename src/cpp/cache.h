@@ -4,6 +4,7 @@
 #include <list>
 #include <string>
 #include <iterator>
+#include <mutex>
 
 #include <iostream>
 
@@ -52,6 +53,7 @@ namespace collections
 
         T& operator[](const Key& key)
         {
+            std::lock_guard<std::mutex> lock(_mutex);
             iterator it = _map[key];
             it = _splay(it);
             assert(it == _last());
@@ -80,12 +82,14 @@ namespace collections
         // Modifiers
         void clear()
         {
+            std::lock_guard<std::mutex> lock(_mutex);
             _list.clear();
             _map.clear();
         }
 
         std::pair<iterator, bool> insert(const value_type& pair)
         {
+            std::lock_guard<std::mutex> lock(_mutex);
             auto found = _map.find(pair.first);
             if (found != _map.end())
             {
@@ -149,6 +153,7 @@ namespace collections
         cache_list _list;
         cache_map _map;
         size_t _max_size;
+        std::mutex _mutex;
     };
 
 
