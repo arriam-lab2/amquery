@@ -8,7 +8,7 @@
 
 #include <iostream>
 
-namespace collections
+namespace concurrent
 {
     template <class Key,
               class T,

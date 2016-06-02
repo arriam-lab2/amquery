@@ -3,8 +3,11 @@
 #include <assert.h>
 #include <map>
 #include <vector>
+#include <thread>
+#include <chrono>
 
 #include <cache.h>
+#include <thread_pool.h>
 
 struct Foo
 {
@@ -16,7 +19,7 @@ struct Foo
     }
 };
 
-using namespace collections;
+using namespace concurrent;
 
 void test_create()
 {
@@ -116,11 +119,35 @@ void test_lru_update()
     assert(cache.max_size() == 5);
 }
 
+std::mutex cout_mutex;
+
+void worker_func(size_t n)
+{
+    {
+        std::lock_guard<std::mutex> lock(cout_mutex);
+    	std::cout << "Thread " << std::this_thread::get_id() << std::endl;
+    }
+
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+}
+
+void test_pool()
+{
+    const size_t pool_size = 4;
+    thread_pool pool(pool_size);
+
+    for (size_t i = 0; i < pool_size; ++i)
+    {
+        pool.submit(worker_func, i);
+    }
+}
+
 int main()
 {
     test_create();
     test_simple_insert();
     test_lru_insert();
     test_lru_update();
+    test_pool();
     return 0;
 }
