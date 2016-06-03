@@ -5,6 +5,7 @@
 #include <vector>
 #include <thread>
 #include <chrono>
+#include <cstdlib>
 
 #include <cache.h>
 #include <thread_pool.h>
@@ -12,7 +13,17 @@
 struct Foo
 {
     int a;
-
+/*
+    Foo(int _a)
+        : a(_a)
+    {}
+*/
+    //Foo(Foo& other) = delete;
+/*
+    Foo(Foo&& other)
+        : a(std::move(other.a))
+    {}
+*/
     bool operator==(const Foo& other)
     {
         return a == other.a;
@@ -121,7 +132,7 @@ void test_lru_update()
 
 std::mutex cout_mutex;
 
-void worker_func(size_t n)
+void worker_func()
 {
     {
         std::lock_guard<std::mutex> lock(cout_mutex);
@@ -138,8 +149,27 @@ void test_pool()
 
     for (size_t i = 0; i < pool_size; ++i)
     {
-        pool.submit(worker_func, i);
+        pool.submit(worker_func);
     }
+}
+
+Foo foo_calc(const std::string& string)
+{
+    return Foo { (int)(rand() % 100) };
+}
+
+void test_multithreaded_lru()
+{
+    const size_t pool_size = 4;
+    thread_pool pool(pool_size);
+
+    const int cache_size = 5;
+    lru_cache<std::string, Foo> cache(cache_size);
+
+    for (size_t i = 0; i < cache_size; ++i)
+    {
+    }
+
 }
 
 int main()
@@ -149,5 +179,6 @@ int main()
     test_lru_insert();
     test_lru_update();
     test_pool();
+    test_multithreaded_lru();
     return 0;
 }
