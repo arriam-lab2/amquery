@@ -158,16 +158,70 @@ Foo foo_calc(const std::string& string)
     return Foo { (int)(rand() % 100) };
 }
 
+
+static std::exception_ptr teptr = nullptr;
+
+
+class foo_worker
+{
+public:
+    foo_worker(lru_cache<std::string, Foo>& cache)
+        : _cache(cache)
+    {}
+
+    Foo operator()(const std::string& string)
+    {
+        try
+        {
+            auto it = _cache.find(string);
+            if (it == _cache.end())
+            {
+                Foo foo = foo_calc(string);
+                _cache.insert(std::make_pair(string, foo));
+                return foo;
+            }
+            else
+            {
+                return it->second;
+            }
+        }
+        catch (std::exception e)
+        {
+            teptr = std::current_exception();
+        }
+        return Foo { -1 };
+    }
+
+private:
+    lru_cache<std::string, Foo>& _cache;
+};
+
+
 void test_multithreaded_lru()
 {
-    const size_t pool_size = 4;
+    const size_t pool_size = 10;
     thread_pool pool(pool_size);
 
-    const int cache_size = 5;
+    const int cache_size = 10;
     lru_cache<std::string, Foo> cache(cache_size);
 
-    for (size_t i = 0; i < cache_size; ++i)
+    std::vector<boost::future<Foo>> futures;
+    std::vector<std::string> keys = { "1", "2", "3", "4", "5", "6", "7" };
+    for (size_t i = 0; i < 10*keys.size(); ++i)
     {
+        foo_worker worker(cache);
+        futures.emplace_back(std::move(pool.submit(worker, keys[i % keys.size()])));
+    }
+
+    try
+    {
+        boost::wait_for_all(futures.begin(), futures.end());
+        if (teptr)
+        {
+            std::rethrow_exception(teptr);
+        }
+    } catch (std::exception e) {
+        std::cout << e.what() << std::endl;
     }
 
 }
@@ -180,5 +234,7 @@ int main()
     test_lru_update();
     test_pool();
     test_multithreaded_lru();
+
+    std::cout << "OK" << std::endl;
     return 0;
 }

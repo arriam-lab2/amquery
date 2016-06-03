@@ -5,7 +5,7 @@ set(Boost_USE_MULTITHREADED ON)
 find_package(Boost REQUIRED)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --std=c++14 -lboost_system \
-    -lboost_thread -Wall -Werror -Wpedantic")
+    -lboost_thread -Wall -Werror -Wpedantic -g")
 set(SOURCE_FILES
     test.cpp
     cache.h

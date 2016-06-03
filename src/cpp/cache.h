@@ -21,8 +21,7 @@ namespace concurrent
         typedef T mapped_type;
         typedef std::pair<const Key, T> value_type;
         typedef size_t size_type;
-
-        // TODO; typedef difference_type //
+        typedef std::ptrdiff_t difference_type;
 
         typedef Compare key_compare;
 
@@ -62,6 +61,26 @@ namespace concurrent
 
         // TODO: iterators
 
+        iterator begin()
+        {
+            return _list.begin();
+        }
+
+        const_iterator begin() const
+        {
+            return _list.begin();
+        }
+
+        iterator end()
+        {
+            return _list.end();
+        }
+
+        const_iterator end() const
+        {
+            return _list.end();
+        }
+
         // Capacity
 
         bool empty()
@@ -90,10 +109,10 @@ namespace concurrent
         std::pair<iterator, bool> insert(const value_type& pair)
         {
             std::lock_guard<std::mutex> lock(_mutex);
-            auto found = _map.find(pair.first);
-            if (found != _map.end())
+            iterator found = _lockfree_find(pair.first);
+            if (found != end())
             {
-                return std::make_pair(_last(), false);
+                return std::make_pair(found, false);
             }
             else
             {
@@ -101,11 +120,31 @@ namespace concurrent
             }
         }
 
-        // TODO: Lookup
+        // Lookup
+
+        iterator find(const key_type& key)
+        {
+            std::lock_guard<std::mutex> lock(_mutex);
+            return _lockfree_find(key);
+        }
+
 
         // TODO: Observers
 
     private:
+        iterator _lockfree_find(const key_type& key)
+        {
+            auto it = _map.find(key);
+            if (it == _map.end())
+            {
+                return _list.end();
+            }
+            else
+            {
+                return it->second;
+            }
+        }
+
         std::pair<iterator, bool> _lru_insert(const value_type& pair)
         {
             if (_list.size() == _max_size)
@@ -121,8 +160,8 @@ namespace concurrent
 
             iterator elem = _list.begin();
             key_type key = elem->first;
-            _list.erase(elem);
             _map.erase(key);
+            _list.erase(elem);
         }
 
         std::pair<iterator, bool> _insert_back(const value_type& pair)
