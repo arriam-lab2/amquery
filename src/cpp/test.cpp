@@ -153,7 +153,7 @@ void test_pool()
     }
 }
 
-Foo foo_calc(const std::string& string)
+Foo foo_calc(std::string string)
 {
     return Foo { (int)(rand() % 100) };
 }
@@ -161,24 +161,31 @@ Foo foo_calc(const std::string& string)
 
 static std::exception_ptr teptr = nullptr;
 
+template <class Key, class T, typename lru = lru_cache<Key, T>>
+auto get_lru_cache_pointer() -> std::shared_ptr<lru>
+{
+    static std::shared_ptr<lru> instance = std::make_shared<lru>();
+    return instance;
+}
 
-class foo_worker
+template <class Key, class T, T(*Function)(Key)>
+class lru_cache_wrapper
 {
 public:
-    foo_worker(lru_cache<std::string, Foo>& cache)
-        : _cache(cache)
+    lru_cache_wrapper(size_t cache_size)
+        : _pcache(get_lru_cache_pointer<Key, T>())
     {}
 
-    Foo operator()(const std::string& string)
+    Foo operator()(const Key& key)
     {
         try
         {
-            auto it = _cache.find(string);
-            if (it == _cache.end())
+            auto it = _pcache->find(key);
+            if (it == _pcache->end())
             {
-                Foo foo = foo_calc(string);
-                _cache.insert(std::make_pair(string, foo));
-                return foo;
+                T result_obj = std::move(Function(key));
+                _pcache->insert(std::make_pair(key, result_obj));
+                return std::move(result_obj);
             }
             else
             {
@@ -189,11 +196,11 @@ public:
         {
             teptr = std::current_exception();
         }
-        return Foo { -1 };
+        return T();
     }
 
 private:
-    lru_cache<std::string, Foo>& _cache;
+    std::shared_ptr<lru_cache<Key, T>> _pcache;
 };
 
 
@@ -203,14 +210,19 @@ void test_multithreaded_lru()
     thread_pool pool(pool_size);
 
     const int cache_size = 10;
-    lru_cache<std::string, Foo> cache(cache_size);
+    lru_cache_wrapper<std::string, Foo, foo_calc> wrapper(cache_size);
 
     std::vector<boost::future<Foo>> futures;
     std::vector<std::string> keys = { "1", "2", "3", "4", "5", "6", "7" };
-    for (size_t i = 0; i < 10*keys.size(); ++i)
+    for (size_t i = 0; i < 10 * keys.size(); ++i)
     {
-        foo_worker worker(cache);
-        futures.emplace_back(std::move(pool.submit(worker, keys[i % keys.size()])));
+        futures.emplace_back(
+            std::move(pool.submit(
+                    wrapper,
+                    keys[i % keys.size()]
+                )
+            )
+        );
     }
 
     try
