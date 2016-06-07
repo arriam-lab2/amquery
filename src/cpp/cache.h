@@ -196,4 +196,54 @@ namespace concurrent
     };
 
 
+    namespace __detail
+    {
+        template <class Key, class T, T(*Function)(Key), typename lru = lru_cache<Key, T>>
+        auto get_lru_cache_pointer() -> std::shared_ptr<lru>
+        {
+            static std::shared_ptr<lru> instance = std::make_shared<lru>();
+            return instance;
+        }
+    }
+
+    template <class Key,
+              class T,
+              T(*Function)(Key)>
+    class lru_cache_wrapper
+    {
+    public:
+        lru_cache_wrapper(size_t cache_size)
+            : _pcache(__detail::get_lru_cache_pointer<Key, T, Function>())
+        {}
+
+        T operator()(const Key& key)
+        {
+            T result;
+            try
+            {
+                auto it = _pcache->find(key);
+                if (it == _pcache->end())
+                {
+                    T result_obj = Function(key);
+                    _pcache->insert(std::make_pair(key, result_obj));
+                    result = std::move(result_obj);
+                }
+                else
+                {
+                    result = std::move(it->second);
+                }
+            }
+            catch (std::exception e)
+            {
+                //teptr = std::current_exception();
+            }
+            return result;
+        }
+
+    private:
+        std::shared_ptr<lru_cache<Key, T>> _pcache;
+    };
+
+
+
 }
