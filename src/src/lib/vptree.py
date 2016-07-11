@@ -27,7 +27,7 @@ class Distance:
         return self.matrix[self.map[a], self.map[b]]
 
 
-def euclidian(a: np.ndarray, b: np.ndarray):
+def euclidean(a: np.ndarray, b: np.ndarray):
     return np.linalg.norm(a - b)
 
 
@@ -42,7 +42,7 @@ class CsDistance:
     def __call__(self, a: Point, b: Point):
         x = np.array([self.dist(a, c) for c in self.coord_system])
         y = np.array([self.dist(b, c) for c in self.coord_system])
-        return euclidian(x, y)
+        return euclidean(x, y)
 
 
 class VpTree:
@@ -140,20 +140,3 @@ def csdist(config, coord_system, labels, pwmatrix, test_size, output_prefix):
     labels_map = dict(zip(labels, range(len(labels))))
     distance = CsDistance(labels_map, coord_system, pwmatrix)
     return build(config, distance, labels, pwmatrix, test_size, output_prefix)
-
-
-if __name__ == "__main__":
-    pass
-    #n = 100
-    #x = np.random.uniform(0, 10, n)
-    #y = np.random.uniform(0, 10, n)
-    #points = np.array(list(zip(x, y)))
-
-    #dist = Distance(np.random.rand(n, n))
-    #vptree = VpTree(points, dist)
-
-    #for p in points:
-    #    nns = nearest_neighbors(vptree, p, 3)
-
-    # print(nns.dfs())
-    # print(vptree.dfs())
