@@ -3,11 +3,11 @@
 import click
 import os
 import pickle
-import vptree
 import testing
 import distance as mdist
 import src.lib.prebuild as pre
 import src.lib.iof as iof
+import src.lib.vptree as vptree
 
 
 class Config(object):

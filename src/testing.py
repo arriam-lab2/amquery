@@ -3,7 +3,7 @@
 import numpy as np
 import random
 import os
-import vptree
+import src.lib.vptree as vptree
 
 
 def _precision_recall(y_true, y_pred):
