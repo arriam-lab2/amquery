@@ -3,11 +3,11 @@
 import click
 import os
 import pickle
-import python.distance as dist
-import python.vptree as vptree
-import python.testing as testing
-import python.src.lib.prebuild as pre
-import python.src.lib.iof as iof
+import vptree
+import testing
+import distance as mdist
+import src.lib.prebuild as pre
+import src.lib.iof as iof
 
 
 class Config(object):
@@ -36,14 +36,10 @@ def cli(config, working_directory, force, quiet):
               help='A single file containing reads for all samples')
 @click.option('--kmer_size', '-k', type=int, help='K-mer size',
               default=50, required=True)
-@click.option('--distance', '-d', type=click.Choice(dist.distances.keys()),
+@click.option('--distance', '-d', type=click.Choice(mdist.distances.keys()),
               default='jsd', help='A distance metric')
-@click.option('--test-size', type=float, default=0.0)
-@click.option('--coord-system', '-c', type=click.Path(exists=True),
-              required=True)
 @pass_config
-def build(config, input_dirs, single_file, kmer_size,
-          distance, test_size, coord_system):
+def dist(config, input_dirs, single_file, kmer_size, distance):
     if single_file:
         input_file = input_dirs[0]
         input_dir = pre.split(config, input_file)
@@ -51,8 +47,21 @@ def build(config, input_dirs, single_file, kmer_size,
     else:
         input_dirs = [iof.normalize(d) for d in input_dirs]
 
-    labels, pwmatrix = dist.run(config, input_dirs, kmer_size, distance)
+    mdist.run(config, input_dirs, kmer_size, distance)
 
+
+@cli.command()
+@click.option('--pwmatrix', '-m', type=click.Path(exists=True),
+              help='A distance matrix file', required=True)
+@click.option('--test-size', type=float, default=0.0)
+@click.option('--coord-system', '-c', type=click.Path(exists=True),
+              required=True)
+@click.option('--distance', '-d', type=click.Choice(mdist.distances.keys()),
+              default='jsd', help='A distance metric')
+@pass_config
+def build(config, pwmatrix, test_size, coord_system, distance):
+    input_file = pwmatrix
+    labels, pwmatrix = iof.read_distance_matrix(input_file)
     cs_system = iof.read_coords(coord_system)
     vptree.dist(config, labels, pwmatrix, test_size, distance)
     vptree.csdist(config, cs_system, labels, pwmatrix,
@@ -89,7 +98,7 @@ def filter(config, input_dirs, single_file, max_samples,
 
 
 @cli.command()
-@click.option('--dist', '-d', type=click.Choice(dist.distances.keys()),
+@click.option('--dist', '-d', type=click.Choice(mdist.distances.keys()),
               default='jsd')
 @click.option('--unifrac-file', '-f', type=click.Path(exists=True),
               required=True)
