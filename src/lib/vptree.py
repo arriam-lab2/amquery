@@ -31,6 +31,7 @@ def euclidean(a: np.ndarray, b: np.ndarray):
     return np.linalg.norm(a - b)
 
 
+# Distance in a proper coordinate system
 class CsDistance:
     def __init__(self, labels_map: Mapping, coord_system: List[str],
                  matrix: np.ndarray):
@@ -45,6 +46,7 @@ class CsDistance:
         return euclidean(x, y)
 
 
+# Vantage-point tree
 class VpTree:
     def __init__(self, points: np.array, func: Callable):
         self.func = func
@@ -130,13 +132,7 @@ def build(config, distance, labels, pwmatrix, test_size, output_prefix):
     return vptree, train
 
 
-def dist(config, labels, pwmatrix, test_size, output_prefix):
-    labels_map = dict(zip(labels, range(len(labels))))
-    distance = Distance(labels_map, pwmatrix)
-    return build(config, distance, labels, pwmatrix, test_size, output_prefix)
-
-
-def csdist(config, coord_system, labels, pwmatrix, test_size, output_prefix):
+def dist(config, coord_system, labels, pwmatrix, test_size, output_prefix):
     labels_map = dict(zip(labels, range(len(labels))))
     distance = CsDistance(labels_map, coord_system, pwmatrix)
     return build(config, distance, labels, pwmatrix, test_size, output_prefix)
