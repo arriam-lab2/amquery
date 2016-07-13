@@ -5,9 +5,9 @@ import os
 import pickle
 import testing
 import distance as mdist
-import src.lib.prebuild as pre
-import src.lib.iof as iof
-import src.lib.vptree as vptree
+import lib.prebuild as pre
+import lib.iof as iof
+import lib.vptree as vptree
 
 
 class Config(object):

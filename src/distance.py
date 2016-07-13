@@ -4,10 +4,10 @@ import os
 import numpy as np
 from typing import List, Callable, Mapping
 
-from src.lib import iof
-from src.lib.dist import kmerize_samples, LoadApply
-from src.lib.metrics import jaccard, generalized_jaccard, jsd, bray_curtis
-from src.lib.pwcomp import pwmatrix
+from lib import iof
+from lib.dist import kmerize_samples, LoadApply
+from lib.metrics import jaccard, generalized_jaccard, jsd, bray_curtis
+from lib.pwcomp import pwmatrix
 
 
 distances = {'jaccard': jaccard, 'jsd': jsd, 'bc': bray_curtis,
