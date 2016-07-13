@@ -45,6 +45,9 @@ def make_kmer_data_mapping(config, input_dirs: str, k: int) -> dict:
 
 
 def run(config, input_dirs, kmer_size, distance):
+    config.dist.func = distance
+    config.dist.kmer_size = kmer_size
+
     input_dirs = [iof.normalize(d) for d in input_dirs]
     output_file = os.path.join(config.workon,
                                distance + '_' + str(kmer_size) + '.txt')

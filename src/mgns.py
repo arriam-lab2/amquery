@@ -64,6 +64,8 @@ def dist(config, input_dirs, single_file, kmer_size, distance):
         print("There is no index created. Run 'mgns init' or 'mgns use' first")
         return
 
+    config.dist = Bunch()
+
     if single_file:
         input_file = input_dirs[0]
         input_dir = pre.split(config, input_file)
