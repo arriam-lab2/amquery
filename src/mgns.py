@@ -60,6 +60,10 @@ def cli(config, workon, force, quiet):
               default='jsd', help='A distance metric')
 @pass_config
 def dist(config, input_dirs, single_file, kmer_size, distance):
+    if "current_index" not in config:
+        print("There is no index created. Run 'mgns init' or 'mgns use' first")
+        return
+
     if single_file:
         input_file = input_dirs[0]
         input_dir = pre.split(config, input_file)
@@ -86,6 +90,8 @@ def build(config, pwmatrix, test_size, coord_system, distance):
     cs_system = iof.read_coords(coord_system)
     vptree.dist(config, cs_system, labels, pwmatrix,
                 test_size, distance)
+
+    config.save()
 
 
 @cli.command()
@@ -145,32 +151,13 @@ def test(config, dist, unifrac_file):
 
 
 @cli.command()
-@pass_config
-def learn(config):
-    # TODO:
-    # 1. make sure there is proper qiime output files
-    # 2. make sure there is a pwmatrix file
-    # 3. run a network
-
-    raise NotImplementedError("Not implemented yet")
-
-
-@cli.command()
-@pass_config
-def search(config):
-    # TODO:
-    # 1. make sure there is a pwmatrix file (result of nns build)
-    # 2. make sure there is a result from nns learn (k value)
-    # 2. run vptree.py (search)
-    raise NotImplementedError("Not implemented yet")
-
-
-@cli.command()
 @click.argument('name', type=str, required=True)
 @pass_config
 def init(config: Config, name: str):
     index_path = os.path.join(config.workon, name)
     iof.make_sure_exists(index_path)
+    config.current_index = name
+    config.save()
 
 
 @cli.command()
@@ -181,8 +168,8 @@ def use(config: Config, name: str):
     if not iof.exists(index_path):
         print('No such index:', name)
 
-    config.current_index = index_path
-    config.flush()
+    config.current_index = name
+    config.save()
 
 
 if __name__ == "__main__":
