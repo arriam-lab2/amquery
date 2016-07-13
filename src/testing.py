@@ -95,7 +95,7 @@ def dist(config, dist_tree, train_labels, labels, pwmatrix,
     result = test(config, DistProxy(dist_tree), dist_tree, train_labels,
                   labels, pwmatrix, k_values)
 
-    output_file = os.path.join(config.working_directory, output_file)
+    output_file = os.path.join(config.workon, output_file)
     with open(output_file, 'w') as f:
         f.write('\n'.join(str(f1) for p, r, f1 in result))
 
@@ -104,7 +104,7 @@ def baseline(config, dist_tree, train_labels, labels, pwmatrix, k_values):
     result = test(config, BaselineProxy(train_labels), dist_tree, train_labels,
                   labels, pwmatrix, k_values)
 
-    output_file = os.path.join(config.working_directory,
+    output_file = os.path.join(config.workon,
                                'baseline.txt')
     with open(output_file, 'w') as f:
         f.write('\n'.join(str(f1) for p, r, f1 in result))
