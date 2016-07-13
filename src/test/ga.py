@@ -1,4 +1,4 @@
-from ..lib.ga import *
+from lib.ga import *
 
 print("ga test: ", end="")
 
@@ -19,4 +19,3 @@ for generation_legends in population.evolve(100, 100, 50):
     pass
 
 print("passed")
-

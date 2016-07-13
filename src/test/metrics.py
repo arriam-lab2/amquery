@@ -1,6 +1,5 @@
-from ..lib.metrics import *
+from lib.metrics import *
 import random
-import time
 
 # TODO create normal unit-test
 

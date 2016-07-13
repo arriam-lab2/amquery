@@ -1,5 +1,7 @@
 import numpy as np
-from ..lib import vptree
+from lib import vptree
+
+print("vptree test: ", end="")
 
 n = 1000
 x = np.random.uniform(0, 10, n)
@@ -13,3 +15,5 @@ for p in points:
 
 # print(nns.dfs())
 # print(vptree.dfs())
+
+print("passed")
