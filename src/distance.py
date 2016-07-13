@@ -26,12 +26,12 @@ def calc_distance_matrix(kmer_mapping: Mapping, k: int,
 def make_kmer_data_mapping(config, input_dirs: str, k: int) -> dict:
     kmer_mapping = dict()
     for dirname in input_dirs:
-        if not config.quiet:
+        if not config.temp.quiet:
             print("Processing ", dirname, "...")
 
         input_basename = (os.path.basename(os.path.split(dirname)[0]))
         kmer_output_dir = iof.make_sure_exists(
-            os.path.join(config.working_directory, input_basename + ".kmers." +
+            os.path.join(config.workon, input_basename + ".kmers." +
                          str(k))
         )
 
@@ -46,10 +46,10 @@ def make_kmer_data_mapping(config, input_dirs: str, k: int) -> dict:
 
 def run(config, input_dirs, kmer_size, distance):
     input_dirs = [iof.normalize(d) for d in input_dirs]
-    output_file = os.path.join(config.working_directory,
+    output_file = os.path.join(config.workon,
                                distance + '_' + str(kmer_size) + '.txt')
 
-    if (not os.path.isfile(output_file)) or config.force:
+    if (not os.path.isfile(output_file)) or config.temp.force:
         kmer_mapping = make_kmer_data_mapping(config, input_dirs,
                                               kmer_size)
 

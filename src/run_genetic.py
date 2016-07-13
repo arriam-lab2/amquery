@@ -6,8 +6,8 @@ import random
 import click
 import numpy as np
 
-from src.lib import ga
-from src.lib.iof import read_distance_matrix
+from lib import ga
+from lib.iof import read_distance_matrix
 
 
 class CoordSystem(ga.Individual):

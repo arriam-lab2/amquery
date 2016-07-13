@@ -3,6 +3,9 @@
 import click
 import os
 import pickle
+from bunch import Bunch
+import json
+
 import testing
 import distance as mdist
 import lib.prebuild as pre
@@ -10,23 +13,40 @@ import lib.iof as iof
 import lib.vptree as vptree
 
 
-class Config(object):
-    def __init__(self):
-        pass
+class Config(Bunch):
+    def __init__(self, *args, **kwargs):
+        super(Config, self).__init__(*args, **kwargs)
+        self.temp = Bunch()
+        self.temp.config_path = '.mgns.config'
+
+    def load(self, workon: str):
+        self.workon = iof.make_sure_exists(workon)
+        if iof.exists(self.temp.config_path):
+            with open(self.temp.config_path) as data_file:
+                loaded_dict = json.load(data_file)
+                self.update(loaded_dict)
+
+    def save(self):
+        config_path = self.temp.config_path
+        del self.temp
+
+        with open(config_path, "w") as f:
+            print("", json.dumps(self), file=f)
+
 
 pass_config = click.make_pass_decorator(Config, ensure=True)
 
 
 @click.group()
-@click.option('--working-directory', default='./mgns_out/')
+@click.option('--workon', default='./.mgns/')
 @click.option('--force', '-f', is_flag=True,
               help='Force overwrite output directory')
 @click.option('--quiet', '-q', is_flag=True, help='Be quiet')
 @pass_config
-def cli(config, working_directory, force, quiet):
-    config.working_directory = iof.make_sure_exists(working_directory)
-    config.force = force
-    config.quiet = quiet
+def cli(config, workon, force, quiet):
+    config.load(workon)
+    config.temp.force = force
+    config.temp.quiet = quiet
 
 
 @cli.command()
@@ -48,6 +68,7 @@ def dist(config, input_dirs, single_file, kmer_size, distance):
         input_dirs = [iof.normalize(d) for d in input_dirs]
 
     mdist.run(config, input_dirs, kmer_size, distance)
+    config.save()
 
 
 @cli.command()
@@ -82,8 +103,8 @@ def build(config, pwmatrix, test_size, coord_system, distance):
 @pass_config
 def filter(config, input_dirs, single_file, max_samples,
            min, cut, threshold):
-    if config.force:
-        iof.clear_dir(config.working_directory)
+    if config.temp.force:
+        iof.clear_dir(config.workon)
 
     filtered_dirs = pre.filter_reads(config, input_dirs,
                                      min, None, cut, threshold)
@@ -103,9 +124,9 @@ def filter(config, input_dirs, single_file, max_samples,
               required=True)
 @pass_config
 def test(config, dist, unifrac_file):
-    dist_tree_file = os.path.join(config.working_directory,
+    dist_tree_file = os.path.join(config.workon,
                                   dist + '_tree.p')
-    dist_train_file = os.path.join(config.working_directory,
+    dist_train_file = os.path.join(config.workon,
                                    dist + '_train.p')
 
     with open(dist_tree_file, 'rb') as treef:
@@ -145,11 +166,23 @@ def search(config):
 
 
 @cli.command()
+@click.argument('name', type=str, required=True)
 @pass_config
-def stats(config):
-    # TODO:
-    # parse arguments, run length/count.py
-    raise NotImplementedError("Not implemented yet")
+def init(config: Config, name: str):
+    index_path = os.path.join(config.workon, name)
+    iof.make_sure_exists(index_path)
+
+
+@cli.command()
+@click.argument('name', type=str, required=True)
+@pass_config
+def use(config: Config, name: str):
+    index_path = os.path.join(config.workon, name)
+    if not iof.exists(index_path):
+        print('No such index:', name)
+
+    config.current_index = index_path
+    config.flush()
 
 
 if __name__ == "__main__":

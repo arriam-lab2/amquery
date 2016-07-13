@@ -16,6 +16,10 @@ def all_files(dirlist: List[str]) -> List[str]:
             if os.path.isfile(os.path.join(dirname, f))]
 
 
+def exists(path: str):
+    return os.path.exists(path)
+
+
 def make_sure_exists(path: str):
     if not os.path.exists(path):
         os.makedirs(path)
