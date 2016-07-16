@@ -5,7 +5,6 @@ import os
 import pickle
 from bunch import Bunch
 
-import testing
 import distance as mdist
 import lib.prebuild as pre
 import lib.iof as iof
