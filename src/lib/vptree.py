@@ -122,8 +122,7 @@ def build(config, distance, labels, pwmatrix, test_size):
 
     vptree = VpTree(train, distance)
 
-    output_file = os.path.join(config.workon, config.current_index,
-                               'tree.p')
+    output_file = config.get_vptree_path()
     pickle.dump(vptree, open(output_file, "wb"))
 
     train_output = os.path.join(config.workon, config.current_index,

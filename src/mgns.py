@@ -42,6 +42,17 @@ class Config(Bunch):
             else:
                 self[k] = v
 
+    def get_pwmatrix_path(self):
+        return os.path.join(self.workon, self.current_index,
+                            self.dist.func + "_" +
+                            str(self.dist.kmer_size) + ".txt")
+
+    def get_coordsys_path(self):
+        raise NotImplementedError()
+
+    def get_vptree_path(self):
+        return os.path.join(self.workon, self.current_index,
+                            'vptree.p')
 
 pass_config = click.make_pass_decorator(Config, ensure=True)
 
@@ -89,21 +100,14 @@ def dist(config, input_dirs, single_file, kmer_size, distance):
 @cli.command()
 @click.option('--pwmatrix', '-m', type=click.Path(exists=True),
               help='A distance matrix file')
-@click.option('--test-size', type=float, default=0.0)
 @click.option('--coord-system', '-c', type=click.Path(exists=True),
               required=True)
 @pass_config
-def build(config: Config, pwmatrix, test_size, coord_system):
-    if not pwmatrix:
-        pwmatrix = os.path.join(config.workon, config.current_index,
-                                config.dist.func + "_" +
-                                str(config.dist.kmer_size) + ".txt")
-
-    input_file = pwmatrix
-    labels, pwmatrix = iof.read_distance_matrix(input_file)
+def build(config: Config, pwmatrix: str, coord_system: str):
+    pwmatrix_path = pwmatrix or config.get_pwmatrix_path()
+    labels, pwmatrix = iof.read_distance_matrix(pwmatrix_path)
     cs_system = iof.read_coords(coord_system)
-    vptree.dist(config, cs_system, labels, pwmatrix, test_size)
-
+    vptree.dist(config, cs_system, labels, pwmatrix)
     config.save()
 
 
