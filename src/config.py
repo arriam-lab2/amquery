@@ -8,7 +8,7 @@ import lib.iof as iof
 
 class ConfigBase(Bunch):
     def __init__(self, *args, **kwargs):
-        super(Config, self).__init__(*args, **kwargs)
+        super(ConfigBase, self).__init__(*args, **kwargs)
         self.temp = Bunch()
         self.temp.config_path = '.mgns.config'
 
