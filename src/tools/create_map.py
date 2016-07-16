@@ -3,7 +3,7 @@
 import click
 import os
 import os.path
-import src.lib.iof as iof
+import lib.iof as iof
 import random
 
 

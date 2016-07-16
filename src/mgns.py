@@ -3,30 +3,28 @@
 import click
 import os
 import pickle
+from bunch import Bunch
+
 import testing
 import distance as mdist
 import lib.prebuild as pre
 import lib.iof as iof
 import lib.vptree as vptree
-
-
-class Config(object):
-    def __init__(self):
-        pass
+from config import Config
 
 pass_config = click.make_pass_decorator(Config, ensure=True)
 
 
 @click.group()
-@click.option('--working-directory', default='./mgns_out/')
+@click.option('--workon', default='./.mgns/')
 @click.option('--force', '-f', is_flag=True,
               help='Force overwrite output directory')
 @click.option('--quiet', '-q', is_flag=True, help='Be quiet')
 @pass_config
-def cli(config, working_directory, force, quiet):
-    config.working_directory = iof.make_sure_exists(working_directory)
-    config.force = force
-    config.quiet = quiet
+def cli(config, workon, force, quiet):
+    config.load(workon)
+    config.temp.force = force
+    config.temp.quiet = quiet
 
 
 @cli.command()
@@ -40,6 +38,12 @@ def cli(config, working_directory, force, quiet):
               default='jsd', help='A distance metric')
 @pass_config
 def dist(config, input_dirs, single_file, kmer_size, distance):
+    if "current_index" not in config:
+        print("There is no index created. Run 'mgns init' or 'mgns use' first")
+        return
+
+    config.dist = Bunch()
+
     if single_file:
         input_file = input_dirs[0]
         input_dir = pre.split(config, input_file)
@@ -48,24 +52,21 @@ def dist(config, input_dirs, single_file, kmer_size, distance):
         input_dirs = [iof.normalize(d) for d in input_dirs]
 
     mdist.run(config, input_dirs, kmer_size, distance)
+    config.save()
 
 
 @cli.command()
 @click.option('--pwmatrix', '-m', type=click.Path(exists=True),
-              help='A distance matrix file', required=True)
-@click.option('--test-size', type=float, default=0.0)
+              help='A distance matrix file')
 @click.option('--coord-system', '-c', type=click.Path(exists=True),
               required=True)
-@click.option('--distance', '-d', type=click.Choice(mdist.distances.keys()),
-              default='jsd', help='A distance metric')
 @pass_config
-def build(config, pwmatrix, test_size, coord_system, distance):
-    input_file = pwmatrix
-    labels, pwmatrix = iof.read_distance_matrix(input_file)
+def build(config: Config, pwmatrix: str, coord_system: str):
+    pwmatrix_path = pwmatrix or config.get_pwmatrix_path()
+    labels, pwmatrix = iof.read_distance_matrix(pwmatrix_path)
     cs_system = iof.read_coords(coord_system)
-    vptree.dist(config, labels, pwmatrix, test_size, distance)
-    vptree.csdist(config, cs_system, labels, pwmatrix,
-                  test_size, 'cs_' + distance)
+    vptree.dist(config, cs_system, labels, pwmatrix)
+    config.save()
 
 
 @cli.command()
@@ -83,8 +84,8 @@ def build(config, pwmatrix, test_size, coord_system, distance):
 @pass_config
 def filter(config, input_dirs, single_file, max_samples,
            min, cut, threshold):
-    if config.force:
-        iof.clear_dir(config.working_directory)
+    if config.temp.force:
+        iof.clear_dir(config.workon)
 
     filtered_dirs = pre.filter_reads(config, input_dirs,
                                      min, None, cut, threshold)
@@ -104,9 +105,9 @@ def filter(config, input_dirs, single_file, max_samples,
               required=True)
 @pass_config
 def test(config, dist, unifrac_file):
-    dist_tree_file = os.path.join(config.working_directory,
+    dist_tree_file = os.path.join(config.workon,
                                   dist + '_tree.p')
-    dist_train_file = os.path.join(config.working_directory,
+    dist_train_file = os.path.join(config.workon,
                                    dist + '_train.p')
 
     with open(dist_tree_file, 'rb') as treef:
@@ -115,55 +116,35 @@ def test(config, dist, unifrac_file):
     with open(dist_train_file, 'rb') as trainf:
         train_labels = pickle.load(trainf)
 
-    cs_tree_file = os.path.join(config.working_directory,
-                                'cs_' + dist + '_tree.p')
-    cs_train_file = os.path.join(config.working_directory,
-                                 'cs_' + dist + '_train.p')
-
-    with open(cs_tree_file, 'rb') as treef:
-        cs_tree = pickle.load(treef)
-
-    with open(cs_train_file, 'rb') as trainf:
-        cs_train_labels = pickle.load(trainf)
-
     labels, pwmatrix = iof.read_distance_matrix(unifrac_file)
     k_values = range(3, len(train_labels))
 
     testing.dist(config, dist_tree, train_labels, labels,
                  pwmatrix, k_values, 'dist.txt')
-    testing.dist(config, cs_tree, cs_train_labels,
-                 labels, pwmatrix, k_values, 'cs_dist.txt')
     testing.baseline(config, dist_tree, train_labels,
                      labels, pwmatrix, k_values)
 
 
 @cli.command()
+@click.argument('name', type=str, required=True)
 @pass_config
-def learn(config):
-    # TODO:
-    # 1. make sure there is proper qiime output files
-    # 2. make sure there is a pwmatrix file
-    # 3. run a network
-
-    raise NotImplementedError("Not implemented yet")
+def init(config: Config, name: str):
+    index_path = os.path.join(config.workon, name)
+    iof.make_sure_exists(index_path)
+    config.current_index = name
+    config.save()
 
 
 @cli.command()
+@click.argument('name', type=str, required=True)
 @pass_config
-def search(config):
-    # TODO:
-    # 1. make sure there is a pwmatrix file (result of nns build)
-    # 2. make sure there is a result from nns learn (k value)
-    # 2. run vptree.py (search)
-    raise NotImplementedError("Not implemented yet")
+def use(config: Config, name: str):
+    index_path = os.path.join(config.workon, name)
+    if not iof.exists(index_path):
+        print('No such index:', name)
 
-
-@cli.command()
-@pass_config
-def stats(config):
-    # TODO:
-    # parse arguments, run length/count.py
-    raise NotImplementedError("Not implemented yet")
+    config.current_index = name
+    config.save()
 
 
 if __name__ == "__main__":
