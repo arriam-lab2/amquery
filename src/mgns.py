@@ -2,7 +2,6 @@
 
 import click
 import os
-import pickle
 from bunch import Bunch
 
 import distance as mdist
@@ -19,11 +18,15 @@ pass_config = click.make_pass_decorator(Config, ensure=True)
 @click.option('--force', '-f', is_flag=True,
               help='Force overwrite output directory')
 @click.option('--quiet', '-q', is_flag=True, help='Be quiet')
+@click.option('--njobs', '-n', type=int, default=1,
+              help='Number of jobs to start in parallel')
 @pass_config
-def cli(config, workon, force, quiet):
+def cli(config: Config, workon: str, force: bool,
+        quiet: bool, njobs: int):
     config.load(workon)
     config.temp.force = force
     config.temp.quiet = quiet
+    config.temp.njobs = njobs
 
 
 @cli.command()
