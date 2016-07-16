@@ -99,33 +99,6 @@ def filter(config, input_dirs, single_file, max_samples,
 
 
 @cli.command()
-@click.option('--dist', '-d', type=click.Choice(mdist.distances.keys()),
-              default='jsd')
-@click.option('--unifrac-file', '-f', type=click.Path(exists=True),
-              required=True)
-@pass_config
-def test(config, dist, unifrac_file):
-    dist_tree_file = os.path.join(config.workon,
-                                  dist + '_tree.p')
-    dist_train_file = os.path.join(config.workon,
-                                   dist + '_train.p')
-
-    with open(dist_tree_file, 'rb') as treef:
-        dist_tree = pickle.load(treef)
-
-    with open(dist_train_file, 'rb') as trainf:
-        train_labels = pickle.load(trainf)
-
-    labels, pwmatrix = iof.read_distance_matrix(unifrac_file)
-    k_values = range(3, len(train_labels))
-
-    testing.dist(config, dist_tree, train_labels, labels,
-                 pwmatrix, k_values, 'dist.txt')
-    testing.baseline(config, dist_tree, train_labels,
-                     labels, pwmatrix, k_values)
-
-
-@cli.command()
 @click.argument('name', type=str, required=True)
 @pass_config
 def init(config: Config, name: str):
