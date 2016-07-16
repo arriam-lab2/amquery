@@ -31,8 +31,8 @@ def make_kmer_data_mapping(config, input_dirs: str, k: int) -> dict:
 
         input_basename = (os.path.basename(os.path.split(dirname)[0]))
         kmer_output_dir = iof.make_sure_exists(
-            os.path.join(config.workon, input_basename + ".kmers." +
-                         str(k))
+            os.path.join(config.workon, config.current_index,
+                         input_basename + ".kmers." + str(k))
         )
 
         sample_files = [os.path.join(dirname, f)
@@ -49,7 +49,7 @@ def run(config, input_dirs, kmer_size, distance):
     config.dist.kmer_size = kmer_size
 
     input_dirs = [iof.normalize(d) for d in input_dirs]
-    output_file = os.path.join(config.workon,
+    output_file = os.path.join(config.workon, config.current_index,
                                distance + '_' + str(kmer_size) + '.txt')
 
     if (not os.path.isfile(output_file)) or config.temp.force:

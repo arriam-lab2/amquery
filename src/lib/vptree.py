@@ -114,7 +114,7 @@ def nearest_neighbors(vptree: VpTree, x: Point, k: int) -> list:
     return tree
 
 
-def build(config, distance, labels, pwmatrix, test_size, output_prefix):
+def build(config, distance, labels, pwmatrix, test_size):
     lables_idx = list(range(len(labels)))
     train_size = int(len(lables_idx) * (1 - test_size))
     train_idx = random.sample(lables_idx, train_size)
@@ -122,17 +122,17 @@ def build(config, distance, labels, pwmatrix, test_size, output_prefix):
 
     vptree = VpTree(train, distance)
 
-    output_file = os.path.join(config.workon,
-                               output_prefix + '_tree.p')
+    output_file = os.path.join(config.workon, config.current_index,
+                               'tree.p')
     pickle.dump(vptree, open(output_file, "wb"))
 
-    train_output = os.path.join(config.workon,
-                                output_prefix + '_train.p')
+    train_output = os.path.join(config.workon, config.current_index,
+                                'train.p')
     pickle.dump(train, open(train_output, "wb"))
     return vptree, train
 
 
-def dist(config, coord_system, labels, pwmatrix, test_size, output_prefix):
+def dist(config, coord_system, labels, pwmatrix, test_size):
     labels_map = dict(zip(labels, range(len(labels))))
     distance = CsDistance(labels_map, coord_system, pwmatrix)
-    return build(config, distance, labels, pwmatrix, test_size, output_prefix)
+    return build(config, distance, labels, pwmatrix, test_size)

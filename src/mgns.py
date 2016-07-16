@@ -3,8 +3,9 @@
 import click
 import os
 import pickle
-from bunch import Bunch
 import json
+from bunch import Bunch
+from typing import Mapping
 
 import testing
 import distance as mdist
@@ -32,6 +33,14 @@ class Config(Bunch):
 
         with open(config_path, "w") as f:
             print("", json.dumps(self), file=f)
+
+    def update(self, dictionary: Mapping):
+        for k, v in dictionary.items():
+            if type(v) == dict:
+                self[k] = Bunch()
+                self[k].update(v)
+            else:
+                self[k] = v
 
 
 pass_config = click.make_pass_decorator(Config, ensure=True)
@@ -79,19 +88,21 @@ def dist(config, input_dirs, single_file, kmer_size, distance):
 
 @cli.command()
 @click.option('--pwmatrix', '-m', type=click.Path(exists=True),
-              help='A distance matrix file', required=True)
+              help='A distance matrix file')
 @click.option('--test-size', type=float, default=0.0)
 @click.option('--coord-system', '-c', type=click.Path(exists=True),
               required=True)
-@click.option('--distance', '-d', type=click.Choice(mdist.distances.keys()),
-              default='jsd', help='A distance metric')
 @pass_config
-def build(config, pwmatrix, test_size, coord_system, distance):
+def build(config: Config, pwmatrix, test_size, coord_system):
+    if not pwmatrix:
+        pwmatrix = os.path.join(config.workon, config.current_index,
+                                config.dist.func + "_" +
+                                str(config.dist.kmer_size) + ".txt")
+
     input_file = pwmatrix
     labels, pwmatrix = iof.read_distance_matrix(input_file)
     cs_system = iof.read_coords(coord_system)
-    vptree.dist(config, cs_system, labels, pwmatrix,
-                test_size, distance)
+    vptree.dist(config, cs_system, labels, pwmatrix, test_size)
 
     config.save()
 
