@@ -20,6 +20,10 @@ def exists(path: str):
     return os.path.exists(path)
 
 
+def is_empty(filename: str):
+    return os.path.getsize(filename) == 0
+
+
 def make_sure_exists(path: str):
     if not os.path.exists(path):
         os.makedirs(path)

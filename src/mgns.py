@@ -9,6 +9,7 @@ import lib.prebuild as pre
 import lib.iof as iof
 import lib.vptree as vptree
 from config import Config
+from tools import format_check as fc
 
 pass_config = click.make_pass_decorator(Config, ensure=True)
 
@@ -52,6 +53,8 @@ def dist(config, input_dirs, single_file, kmer_size, distance):
         input_dirs = [input_dir]
     else:
         input_dirs = [iof.normalize(d) for d in input_dirs]
+
+    fc.format_check(input_dirs)
 
     mdist.run(config, input_dirs, kmer_size, distance)
     config.save()
