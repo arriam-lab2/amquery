@@ -1,7 +1,6 @@
 from typing import Callable, Iterable, List, Sequence
 import itertools
 import os
-import multiprocessing as mp
 
 
 N_JOBS = int(os.getenv("PWM_JOBS", 1))

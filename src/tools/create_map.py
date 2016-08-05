@@ -66,7 +66,7 @@ def create_map(dirlist, output_file):
 @click.option('--output_dir', '-o', help='Output directory',
               required=True)
 def run(input_dirs, output_dir):
-    input_dirs = [os.path.join(x, '') for x in input_dirs]
+    input_dirs = [iof.normalize(d) for d in input_dirs]
     output_dir = os.path.join(output_dir, '')
     output_file = os.path.join(output_dir, "map.txt")
     iof.make_sure_exists(output_dir)

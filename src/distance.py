@@ -8,6 +8,7 @@ from lib import iof
 from lib.dist import kmerize_samples, LoadApply
 from lib.metrics import jaccard, generalized_jaccard, jsd, bray_curtis
 from lib.pwcomp import pwmatrix
+from config import Config
 
 
 distances = {'jaccard': jaccard, 'jsd': jsd, 'bc': bray_curtis,
@@ -23,7 +24,7 @@ def calc_distance_matrix(kmer_mapping: Mapping, k: int,
     return labels, pwmatrix(func, kmer_mapping.values())
 
 
-def make_kmer_data_mapping(config, input_dirs: str, k: int) -> dict:
+def make_kmer_data_mapping(config: Config, input_dirs: str, k: int) -> dict:
     kmer_mapping = dict()
     for dirname in input_dirs:
         if not config.temp.quiet:
@@ -39,7 +40,8 @@ def make_kmer_data_mapping(config, input_dirs: str, k: int) -> dict:
                         for f in os.listdir(dirname)
                         if os.path.isfile(os.path.join(dirname, f))]
 
-        kmer_mapping.update(kmerize_samples(sample_files, kmer_output_dir, k))
+        kmer_mapping.update(kmerize_samples(sample_files, kmer_output_dir,
+                                            k, config.temp.njobs))
 
     return kmer_mapping
 

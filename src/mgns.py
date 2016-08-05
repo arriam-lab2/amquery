@@ -2,15 +2,14 @@
 
 import click
 import os
-import pickle
 from bunch import Bunch
 
-import testing
 import distance as mdist
 import lib.prebuild as pre
 import lib.iof as iof
 import lib.vptree as vptree
 from config import Config
+from tools import format_check as fc
 
 pass_config = click.make_pass_decorator(Config, ensure=True)
 
@@ -20,11 +19,15 @@ pass_config = click.make_pass_decorator(Config, ensure=True)
 @click.option('--force', '-f', is_flag=True,
               help='Force overwrite output directory')
 @click.option('--quiet', '-q', is_flag=True, help='Be quiet')
+@click.option('--njobs', '-n', type=int, default=1,
+              help='Number of jobs to start in parallel')
 @pass_config
-def cli(config, workon, force, quiet):
+def cli(config: Config, workon: str, force: bool,
+        quiet: bool, njobs: int):
     config.load(workon)
     config.temp.force = force
     config.temp.quiet = quiet
+    config.temp.njobs = njobs
 
 
 @cli.command()
@@ -50,6 +53,8 @@ def dist(config, input_dirs, single_file, kmer_size, distance):
         input_dirs = [input_dir]
     else:
         input_dirs = [iof.normalize(d) for d in input_dirs]
+
+    fc.format_check(input_dirs)
 
     mdist.run(config, input_dirs, kmer_size, distance)
     config.save()
@@ -96,33 +101,6 @@ def filter(config, input_dirs, single_file, max_samples,
                 "--single-file is not implemented yet")
         else:
             pre.rarefy(config, filtered_dirs, max_samples)
-
-
-@cli.command()
-@click.option('--dist', '-d', type=click.Choice(mdist.distances.keys()),
-              default='jsd')
-@click.option('--unifrac-file', '-f', type=click.Path(exists=True),
-              required=True)
-@pass_config
-def test(config, dist, unifrac_file):
-    dist_tree_file = os.path.join(config.workon,
-                                  dist + '_tree.p')
-    dist_train_file = os.path.join(config.workon,
-                                   dist + '_train.p')
-
-    with open(dist_tree_file, 'rb') as treef:
-        dist_tree = pickle.load(treef)
-
-    with open(dist_train_file, 'rb') as trainf:
-        train_labels = pickle.load(trainf)
-
-    labels, pwmatrix = iof.read_distance_matrix(unifrac_file)
-    k_values = range(3, len(train_labels))
-
-    testing.dist(config, dist_tree, train_labels, labels,
-                 pwmatrix, k_values, 'dist.txt')
-    testing.baseline(config, dist_tree, train_labels,
-                     labels, pwmatrix, k_values)
 
 
 @cli.command()

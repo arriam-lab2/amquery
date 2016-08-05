@@ -7,8 +7,6 @@ from collections import Counter
 from typing import Mapping
 import functools
 
-from .work import N_JOBS
-
 
 class LoadApply:
     def __init__(self, func):
@@ -53,7 +51,7 @@ def load_kmer_index(counter_file: str) -> Counter:
 
 
 def kmerize_samples(sample_files: list, tempdir: str,
-                    kmer_size: int) -> Mapping:
+                    kmer_size: int, njobs: int) -> Mapping:
 
     mapping = dict()
     for sample_file in sample_files:
@@ -65,7 +63,7 @@ def kmerize_samples(sample_files: list, tempdir: str,
             # Jellyfish count
             tables_count = 10
             hash_size = "100M"
-            thread_num = N_JOBS
+            thread_num = njobs
             jellyfish_count(sample_file, kmer_size, tables_count, hash_size,
                             thread_num, output_jf_file)
 
