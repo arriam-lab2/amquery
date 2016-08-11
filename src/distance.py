@@ -5,86 +5,19 @@ import numpy as np
 from typing import List, Callable, Mapping
 
 from lib import iof
-from lib.dist import kmerize_samples, LoadApply
+from lib.dist import SampleMap, LoadApply
 from lib.pwcomp import PwMatrix, PairwiseDistance
 from lib.config import Config
 
 
-def calc_distance_matrix(kmer_mapping: Mapping[str, str], k: int,
-                         distance_func: Callable) -> PwMatrix:
-
-    labels = list(kmer_mapping.keys())
-    func = LoadApply(distance_func)
-    return PairwiseDistance.calculate(func, kmer_mapping)
-
-
-def recalc_distance_matrix(kmer_mapping: Mapping[str, str], k: int,
-                           distance_func: Callable,
-                           pwmatrix: PwMatrix) -> PwMatrix:
-
-    func = LoadApply(distance_func)
-    return PairwiseDistance.add(func, pwmatrix, kmer_mapping.values())
-
-
-def make_kmer_data_mapping(config: Config, input_dirs: str) -> dict:
-    kmer_mapping = dict()
-    kmer_size = config.dist.kmer_size
-    for dirname in input_dirs:
-        if not config.temp.quiet:
-            print("Processing ", dirname, "...")
-
-        kmer_output_dir = iof.make_sure_exists(
-            os.path.join(config.workon, config.current_index,
-                         "kmers." + str(kmer_size))
-        )
-
-        sample_files = [os.path.join(dirname, f)
-                        for f in os.listdir(dirname)
-                        if os.path.isfile(os.path.join(dirname, f))]
-
-        kmer_mapping.update(kmerize_samples(sample_files, kmer_output_dir,
-                                            kmer_size, config.temp.njobs))
-
-    return kmer_mapping
-
-
-def create(config: Config, input_dirs: List[str],
-           kmer_size: int, distance: str):
-    config.dist.func = distance
-    config.dist.kmer_size = kmer_size
-
-    input_dirs = [iof.normalize(d) for d in input_dirs]
-    output_file = os.path.join(config.workon, config.current_index,
-                               distance + '_' + str(kmer_size) + '.txt')
-
-    if (not os.path.isfile(output_file)) or config.temp.force:
-        kmer_mapping = make_kmer_data_mapping(config, input_dirs)
-
-        #distance_func = distances[distance]
-        pwmatrix = calc_distance_matrix(kmer_mapping, kmer_size,
-                                        distance_func)
-        PairwiseDistance.save(pwmatrix, output_file)
-    else:
-        pwmatrix = PairwiseDistance.load(output_file)
-
-    return pwmatrix
-
 
 def add(config: Config, input_files: List[str]):
     kmer_size = config.dist.kmer_size
-    print("OK go adding", input_files)
     kmer_output_dir = iof.make_sure_exists(
         os.path.join(config.workon, config.current_index,
                      "kmers." + str(kmer_size))
     )
 
-    kmer_mapping = dict()
-    kmer_mapping.update(kmerize_samples(input_files, kmer_output_dir,
-                                        kmer_size, config.temp.njobs))
-
-    print("Got data mapping:")
-    print(kmer_mapping)
-    #distance_func = distances[config.dist.func]
     pwmatrix_file = os.path.join(config.workon, config.current_index,
                                  'pwmatrix.txt')
 
@@ -92,14 +25,9 @@ def add(config: Config, input_files: List[str]):
         open(pwmatrix_file, 'a').close()
 
     pwmatrix = PwMatrix.load(config, pwmatrix_file)
-    print(pwmatrix)
-    print("OLD pwmatrix:")
-    print(pwmatrix.__labels)
-    print(pwmatrix.__matrix)
-    pwmatrix = recalc_distance_matrix(kmer_mapping, kmer_size,
-                                      distance_func, pwmatrix)
 
-    print("NEW pwmatrix:")
-    print(pwmatrix.__labels)
-    print(pwmatrix.__matrix)
-    return labels, pwmatrix
+    sample_map = SampleMap.kmerize(config, input_files)
+    pwmatrix.add(sample_map)
+    pwmatrix.save()
+
+    return pwmatrix

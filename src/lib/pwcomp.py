@@ -8,6 +8,7 @@ from .work import N_JOBS
 from .ui import progress_bar
 from .config import Config
 from .metrics import distances
+from .dist import LoadApply, SampleMap
 
 
 class PackedTask:
@@ -22,9 +23,9 @@ class PackedTask:
 
 
 class PwMatrix:
-    def __init__(self, labels: List[str], matrix: np.ndarray,
+    def __init__(self, sample_map: SampleMap, matrix: np.ndarray,
                  filename: str, distance_func: Callable):
-        self.__labels = labels
+        self.__sample_map = sample_map
         self.__matrix = matrix
         self.__filename = filename
         self.__distfunc = distance_func
@@ -42,28 +43,33 @@ class PwMatrix:
             matrix = [list(map(float, l)) for l in matrix]
 
 
+        sample_map = SampleMap.reload(config, labels)
         distance_func = distances[config.dist.func]
-        return PwMatrix(labels, np.matrix(matrix), filename,
+        return PwMatrix(sample_map, np.matrix(matrix), filename,
                         distance_func)
 
 
     def save(self):
+        labels = self.__sample_map.labels()
         with open(self.__filename, "w") as f:
-            print("", *map(str, self.__labels), sep="\t", file=f)
-            for label, row in zip(self.__labels, self.__matrix):
+            print("", *map(str, labels), sep="\t", file=f)
+            for label, row in zip(labels, self.__matrix):
                 print(label, *map(str, row), sep="\t", file=f)
 
-    def add(self, new_samples: Mapping[str, str]):
-        raise NotImplementedError("")
-        all_labels = pwmatrix.labels + new_labels
-        old_pairs = list(itertools.combinations(pwmatrix.labels, 2))
-        new_pairs = [x for x in list(itertools.combinations(all_labels, 2))
+    def add(self, sample_map: SampleMap):
+        new_samples = list(sample_map.paths())
+        all_samples = list(self.__sample_map.paths()) + new_samples
+        old_pairs = list(itertools.combinations(self.__sample_map.paths(), 2))
+        new_pairs = [x for x in list(itertools.combinations(all_samples, 2))
                      if not x in old_pairs]
 
-        packed_task = PackedTask(self.__distfunc, queue)
-        result = pool.map_async(packed_task, pairs)
-        progress_bar(result, queue, len(pairs))
+        task = LoadApply(self.__distfunc)
+        packed_task = PackedTask(task, queue)
+        result = pool.map_async(packed_task, new_pairs)
+        progress_bar(result, queue, len(new_pairs))
 
+        self.__sample_map = sample_map
+        self.__matrix = scipy.spatial.distance.squareform(result.get())
 
 
     def __getitem__(self, row, column):
@@ -71,9 +77,14 @@ class PwMatrix:
         j = self.__labels.index(column)
         return self.__matrix[i, j]
 
+    def get_sample_map(self):
+        return self.__sample_map
+
+    def get_matrix(self):
+        return self.__matrix
+
 
 class PairwiseDistance:
-
     @staticmethod
     def calculate(func: Callable, mapping: Mapping[str, str]) -> PwMatrix:
         pairs = list(itertools.combinations(mapping.values(), 2))
@@ -82,7 +93,6 @@ class PairwiseDistance:
         progress_bar(result, queue, len(pairs))
         matrix = scipy.spatial.distance.squareform(result.get())
         return PwMatrix(mapping.keys(), matrix)
-
 
 
 

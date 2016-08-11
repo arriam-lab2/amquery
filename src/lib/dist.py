@@ -4,8 +4,56 @@ from subprocess import call
 import os
 from Bio import SeqIO
 from collections import Counter
-from typing import Mapping
+from typing import Mapping, List
 import functools
+
+from .config import Config
+from .iof import make_sure_exists
+
+
+class SampleMap:
+    def __init__(self):
+        self.mapping = dict()
+
+    @staticmethod
+    def kmerize(config: Config, sample_files: List[str]):
+        sample_map = SampleMap()
+        sample_map.mapping = dict()
+        kmer_size = config.dist.kmer_size
+
+        kmer_output_dir = make_sure_exists(
+            os.path.join(config.workon, config.current_index,
+                         "kmers." + str(kmer_size))
+        )
+
+        sample_map.mapping = kmerize_samples(sample_files,
+                                             kmer_output_dir,
+                                             kmer_size,
+                                             config.temp.njobs)
+        return sample_map
+
+
+    @staticmethod
+    def reload(config: Config, labels: List[str]):
+        kmers_dir = make_sure_exists(
+            os.path.join(config.workon, config.current_index,
+                         "kmers." + str(config.dist.kmer_size))
+        )
+        sample_map = SampleMap()
+        for label in labels:
+            sample_map.mapping[label] = os.path.join(kmers_dir,
+                                                     label + '.counter')
+
+        return sample_map
+
+    def __getitem__(self, sample_name: str) -> str:
+        return self.mapping[sample_name]
+
+    def labels(self):
+        return self.mapping.keys()
+
+    def paths(self):
+        return self.mapping.values()
 
 
 class LoadApply:
