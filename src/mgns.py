@@ -9,7 +9,8 @@ import distance as mdist
 import lib.prebuild as pre
 import lib.iof as iof
 import lib.vptree as vptree
-from config import Config
+from lib.config import Config
+from lib.metrics import distances
 from tools import format_check as fc
 
 pass_config = click.make_pass_decorator(Config, ensure=True)
@@ -32,14 +33,38 @@ def cli(config: Config, workon: str, force: bool,
 
 
 @cli.command()
+@click.argument('name', type=str, required=True)
+@click.option('--kmer_size', '-k', type=int, help='K-mer size',
+              default=50, required=True)
+@click.option('--distance', '-d', type=click.Choice(distances.keys()),
+              default='jsd', help='A distance metric')
+@pass_config
+def init(config: Config, name: str, kmer_size: int, distance: str):
+    index_path = os.path.join(config.workon, name)
+    iof.make_sure_exists(index_path)
+    config.current_index = name
+
+    config.dist = Bunch()
+    config.dist.func = distance
+    config.dist.kmer_size = kmer_size
+
+    config.save()
+
+
+@cli.command()
+@click.argument('input_files', type=click.Path(exists=True), nargs=-1,
+                required=True)
+@pass_config
+def add(config: Config, input_files: List[str]):
+    mdist.add(config, input_files)
+
+
+@cli.command()
 @click.argument('input_dirs', type=click.Path(exists=True), nargs=-1,
                 required=True)
 @click.option('--single-file', '-f', is_flag=True,
               help='A single file containing reads for all samples')
-@click.option('--kmer_size', '-k', type=int, help='K-mer size',
-              default=50, required=True)
-@click.option('--distance', '-d', type=click.Choice(mdist.distances.keys()),
-              default='jsd', help='A distance metric')
+
 @pass_config
 def dist(config, input_dirs, single_file, kmer_size, distance):
     if "current_index" not in config:
@@ -107,16 +132,6 @@ def filter(config, input_dirs, single_file, max_samples,
 @cli.command()
 @click.argument('name', type=str, required=True)
 @pass_config
-def init(config: Config, name: str):
-    index_path = os.path.join(config.workon, name)
-    iof.make_sure_exists(index_path)
-    config.current_index = name
-    config.save()
-
-
-@cli.command()
-@click.argument('name', type=str, required=True)
-@pass_config
 def use(config: Config, name: str):
     index_path = os.path.join(config.workon, name)
     if not iof.exists(index_path):
@@ -125,13 +140,6 @@ def use(config: Config, name: str):
     config.current_index = name
     config.save()
 
-
-@cli.command()
-@click.argument('input_files', type=click.Path(exists=True), nargs=-1,
-                required=True)
-@pass_config
-def add(config: Config, input_files: List[str]):
-    mdist.add(config, input_files)
 
 
 if __name__ == "__main__":

@@ -6,9 +6,11 @@ import multiprocessing as mp
 
 from .work import N_JOBS
 from .ui import progress_bar
+from .config import Config
+from .metrics import distances
 
 
-class Job:
+class PackedTask:
     def __init__(self, func: Callable, queue: mp.Queue):
         self.func = func
         self.queue = queue
@@ -20,19 +22,15 @@ class Job:
 
 
 class PwMatrix:
-    def __init__(self, labels: List[str], matrix: np.ndarray):
-        self.labels = labels
-        self.matrix = matrix
+    def __init__(self, labels: List[str], matrix: np.ndarray,
+                 filename: str, distance_func: Callable):
+        self.__labels = labels
+        self.__matrix = matrix
+        self.__filename = filename
+        self.__distfunc = distance_func
 
-    def __getitem__(self, row, column):
-        i = self.labels.index(row)
-        j = self.labels.index(column)
-        return self.matrix[i, j]
-
-
-class PairwiseDistance:
     @staticmethod
-    def load(filename: str):
+    def load(config: Config, filename: str):
         matrix = []
         with open(filename) as f:
             labels = f.readline()[:-1].split("\t")[1:]
@@ -43,19 +41,38 @@ class PairwiseDistance:
 
             matrix = [list(map(float, l)) for l in matrix]
 
-        return PwMatrix(labels, np.matrix(matrix))
+
+        distance_func = distances[config.dist.func]
+        return PwMatrix(labels, np.matrix(matrix), filename,
+                        distance_func)
 
 
-    @staticmethod
-    def save(pwmatrix: PwMatrix, filename: str):
-        labels = pwmatrix.labels
-        matrix = pwmatrix.matrix
-
-        with open(filename, "w") as f:
-            print("", *map(str, labels), sep="\t", file=f)
-            for label, row in zip(labels, matrix):
+    def save(self):
+        with open(self.__filename, "w") as f:
+            print("", *map(str, self.__labels), sep="\t", file=f)
+            for label, row in zip(self.__labels, self.__matrix):
                 print(label, *map(str, row), sep="\t", file=f)
 
+    def add(self, new_samples: Mapping[str, str]):
+        raise NotImplementedError("")
+        all_labels = pwmatrix.labels + new_labels
+        old_pairs = list(itertools.combinations(pwmatrix.labels, 2))
+        new_pairs = [x for x in list(itertools.combinations(all_labels, 2))
+                     if not x in old_pairs]
+
+        packed_task = PackedTask(self.__distfunc, queue)
+        result = pool.map_async(packed_task, pairs)
+        progress_bar(result, queue, len(pairs))
+
+
+
+    def __getitem__(self, row, column):
+        i = self.__labels.index(row)
+        j = self.__labels.index(column)
+        return self.__matrix[i, j]
+
+
+class PairwiseDistance:
 
     @staticmethod
     def calculate(func: Callable, mapping: Mapping[str, str]) -> PwMatrix:
@@ -66,22 +83,7 @@ class PairwiseDistance:
         matrix = scipy.spatial.distance.squareform(result.get())
         return PwMatrix(mapping.keys(), matrix)
 
-    @staticmethod
-    def append(func: Callable, pwmatrix: PwMatrix,
-               new_labels: Sequence[str]) -> PwMatrix:
 
-        all_labels = pwmatrix.labels + new_labels
-        old_pairs = list(itertools.combinations(pwmatrix.labels, 2))
-        new_pairs = [x for x in list(itertools.combinations(all_labels, 2))
-                     if not x in old_pairs]
-
-        f = Job(func, queue)
-        result = pool.map_async(f, pairs)
-        progress_bar(result, queue, len(pairs))
-        raise NotImplementedError("")
-        #print(result)
-        #pwmatrix = scipy.spatial.distance.squareform(result.get())
-        return PwMatrix(labels, pwmatrix)
 
 
 if __name__ == "__main__":

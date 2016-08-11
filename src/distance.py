@@ -6,13 +6,8 @@ from typing import List, Callable, Mapping
 
 from lib import iof
 from lib.dist import kmerize_samples, LoadApply
-from lib.metrics import jaccard, generalized_jaccard, jsd, bray_curtis
 from lib.pwcomp import PwMatrix, PairwiseDistance
-from config import Config
-
-
-distances = {'jaccard': jaccard, 'jsd': jsd, 'bc': bray_curtis,
-             'gji': generalized_jaccard}
+from lib.config import Config
 
 
 def calc_distance_matrix(kmer_mapping: Mapping[str, str], k: int,
@@ -28,7 +23,7 @@ def recalc_distance_matrix(kmer_mapping: Mapping[str, str], k: int,
                            pwmatrix: PwMatrix) -> PwMatrix:
 
     func = LoadApply(distance_func)
-    return PairwiseDistance.append(func, pwmatrix, kmer_mapping.values())
+    return PairwiseDistance.add(func, pwmatrix, kmer_mapping.values())
 
 
 def make_kmer_data_mapping(config: Config, input_dirs: str) -> dict:
@@ -65,7 +60,7 @@ def create(config: Config, input_dirs: List[str],
     if (not os.path.isfile(output_file)) or config.temp.force:
         kmer_mapping = make_kmer_data_mapping(config, input_dirs)
 
-        distance_func = distances[distance]
+        #distance_func = distances[distance]
         pwmatrix = calc_distance_matrix(kmer_mapping, kmer_size,
                                         distance_func)
         PairwiseDistance.save(pwmatrix, output_file)
@@ -89,23 +84,22 @@ def add(config: Config, input_files: List[str]):
 
     print("Got data mapping:")
     print(kmer_mapping)
-    distance_func = distances[config.dist.func]
+    #distance_func = distances[config.dist.func]
     pwmatrix_file = os.path.join(config.workon, config.current_index,
-                                 config.dist.func + '_' + str(kmer_size) +
-                                 '.txt')
+                                 'pwmatrix.txt')
 
-    pwmatrix = PairwiseDistance.load(pwmatrix_file)
+    if not iof.exists(pwmatrix_file):
+        open(pwmatrix_file, 'a').close()
 
-    print("OLD pwmatrix:")
-    print(labels)
+    pwmatrix = PwMatrix.load(config, pwmatrix_file)
     print(pwmatrix)
+    print("OLD pwmatrix:")
+    print(pwmatrix.__labels)
+    print(pwmatrix.__matrix)
     pwmatrix = recalc_distance_matrix(kmer_mapping, kmer_size,
                                       distance_func, pwmatrix)
 
     print("NEW pwmatrix:")
-    print(labels)
-    print(pwmatrix)
+    print(pwmatrix.__labels)
+    print(pwmatrix.__matrix)
     return labels, pwmatrix
-
-if __name__ == "__main__":
-    pass
