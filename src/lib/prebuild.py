@@ -63,7 +63,7 @@ def split(config, input_file: str):
             read_mapping[sample_name].append(seq_record)
 
     # creating a folder for splitted files
-    output_dir = os.path.join(config.working_directory,
+    output_dir = os.path.join(config.workon,
                               "splitted")
     output_dir = make_sure_exists(output_dir)
 

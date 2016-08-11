@@ -52,28 +52,6 @@ def clear(path):
     for f in files:
         os.remove(f)
 
-
-def write_distance_matrix(labels, dmatrix, fname):
-    with open(fname, "w") as f:
-        print("", *map(str, labels), sep="\t", file=f)
-        for label, row in zip(labels, dmatrix):
-            print(label, *map(str, row), sep="\t", file=f)
-
-
-def read_distance_matrix(filename: str):
-    dmatrix = []
-    with open(filename) as f:
-        keys = f.readline()[:-1].split("\t")[1:]
-
-        for line in f.readlines():
-            values = line[:-1].split("\t")[1:]
-            dmatrix.append(values)
-
-        dmatrix = [list(map(float, l)) for l in dmatrix]
-
-    return keys, np.matrix(dmatrix)
-
-
 def read_coords(filename: str) -> List[str]:
     return [line.rstrip('\n') for line in open(filename)]
 

@@ -3,6 +3,7 @@
 import click
 import os
 from bunch import Bunch
+from typing import List
 
 import distance as mdist
 import lib.prebuild as pre
@@ -56,7 +57,7 @@ def dist(config, input_dirs, single_file, kmer_size, distance):
 
     fc.format_check(input_dirs)
 
-    mdist.run(config, input_dirs, kmer_size, distance)
+    mdist.create(config, input_dirs, kmer_size, distance)
     config.save()
 
 
@@ -123,6 +124,14 @@ def use(config: Config, name: str):
 
     config.current_index = name
     config.save()
+
+
+@cli.command()
+@click.argument('input_files', type=click.Path(exists=True), nargs=-1,
+                required=True)
+@pass_config
+def add(config: Config, input_files: List[str]):
+    mdist.add(config, input_files)
 
 
 if __name__ == "__main__":
