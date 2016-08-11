@@ -1,4 +1,4 @@
-from typing import Sequence, Callable, List
+from typing import Sequence, Callable, List, Mapping
 import itertools
 import numpy as np
 import scipy.spatial.distance
@@ -58,14 +58,13 @@ class PairwiseDistance:
 
 
     @staticmethod
-    def calculate(func: Callable, labels: Sequence[str]) -> PwMatrix:
-        print("LABELS: ", labels)
-        pairs = list(itertools.combinations(labels, 2))
+    def calculate(func: Callable, mapping: Mapping[str, str]) -> PwMatrix:
+        pairs = list(itertools.combinations(mapping.values(), 2))
         f = Job(func, queue)
         result = pool.map_async(f, pairs)
         progress_bar(result, queue, len(pairs))
         matrix = scipy.spatial.distance.squareform(result.get())
-        return PwMatrix(labels, matrix)
+        return PwMatrix(mapping.keys(), matrix)
 
     @staticmethod
     def append(func: Callable, pwmatrix: PwMatrix,

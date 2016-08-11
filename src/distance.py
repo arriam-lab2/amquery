@@ -15,15 +15,15 @@ distances = {'jaccard': jaccard, 'jsd': jsd, 'bc': bray_curtis,
              'gji': generalized_jaccard}
 
 
-def calc_distance_matrix(kmer_mapping: Mapping, k: int,
+def calc_distance_matrix(kmer_mapping: Mapping[str, str], k: int,
                          distance_func: Callable) -> PwMatrix:
 
     labels = list(kmer_mapping.keys())
     func = LoadApply(distance_func)
-    return PairwiseDistance.calculate(func, kmer_mapping.values())
+    return PairwiseDistance.calculate(func, kmer_mapping)
 
 
-def recalc_distance_matrix(kmer_mapping: Mapping, k: int,
+def recalc_distance_matrix(kmer_mapping: Mapping[str, str], k: int,
                            distance_func: Callable,
                            pwmatrix: PwMatrix) -> PwMatrix:
 
