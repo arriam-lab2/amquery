@@ -6,45 +6,42 @@ from Bio import SeqIO
 from collections import Counter
 from typing import Mapping, List
 import functools
+import pickle
 
 from .config import Config
 from .iof import make_sure_exists
 
 
 class SampleMap(Mapping):
-    def __init__(self):
+    def __init__(self, config: Config):
         self.mapping = dict()
+        self.config = config
 
     @staticmethod
     def kmerize(config: Config, sample_files: List[str]):
-        sample_map = SampleMap()
+        sample_map = SampleMap(config)
         sample_map.mapping = dict()
         kmer_size = config.dist.kmer_size
 
-        kmer_output_dir = make_sure_exists(
-            os.path.join(config.workon, config.current_index,
-                         "kmers." + str(kmer_size))
-        )
-
         sample_map.mapping = kmerize_samples(sample_files,
-                                             kmer_output_dir,
+                                             config.get_kmers_dir(),
                                              kmer_size,
                                              config.temp.njobs)
         return sample_map
 
 
     @staticmethod
-    def reload(config: Config, labels: List[str]):
-        kmers_dir = make_sure_exists(
-            os.path.join(config.workon, config.current_index,
-                         "kmers." + str(config.dist.kmer_size))
-        )
-        sample_map = SampleMap()
-        for label in labels:
-            sample_map.mapping[label] = os.path.join(kmers_dir,
-                                                     label + '.counter')
+    def load(config: Config):
+        try:
+            with open(config.get_sample_map_path(), 'rb') as f:
+                sample_map = pickle.load(f)
+        except IOError:
+            sample_map = SampleMap(config)
 
         return sample_map
+
+    def save(self):
+        pickle.dump(self, open(self.config.get_sample_map_path(), "wb"))
 
     def __getitem__(self, sample_name: str) -> str:
         return self.mapping[sample_name]

@@ -11,6 +11,9 @@ import lib.iof as iof
 import lib.vptree as vptree
 from lib.config import Config
 from lib.metrics import distances
+from lib.dist import SampleMap
+from lib.pwcomp import PwMatrix
+from lib.index import Index
 from tools import format_check as fc
 
 pass_config = click.make_pass_decorator(Config, ensure=True)
@@ -56,6 +59,10 @@ def init(config: Config, name: str, kmer_size: int, distance: str):
                 required=True)
 @pass_config
 def add(config: Config, input_files: List[str]):
+    if "current_index" not in config:
+        print("There is no index created. Run 'mgns init' or 'mgns use' first")
+        return
+
     if not hasattr(config, "index"):
         config.index = Bunch()
         config.index.sample_map_file = "sample_map.p"
@@ -64,46 +71,10 @@ def add(config: Config, input_files: List[str]):
     mdist.add(config, input_files)
 
 
-
 @cli.command()
-@click.argument('input_dirs', type=click.Path(exists=True), nargs=-1,
-                required=True)
-@click.option('--single-file', '-f', is_flag=True,
-              help='A single file containing reads for all samples')
-
 @pass_config
-def dist(config, input_dirs, single_file, kmer_size, distance):
-    if "current_index" not in config:
-        print("There is no index created. Run 'mgns init' or 'mgns use' first")
-        return
-
-    config.dist = Bunch()
-
-    if single_file:
-        input_file = input_dirs[0]
-        input_dir = pre.split(config, input_file)
-        input_dirs = [input_dir]
-    else:
-        input_dirs = [iof.normalize(d) for d in input_dirs]
-
-    fc.format_check(input_dirs)
-
-    mdist.create(config, input_dirs, kmer_size, distance)
-    config.save()
-
-
-@cli.command()
-@click.option('--pwmatrix', '-m', type=click.Path(exists=True),
-              help='A distance matrix file')
-@click.option('--coord-system', '-c', type=click.Path(exists=True),
-              required=True)
-@pass_config
-def build(config: Config, pwmatrix: str, coord_system: str):
-    pwmatrix_path = pwmatrix or config.get_pwmatrix_path()
-    labels, pwmatrix = iof.read_distance_matrix(pwmatrix_path)
-    cs_system = iof.read_coords(coord_system)
-    vptree.dist(config, cs_system, labels, pwmatrix)
-    config.save()
+def build(config: Config):
+    index = Index.build(config)
 
 
 @cli.command()

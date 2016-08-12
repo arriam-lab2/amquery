@@ -50,3 +50,7 @@ class Config(ConfigBase):
     def get_sample_map_path(self):
         return os.path.join(self.workon, self.current_index,
                             'sample_map.p')
+
+    def get_kmers_dir(self):
+        return os.path.join(self.workon, self.current_index,
+                            "kmers." + str(self.dist.kmer_size))

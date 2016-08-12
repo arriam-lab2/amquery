@@ -31,7 +31,23 @@ class PwMatrix:
         self.__distfunc = distance_func
 
     @staticmethod
-    def load(config: Config, filename: str):
+    def calculate(config: Config, sample_map: SampleMap):
+        pairs = list(itertools.combinations(sample_map.paths(), 2))
+        distance_func = distances[config.dist.func]
+
+        task = LoadApply(distance_func)
+        packed_task = PackedTask(task, queue)
+
+        result = pool.map_async(packed_task, pairs)
+        progress_bar(result, queue, len(pairs))
+
+        matrix = scipy.spatial.distance.squareform(result.get())
+        return PwMatrix(sample_map, matrix, config.get_pwmatrix_path(),
+                        distances[config.dist.func])
+
+    @staticmethod
+    def load(config: Config):
+        filename = config.get_pwmatrix_path()
         matrix = []
         with open(filename) as f:
             labels = f.readline()[:-1].split("\t")[1:]
@@ -57,17 +73,6 @@ class PwMatrix:
                 print(label, *map(str, row), sep="\t", file=f)
 
 
-    def recalc(self, sample_map: SampleMap):
-        pairs = list(itertools.combinations(sample_map.paths(), 2))
-        task = LoadApply(self.__distfunc)
-        packed_task = PackedTask(task, queue)
-        result = pool.map_async(packed_task, new_pairs)
-        progress_bar(result, queue, len(new_pairs))
-
-        self.__sample_map = sample_map
-        self.__matrix = scipy.spatial.distance.squareform(result.get())
-
-
     def __getitem__(self, row, column):
         i = self.__labels.index(row)
         j = self.__labels.index(column)
@@ -78,18 +83,6 @@ class PwMatrix:
 
     def matrix(self):
         return self.__matrix
-
-
-class PairwiseDistance:
-    @staticmethod
-    def calculate(func: Callable, mapping: Mapping[str, str]) -> PwMatrix:
-        pairs = list(itertools.combinations(mapping.values(), 2))
-        f = Job(func, queue)
-        result = pool.map_async(f, pairs)
-        progress_bar(result, queue, len(pairs))
-        matrix = scipy.spatial.distance.squareform(result.get())
-        return PwMatrix(mapping.keys(), matrix)
-
 
 
 if __name__ == "__main__":
