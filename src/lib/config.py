@@ -38,8 +38,7 @@ class ConfigBase(Bunch):
 class Config(ConfigBase):
     def get_pwmatrix_path(self):
         return os.path.join(self.workon, self.current_index,
-                            self.dist.func + "_" +
-                            str(self.dist.kmer_size) + ".txt")
+                            "pwmatrix.txt")
 
     def get_coordsys_path(self):
         raise NotImplementedError()
@@ -47,3 +46,7 @@ class Config(ConfigBase):
     def get_vptree_path(self):
         return os.path.join(self.workon, self.current_index,
                             'vptree.p')
+
+    def get_sample_map_path(self):
+        return os.path.join(self.workon, self.current_index,
+                            'sample_map.p')

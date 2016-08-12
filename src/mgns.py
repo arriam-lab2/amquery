@@ -56,7 +56,13 @@ def init(config: Config, name: str, kmer_size: int, distance: str):
                 required=True)
 @pass_config
 def add(config: Config, input_files: List[str]):
+    if not hasattr(config, "index"):
+        config.index = Bunch()
+        config.index.sample_map_file = "sample_map.p"
+        config.save()
+
     mdist.add(config, input_files)
+
 
 
 @cli.command()

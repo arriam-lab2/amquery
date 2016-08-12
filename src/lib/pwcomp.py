@@ -56,13 +56,9 @@ class PwMatrix:
             for label, row in zip(labels, self.__matrix):
                 print(label, *map(str, row), sep="\t", file=f)
 
-    def add(self, sample_map: SampleMap):
-        new_samples = list(sample_map.paths())
-        all_samples = list(self.__sample_map.paths()) + new_samples
-        old_pairs = list(itertools.combinations(self.__sample_map.paths(), 2))
-        new_pairs = [x for x in list(itertools.combinations(all_samples, 2))
-                     if not x in old_pairs]
 
+    def recalc(self, sample_map: SampleMap):
+        pairs = list(itertools.combinations(sample_map.paths(), 2))
         task = LoadApply(self.__distfunc)
         packed_task = PackedTask(task, queue)
         result = pool.map_async(packed_task, new_pairs)
@@ -77,10 +73,10 @@ class PwMatrix:
         j = self.__labels.index(column)
         return self.__matrix[i, j]
 
-    def get_sample_map(self):
+    def sample_map(self):
         return self.__sample_map
 
-    def get_matrix(self):
+    def matrix(self):
         return self.__matrix
 
 

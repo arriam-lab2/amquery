@@ -11,7 +11,7 @@ from .config import Config
 from .iof import make_sure_exists
 
 
-class SampleMap:
+class SampleMap(Mapping):
     def __init__(self):
         self.mapping = dict()
 
@@ -48,6 +48,23 @@ class SampleMap:
 
     def __getitem__(self, sample_name: str) -> str:
         return self.mapping[sample_name]
+
+    def __setitem__(self, key, value):
+        self.mapping[key] = value
+
+    def __len__(self):
+        return self.mapping.len
+
+    def items(self):
+        return self.mapping.items()
+
+    def update(self, other=None, **kwargs):
+        if other is not None:
+            for k, v in other.items() if isinstance(other, Mapping) else other:
+                self[k] = v
+
+        for k, v in kwargs.items():
+            self[k] = v
 
     def labels(self):
         return self.mapping.keys()
