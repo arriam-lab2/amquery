@@ -46,7 +46,10 @@ class PwMatrix:
                         distances[config.dist.func])
 
     @staticmethod
-    def load(config: Config):
+    def load(config: Config, sample_map: SampleMap = None):
+        if not sample_map:
+            sample_map = SampleMap.load(config)
+
         filename = config.get_pwmatrix_path()
         matrix = []
         with open(filename) as f:
@@ -59,7 +62,6 @@ class PwMatrix:
             matrix = [list(map(float, l)) for l in matrix]
 
 
-        sample_map = SampleMap.reload(config, labels)
         distance_func = distances[config.dist.func]
         return PwMatrix(sample_map, np.matrix(matrix), filename,
                         distance_func)
@@ -78,10 +80,16 @@ class PwMatrix:
         j = self.__labels.index(column)
         return self.__matrix[i, j]
 
-    def sample_map(self):
+    @property
+    def sample_map(self) -> SampleMap:
         return self.__sample_map
 
-    def matrix(self):
+    @property
+    def labels(self) -> List[str]:
+        return self.sample_map.labels
+
+    @property
+    def matrix(self) -> np.matrix:
         return self.__matrix
 
 

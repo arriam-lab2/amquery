@@ -72,8 +72,42 @@ def add(config: Config, input_files: List[str]):
 
 
 @cli.command()
+@click.option('--coord_system_size', '-k', type=int, help='Coord system size',
+              required=True)
+@click.option('--generations', '-n', type=int, help='Number of generations',
+              default=1000)
+@click.option('--mutation_rate', '-m', type=float, help='Mutation rate',
+              default=0.1)
+@click.option('--population_size', '-p', type=int, help='Population size',
+              default=100)
+@click.option('--select_rate', '-s', type=float,
+              help='Fraction of best individuals to select on each generation',
+              default=0.25)
+@click.option('--random_select_rate', '-r', type=float,
+              help='Fraction of random individuals to select \
+              on each generation', default=0.1)
+@click.option('--legend_size', '-l', type=int,
+              help='Count of best individuals to keep tracking', default=15)
+@click.option('--idle_threshold', '-i', type=int,
+              help='Number of iterations to \
+              continue the evolution at local minimum', default=5)
 @pass_config
-def build(config: Config):
+def build(config: Config, coord_system_size: int, generations: int,
+          mutation_rate: float, population_size: int,
+          select_rate: float, random_select_rate: float,
+          legend_size: int, idle_threshold: int):
+
+    config.genetic = Bunch()
+    config.genetic.coord_system_size = coord_system_size
+    config.genetic.generations = generations
+    config.genetic.mutation_rate = mutation_rate
+    config.genetic.population_size = population_size
+    config.genetic.select_rate = select_rate
+    config.genetic.random_select_rate = random_select_rate
+    config.genetic.legend_size = legend_size
+    config.genetic.idle_threshold = idle_threshold
+    config.save()
+
     index = Index.build(config)
 
 

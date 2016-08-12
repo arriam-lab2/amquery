@@ -50,7 +50,7 @@ class SampleMap(Mapping):
         self.mapping[key] = value
 
     def __len__(self):
-        return self.mapping.len
+        return len(self.mapping)
 
     def items(self):
         return self.mapping.items()
@@ -63,9 +63,11 @@ class SampleMap(Mapping):
         for k, v in kwargs.items():
             self[k] = v
 
+    @property
     def labels(self):
         return self.mapping.keys()
 
+    @property
     def paths(self):
         return self.mapping.values()
 

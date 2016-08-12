@@ -2,15 +2,7 @@ from .config import Config
 from .dist import SampleMap
 from .pwcomp import PwMatrix
 from .vptree import VpTree
-
-class CoordSystem(list):
-    @staticmethod
-    def load(config: Config):
-        return CoordSystem()
-
-    @staticmethod
-    def calculate(config: Config):
-        return CoordSystem()
+from .coord_system import CoordSystem
 
 class Index:
     def __init__(self,
@@ -36,7 +28,11 @@ class Index:
     @staticmethod
     def build(config: Config):
         sample_map = SampleMap.load(config)
-        pwmatrix = PwMatrix.calculate(config, sample_map)
+
+        #pwmatrix = PwMatrix.calculate(config, sample_map)
+        #pwmatrix.save()
+        pwmatrix = PwMatrix.load(config, sample_map)
+
         coord_system = CoordSystem.calculate(config)
         vptree = VpTree.build(config, coord_system, pwmatrix)
         return Index(config, sample_map, pwmatrix, coord_system, vptree)
