@@ -46,6 +46,7 @@ class CsDistance:
         return euclidean(x, y)
 
 
+
 # Vantage-point tree
 class VpTree:
     def __init__(self, points: np.array, func: Callable):
