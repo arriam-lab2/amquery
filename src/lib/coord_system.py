@@ -70,9 +70,9 @@ class CoordSystem(list):
             last = best[0]
 
         #print()
-        #print(best[1].chromosome)
+        #print(best[1].genome)
 
-        self = [pwmatrix.labels[i] for i in best[1].chromosome]
+        self = [pwmatrix.labels[i] for i in best[1].genome]
 
 
     @staticmethod
@@ -87,11 +87,10 @@ class CoordSystem(list):
 class Engine:
 
     def __init__(self, names):
-        self.names = np.array(names)
+        self.names = np.array(list(names))
 
     def __call__(self, val=None, chromosome=None):
-        pool = self.names
-        elem = random.choice(pool)
+        elem = random.choice(self.names)
         idx = np.where(self.names == elem)[0][0]
         return val if chromosome and idx in chromosome else idx
 
@@ -136,7 +135,7 @@ class Fitness:
         self.names = names
 
     def __call__(self, indiv):
-        return self._total_partcorr(indiv.chromosome)
+        return self._total_partcorr(indiv.genome)
 
     def _choose(self, names_idx):
         outer_idx = list(set(np.arange(len(self.names))) - set(names_idx))
