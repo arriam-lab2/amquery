@@ -18,6 +18,16 @@ from tools import format_check as fc
 
 pass_config = click.make_pass_decorator(Config, ensure=True)
 
+def _index_check(config: Config):
+    if "current_index" not in config:
+        raise ValueError("There is no index created. Run 'mgns init' \
+                         or 'mgns use' first")
+
+def _build_check(config: Config):
+    if not config.built:
+        raise ValueError("First you have to build the index. Run \
+                         'mgns build'")
+
 
 @click.group()
 @click.option('--workon', default='./.mgns/')
@@ -51,6 +61,7 @@ def init(config: Config, name: str, kmer_size: int, distance: str):
     config.dist.func = distance
     config.dist.kmer_size = kmer_size
 
+    config.built = "false"
     config.save()
 
 
@@ -59,9 +70,7 @@ def init(config: Config, name: str, kmer_size: int, distance: str):
                 required=True)
 @pass_config
 def add(config: Config, input_files: List[str]):
-    if "current_index" not in config:
-        print("There is no index created. Run 'mgns init' or 'mgns use' first")
-        return
+    _index_check(config)
 
     if not hasattr(config, "index"):
         config.index = Bunch()
@@ -75,7 +84,16 @@ def add(config: Config, input_files: List[str]):
 @pass_config
 def build(config: Config):
     index = Index.build(config)
+    config.built = "true"
 
+
+@cli.command()
+@pass_config
+def append(config: Config, input_files: List[str]):
+    _index_check(config)
+    _build_check(config)
+    mdist.append(config, input_files)
+    
 
 @cli.command()
 @click.argument('input_dirs', type=click.Path(exists=True), nargs=-1,
