@@ -2,15 +2,8 @@ from .config import Config
 from .dist import SampleMap
 from .pwcomp import PwMatrix
 from .vptree import VpTree
+from .coord_system import CoordSystem
 
-class CoordSystem(list):
-    @staticmethod
-    def load(config: Config):
-        return CoordSystem()
-
-    @staticmethod
-    def calculate(config: Config):
-        return CoordSystem()
 
 class Index:
     def __init__(self,

@@ -8,13 +8,13 @@ from typing import List
 import distance as mdist
 import lib.prebuild as pre
 import lib.iof as iof
-import lib.vptree as vptree
 from lib.config import Config
 from lib.metrics import distances
 from lib.dist import SampleMap
 from lib.pwcomp import PwMatrix
 from lib.index import Index
 from tools import format_check as fc
+
 
 pass_config = click.make_pass_decorator(Config, ensure=True)
 
@@ -93,7 +93,7 @@ def append(config: Config, input_files: List[str]):
     _index_check(config)
     _build_check(config)
     mdist.append(config, input_files)
-    
+
 
 @cli.command()
 @click.argument('input_dirs', type=click.Path(exists=True), nargs=-1,

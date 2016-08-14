@@ -7,6 +7,10 @@ import pickle
 import os
 from typing import Callable, Mapping, List
 
+from .pwcomp import PwMatrix
+from .coord_system import CoordSystem
+from .config import Config
+
 
 class Point:
     pass
@@ -19,26 +23,33 @@ class Sample(Point):
 
 
 class Distance:
-    def __init__(self, labels_map: Mapping, matrix: np.ndarray):
-        self.map = labels_map
-        self.matrix = matrix
+    def __init__(self,
+                 dist_function: Callable,
+                 precalc: PwMatrix):
+        self.dist_function = dist_function
+        self.map = dict(zip(pwmatrix.labels, range(len(pwmatrix.labels))))
+        self.precalc = precalc
 
     def __call__(self, a: Point, b: Point):
-        return self.matrix[self.map[a], self.map[b]]
+        if a in self.precalc.labels and b in self.precalc.labels:
+            return self.precalc.pwmatrix[self.map[a], self.map[b]]
+        else:
+            raise NotImplementedError()
 
 
 def euclidean(a: np.ndarray, b: np.ndarray):
     return np.linalg.norm(a - b)
 
 
-# Distance in a proper coordinate system
+# Euclidean distance in a proper coordinate system
 class CsDistance:
-    def __init__(self, labels_map: Mapping, coord_system: List[str],
-                 matrix: np.ndarray):
-        self.map = labels_map
-        self.matrix = matrix
+    def __init__(self,
+                 dist_function: Callable,
+                 coord_system: CoordSystem,
+                 pwmatrix: PwMatrix):
+
         self.coord_system = coord_system
-        self.dist = Distance(labels_map, matrix)
+        self.dist = Distance(dist_function, PwMatrix.matrix)
 
     def __call__(self, a: Point, b: Point):
         x = np.array([self.dist(a, c) for c in self.coord_system])
@@ -82,6 +93,35 @@ class VpTree:
                 self.right = VpTree(rightside, func)
                 self.size += self.right.size
 
+
+    def save(self, config: Config):
+        vptree_file = config.get_vptree_path()
+        pickle.dump(vptree, open(vptree_file, "wb"))
+
+    @staticmethod
+    def load(config: Config):
+        with open(config.get_vptree_path(), 'rb') as f:
+            vptree = pickle.load(f)
+            return vptree
+
+    @staticmethod
+    def build(config: Config,
+              coord_system: CoordSystem = None,
+              pwmatrix: PwMatrix = None):
+
+        if not coord_system:
+            coord_system = CoordSystem.load(config)
+
+        if not pwmatrix:
+            pwmatrix = PwMatrix.load(config)
+
+        distance = CsDistance(coord_system, pwmatrix)
+
+        vptree = VpTree(labels, distance)
+        vptree.save(config)
+        return vptree
+
+
     # depth-first search
     def dfs(self) -> list:
         result = []
@@ -92,6 +132,10 @@ class VpTree:
 
         result.append(self.vp)
         return result
+
+
+    def insert(self, sample):
+        pass
 
 
 def nearest_neighbors(vptree: VpTree, x: Point, k: int) -> list:
@@ -112,18 +156,3 @@ def nearest_neighbors(vptree: VpTree, x: Point, k: int) -> list:
             return tree
 
     return tree
-
-
-def build(config, distance, labels, pwmatrix):
-    vptree = VpTree(labels, distance)
-
-    output_file = config.get_vptree_path()
-    pickle.dump(vptree, open(output_file, "wb"))
-
-    return vptree
-
-
-def dist(config, coord_system, labels, pwmatrix):
-    labels_map = dict(zip(labels, range(len(labels))))
-    distance = CsDistance(labels_map, coord_system, pwmatrix)
-    return build(config, distance, labels, pwmatrix)
