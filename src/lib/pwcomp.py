@@ -8,7 +8,7 @@ from .work import N_JOBS
 from .ui import progress_bar
 from .config import Config
 from .metrics import distances
-from .dist import LoadApply, SampleMap
+from .sample_map import SampleMap
 
 
 class PackedTask:

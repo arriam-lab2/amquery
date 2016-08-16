@@ -5,12 +5,11 @@ import os
 from bunch import Bunch
 from typing import List
 
-import distance as mdist
 import lib.prebuild as pre
 import lib.iof as iof
 from lib.config import Config
 from lib.metrics import distances
-from lib.dist import SampleMap
+from lib.sample_map import SampleMap
 from lib.pwcomp import PwMatrix
 from lib.index import Index
 from tools import format_check as fc

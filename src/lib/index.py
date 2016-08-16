@@ -1,7 +1,7 @@
 from typing import List
 
 from .config import Config
-from .dist import SampleMap
+from .sample_map import SampleMap
 from .pwcomp import PwMatrix
 from .vptree import VpTree
 from .coord_system import CoordSystem
