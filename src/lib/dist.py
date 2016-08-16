@@ -12,64 +12,31 @@ from .config import Config
 from .iof import make_sure_exists
 
 
-class SampleMap(Mapping):
-    def __init__(self, config: Config):
-        self.mapping = dict()
-        self.config = config
-
-    @staticmethod
-    def kmerize(config: Config, sample_files: List[str]):
-        sample_map = SampleMap(config)
-        sample_map.mapping = dict()
-        kmer_size = config.dist.kmer_size
-
-        sample_map.mapping = kmerize_samples(sample_files,
-                                             config.get_kmers_dir(),
-                                             kmer_size,
-                                             config.temp.njobs)
-        return sample_map
-
+class SampleMap(dict):
+    def register(self, config: Config, sample_files: List[str]):
+        self.update(kmerize_samples(config, sample_files))
+        return self
 
     @staticmethod
     def load(config: Config):
         try:
-            with open(config.get_sample_map_path(), 'rb') as f:
+            with open(config.sample_map_path, 'rb') as f:
                 sample_map = pickle.load(f)
         except IOError:
-            sample_map = SampleMap(config)
+            sample_map = SampleMap()
 
         return sample_map
 
     def save(self):
-        pickle.dump(self, open(self.config.get_sample_map_path(), "wb"))
-
-    def __getitem__(self, sample_name: str) -> str:
-        return self.mapping[sample_name]
-
-    def __setitem__(self, key, value):
-        self.mapping[key] = value
-
-    def __len__(self):
-        return len(self.mapping)
-
-    def items(self):
-        return self.mapping.items()
-
-    def update(self, other=None, **kwargs):
-        if other is not None:
-            for k, v in other.items() if isinstance(other, Mapping) else other:
-                self[k] = v
-
-        for k, v in kwargs.items():
-            self[k] = v
+        pickle.dump(self, open(self.config.sample_map_path, "wb"))
 
     @property
     def labels(self):
-        return self.mapping.keys()
+        return self.keys()
 
     @property
     def paths(self):
-        return self.mapping.values()
+        return self.values()
 
 
 class LoadApply:
@@ -114,26 +81,27 @@ def load_kmer_index(counter_file: str) -> Counter:
     return counter
 
 
-def kmerize_samples(sample_files: list, tempdir: str,
-                    kmer_size: int, njobs: int) -> Mapping:
+def kmerize_samples(config: Config, sample_files: List[str]) -> Mapping:
+    make_sure_exists(config.kmers_dir)
 
     mapping = dict()
     for sample_file in sample_files:
         shortname = os.path.split(sample_file)[1]
         sample_name, _ = os.path.splitext(shortname)
-        output_jf_file = os.path.join(tempdir, sample_name + ".jf")
+        output_jf_file = os.path.join(config.kmers_dir,
+                                      sample_name + ".jf")
 
         if not os.path.exists(output_jf_file):
-            # Jellyfish count
-            tables_count = 10
-            hash_size = "100M"
-            thread_num = njobs
-            jellyfish_count(sample_file, kmer_size, tables_count, hash_size,
-                            thread_num, output_jf_file)
+            jellyfish_count(sample_file,
+                            config.dist.kmer_size,
+                            config.jellyfish.tables_count,
+                            config.jellyfish.hash_size,
+                            config.temp.njobs,
+                            output_jf_file)
 
-        output_counter_file = os.path.join(tempdir, sample_name + ".counter")
+        output_counter_file = os.path.join(config.kmers_dir,
+                                           sample_name + ".counter")
         if not os.path.exists(output_counter_file):
-            # Jellyfish dump
             jellyfish_dump(output_jf_file, output_counter_file)
 
         mapping[sample_name] = output_counter_file

@@ -16,7 +16,7 @@ def add_to_sample_map(config: Config, input_files: List[str]):
     sample_map = SampleMap.load(config)
     sample_map.update(SampleMap.kmerize(config, input_files))
     sample_map.save()
-    
+
 def add_to_vptree(config: Config, input_files: List[str]):
     raise NotImplementedError()
     #vptree = VpTree.load(config)

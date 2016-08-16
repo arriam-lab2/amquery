@@ -32,7 +32,7 @@ class PwMatrix:
 
     @staticmethod
     def calculate(config: Config, sample_map: SampleMap):
-        pairs = list(itertools.combinations(sample_map.paths(), 2))
+        pairs = list(itertools.combinations(sample_map.paths, 2))
         distance_func = distances[config.dist.func]
 
         task = LoadApply(distance_func)
@@ -42,7 +42,7 @@ class PwMatrix:
         progress_bar(result, queue, len(pairs))
 
         matrix = scipy.spatial.distance.squareform(result.get())
-        return PwMatrix(sample_map, matrix, config.get_pwmatrix_path(),
+        return PwMatrix(sample_map, matrix, config.pwmatrix_path,
                         distances[config.dist.func])
 
     @staticmethod
@@ -50,7 +50,7 @@ class PwMatrix:
         if not sample_map:
             sample_map = SampleMap.load(config)
 
-        filename = config.get_pwmatrix_path()
+        filename = config.pwmatrix_path
         matrix = []
         with open(filename) as f:
             labels = f.readline()[:-1].split("\t")[1:]
@@ -68,7 +68,7 @@ class PwMatrix:
 
 
     def save(self):
-        labels = self.__sample_map.labels()
+        labels = self.__sample_map.labels
         with open(self.__filename, "w") as f:
             print("", *map(str, labels), sep="\t", file=f)
             for label, row in zip(labels, self.__matrix):

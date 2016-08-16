@@ -87,8 +87,9 @@ def check_file(filename: str):
         print("Renaming", filename)
         os.rename(filename, new_name)
 
+    return new_name
 
-def format_check(input_dirs: List[str]):
-    files = iof.all_files(input_dirs)
-    for f in files:
-        check_file(f)
+
+def format_check(input_files: List[str]):
+    new_filenames = [check_file(f) for f in input_files]
+    return new_filenames

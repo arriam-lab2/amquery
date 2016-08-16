@@ -1,3 +1,5 @@
+from typing import List
+
 from .config import Config
 from .dist import SampleMap
 from .pwcomp import PwMatrix
@@ -26,16 +28,23 @@ class Index:
         return Index(config, sample_map, pwmatrix, coord_sys)
 
     @staticmethod
-    def build(config: Config):
-        sample_map = SampleMap.load(config)
+    def build(config: Config, input_files: List[str]):
+        sample_map = SampleMap.load(config).register(config, input_files)
 
-        #pwmatrix = PwMatrix.calculate(config, sample_map)
-        #pwmatrix.save()
-        pwmatrix = PwMatrix.load(config, sample_map)
+        pwmatrix = PwMatrix.calculate(config, sample_map)
+        pwmatrix.save()
+        #pwmatrix = PwMatrix.load(config, sample_map)
 
         coord_system = CoordSystem.calculate(config)
         vptree = VpTree.build(config, coord_system, pwmatrix)
         return Index(config, sample_map, pwmatrix, coord_system, vptree)
+
+    @staticmethod
+    def _add_samples(config: Config, input_files: List[str]) -> SampleMap:
+        sample_map = SampleMap.load(config)
+        sample_map.update(SampleMap.kmerize(config, input_files))
+        sample_map.save()
+        return sample_map
 
     @property
     def sample_map(self) -> SampleMap:

@@ -36,21 +36,27 @@ class ConfigBase(Bunch):
 
 
 class Config(ConfigBase):
-    def get_pwmatrix_path(self):
-        return os.path.join(self.workon, self.current_index,
-                            "pwmatrix.txt")
+    @property
+    def index_path(self):
+        return os.path.join(self.workon, self.current_index)
 
-    def get_coordsys_path(self):
-        raise NotImplementedError()
+    @property
+    def pwmatrix_path(self):
+        return os.path.join(self.index_path, "pwmatrix.txt")
 
-    def get_vptree_path(self):
-        return os.path.join(self.workon, self.current_index,
-                            'vptree.p')
+    @property
+    def coordsys_path(self):
+        raise os.path.join(self.index_path, "coord_system.txt")
 
-    def get_sample_map_path(self):
-        return os.path.join(self.workon, self.current_index,
-                            'sample_map.p')
+    @property
+    def vptree_path(self):
+        return os.path.join(self.index_path, "vptree.p")
 
-    def get_kmers_dir(self):
-        return os.path.join(self.workon, self.current_index,
+    @property
+    def sample_map_path(self):
+        return os.path.join(self.index_path, "sample_map.p")
+
+    @property
+    def kmers_dir(self):
+        return os.path.join(self.index_path,
                             "kmers." + str(self.dist.kmer_size))

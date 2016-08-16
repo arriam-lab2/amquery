@@ -72,6 +72,9 @@ def init(config: Config, name: str, kmer_size: int, distance: str):
 def add(config: Config, input_files: List[str]):
     _index_check(config)
 
+    raise NotImplementedError()
+
+
     if not hasattr(config, "index"):
         config.index = Bunch()
         config.index.sample_map_file = "sample_map.p"
@@ -81,6 +84,8 @@ def add(config: Config, input_files: List[str]):
 
 
 @cli.command()
+@click.argument('input_files', type=click.Path(exists=True), nargs=-1,
+              required=True)
 @click.option('--coord_system_size', '-k', type=int, help='Coord system size',
               required=True)
 @click.option('--generations', '-n', type=int, help='Number of generations',
@@ -100,11 +105,15 @@ def add(config: Config, input_files: List[str]):
 @click.option('--idle_threshold', '-i', type=int,
               help='Number of iterations to \
               continue the evolution at local minimum', default=5)
+
 @pass_config
-def build(config: Config, coord_system_size: int, generations: int,
-          mutation_rate: float, population_size: int,
+def build(config: Config,
+          input_files: List[str], coord_system_size: int,
+          generations: int, mutation_rate: float, population_size: int,
           select_rate: float, random_select_rate: float,
           legend_size: int, idle_threshold: int):
+
+    _index_check(config)
 
     config.genetic = Bunch()
     config.genetic.coord_system_size = coord_system_size
@@ -115,10 +124,16 @@ def build(config: Config, coord_system_size: int, generations: int,
     config.genetic.random_select_rate = random_select_rate
     config.genetic.legend_size = legend_size
     config.genetic.idle_threshold = idle_threshold
-    config.save()
 
-    index = Index.build(config)
+    config.jellyfish = Bunch()
+    config.jellyfish.tables_count = 10
+    config.jellyfish.hash_size = "100M"
+
+    input_files = fc.format_check(input_files)
+    index = Index.build(config, input_files)
+
     config.built = "true"
+    config.save()
 
 
 @cli.command()
