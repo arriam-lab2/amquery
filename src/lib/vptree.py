@@ -97,6 +97,16 @@ class VpTree:
                 self.right = VpTree(rightside, func)
                 self.size += self.right.size
 
+    def insert(self, point: int):
+        if len(points) == 0:
+            self.vp = points
+        else:
+            if self.func(point, self.vp) <= self.median:
+                self.left.insert(point)
+            else:
+                self.right.insert(point)
+
+        self.size += 1
 
     def save(self):
         if not hasattr(self, 'config'):
@@ -134,6 +144,10 @@ class VpTree:
         return vptree
 
 
+    def add(self, input_files: List[str]):
+        raise NotImplementedError()
+
+
     # depth-first search
     def dfs(self) -> list:
         result = []
@@ -144,10 +158,6 @@ class VpTree:
 
         result.append(self.vp)
         return result
-
-
-    def insert(self, sample):
-        pass
 
 
 def nearest_neighbors(vptree: VpTree, x: Point, k: int) -> list:
