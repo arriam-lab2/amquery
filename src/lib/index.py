@@ -2,7 +2,7 @@ from typing import List
 
 from .config import Config
 from .sample_map import SampleMap
-from .pwcomp import PwMatrix
+from .distance import PwMatrix
 from .vptree import VpTree
 from .coord_system import CoordSystem
 

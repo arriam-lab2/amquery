@@ -3,12 +3,36 @@ import itertools
 import numpy as np
 import scipy.spatial.distance
 import multiprocessing as mp
+from collections import Counter
+from Bio import SeqIO
+import functools
 
 from .work import N_JOBS
 from .ui import progress_bar
 from .config import Config
 from .metrics import distances
 from .sample_map import SampleMap
+
+
+class LoadApply:
+    def __init__(self, func: Callable):
+        self.func = func
+
+    def __call__(self, x_kmer_file: str, y_kmer_file: str):
+        xcounter = LoadApply._load_kmer_index(x_kmer_file)
+        ycounter = LoadApply._load_kmer_index(y_kmer_file)
+        return self.func(xcounter, ycounter)
+
+    @staticmethod
+    @functools.lru_cache(maxsize=32)
+    def _load_kmer_index(counter_file: str) -> Counter:
+        counter = Counter()
+        seqs = SeqIO.parse(open(counter_file), "fasta")
+        for seq_record in seqs:
+            count, sequence = seq_record.id, str(seq_record.seq)
+            counter[sequence] = int(count)
+
+        return counter
 
 
 class PackedTask:

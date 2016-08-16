@@ -11,7 +11,7 @@ from genetic.individuals import SingleChromosomeIndividual
 from genetic.populations import PanmicticPopulation
 from genetic.selection import bimodal
 
-from lib.pwcomp import PwMatrix
+from lib.distance import PwMatrix
 from lib.config import Config
 
 

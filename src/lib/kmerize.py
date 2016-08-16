@@ -1,32 +1,9 @@
-import functools
 import os
-from Bio import SeqIO
-from collections import Counter
+from subprocess import call
 from typing import Callable, List, Mapping
 
 from .iof import make_sure_exists
 from .config import Config
-
-
-class LoadApply:
-    def __init__(self, func: Callable):
-        self.func = func
-
-    def __call__(self, x_kmer_file: str, y_kmer_file: str):
-        xcounter = LoadApply._load_kmer_index(x_kmer_file)
-        ycounter = LoadApply._load_kmer_index(y_kmer_file)
-        return self.func(xcounter, ycounter)
-
-    @staticmethod
-    @functools.lru_cache(maxsize=32)
-    def _load_kmer_index(counter_file: str) -> Counter:
-        counter = Counter()
-        seqs = SeqIO.parse(open(counter_file), "fasta")
-        for seq_record in seqs:
-            count, sequence = seq_record.id, str(seq_record.seq)
-            counter[sequence] = int(count)
-
-        return counter
 
 
 class KmerCounter:

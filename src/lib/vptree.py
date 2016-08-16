@@ -7,7 +7,7 @@ import pickle
 import os
 from typing import Callable, Mapping, List
 
-from .pwcomp import PwMatrix
+from .distance import PwMatrix
 from .coord_system import CoordSystem
 from .config import Config
 from .metrics import distances

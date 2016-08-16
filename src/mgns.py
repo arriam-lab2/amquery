@@ -10,7 +10,7 @@ import lib.iof as iof
 from lib.config import Config
 from lib.metrics import distances
 from lib.sample_map import SampleMap
-from lib.pwcomp import PwMatrix
+from lib.distance import PwMatrix
 from lib.index import Index
 from tools import format_check as fc
 
@@ -46,19 +46,11 @@ def cli(config: Config, workon: str, force: bool,
 
 @cli.command()
 @click.argument('name', type=str, required=True)
-@click.option('--kmer_size', '-k', type=int, help='K-mer size',
-              default=50, required=True)
-@click.option('--distance', '-d', type=click.Choice(distances.keys()),
-              default='jsd', help='A distance metric')
 @pass_config
 def init(config: Config, name: str, kmer_size: int, distance: str):
     index_path = os.path.join(config.workon, name)
     iof.make_sure_exists(index_path)
     config.current_index = name
-
-    config.dist = Bunch()
-    config.dist.func = distance
-    config.dist.kmer_size = kmer_size
 
     config.built = "false"
     config.save()
@@ -85,7 +77,12 @@ def add(config: Config, input_files: List[str]):
 @cli.command()
 @click.argument('input_files', type=click.Path(exists=True), nargs=-1,
               required=True)
-@click.option('--coord_system_size', '-k', type=int, help='Coord system size',
+
+@click.option('--kmer_size', '-k', type=int, help='K-mer size',
+              default=50, required=True)
+@click.option('--distance', '-d', type=click.Choice(distances.keys()),
+              default='jsd', help='A distance metric')
+@click.option('--coord_system_size', '-c', type=int, help='Coord system size',
               required=True)
 @click.option('--generations', '-n', type=int, help='Number of generations',
               default=1000)
@@ -106,13 +103,17 @@ def add(config: Config, input_files: List[str]):
               continue the evolution at local minimum', default=5)
 
 @pass_config
-def build(config: Config,
+def build(config: Config, kmer_size: int, distance: str,
           input_files: List[str], coord_system_size: int,
           generations: int, mutation_rate: float, population_size: int,
           select_rate: float, random_select_rate: float,
           legend_size: int, idle_threshold: int):
 
     _index_check(config)
+
+    config.dist = Bunch()
+    config.dist.func = distance
+    config.dist.kmer_size = kmer_size
 
     config.genetic = Bunch()
     config.genetic.coord_system_size = coord_system_size
