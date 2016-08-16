@@ -3,7 +3,7 @@ from typing import List
 from .config import Config
 from .sample_map import SampleMap
 from .distance import PwMatrix
-from .vptree import VpTree
+from .vptree.vptree import VpTree
 from .coord_system import CoordSystem
 
 class Index:
@@ -46,10 +46,13 @@ class Index:
 
 
     def refine(self):
-        self.coord_system = CoordSystem.calculate(self.config, pwmatrix)
+        self._coord_system = CoordSystem.calculate(self.config,
+                                                   self.pwmatrix)
         self.coord_system.save()
 
-        self.vptree = VpTree.build(self.config, coord_system, pwmatrix)
+        self._vptree = VpTree.build(self.config,
+                                    self.coord_system,
+                                    self.pwmatrix)
         self.vptree.save()
 
     def add(self, input_files: List[str]):
@@ -74,3 +77,7 @@ class Index:
     @property
     def vptree(self) -> VpTree:
         return self._vptree
+
+    @property
+    def config(self) -> Config:
+        return self._config

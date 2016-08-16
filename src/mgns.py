@@ -187,7 +187,8 @@ def refine(config: Config, kmer_size: int, distance: str,
     config.jellyfish.tables_count = 10
     config.jellyfish.hash_size = "100M"
 
-    index = Index.refine(config)
+    index = Index.load(config)
+    index.refine()
 
     config.built = "true"
     config.save()
