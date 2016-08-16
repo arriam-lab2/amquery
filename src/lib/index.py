@@ -25,7 +25,8 @@ class Index:
         sample_map = SampleMap.load(config)
         pwmatrix = PwMatrix.load(config, sample_map)
         coord_sys = CoordSystem.load(config)
-        return Index(config, sample_map, pwmatrix, coord_sys)
+        vptree = VpTree.load(config)
+        return Index(config, sample_map, pwmatrix, coord_sys, vptree)
 
     @staticmethod
     def build(config: Config, input_files: List[str]):
@@ -43,26 +44,20 @@ class Index:
 
         return Index(config, sample_map, pwmatrix, coord_system, vptree)
 
-    @staticmethod
-    def refine(config: Config):
-        sample_map = SampleMap.load(config)
-        pwmatrix = PwMatrix.load(config, sample_map)
 
-        coord_system = CoordSystem.calculate(config, pwmatrix)
-        coord_system.save()
-        print(coord_system)
+    def refine(self):
+        self.coord_system = CoordSystem.calculate(self.config, pwmatrix)
+        self.coord_system.save()
 
-        vptree = VpTree.build(config, coord_system, pwmatrix)
-        vptree.save()
+        self.vptree = VpTree.build(self.config, coord_system, pwmatrix)
+        self.vptree.save()
 
-        return Index(config, sample_map, pwmatrix, coord_system, vptree)
+    def add(self, input_files: List[str]):
+        self.sample_map.register(input_files)
+        self.sample_map.save()
 
-    @staticmethod
-    def _add_samples(config: Config, input_files: List[str]) -> SampleMap:
-        sample_map = SampleMap.load(config)
-        sample_map.update(SampleMap.kmerize(config, input_files))
-        sample_map.save()
-        return sample_map
+        self.vptree.add(input_files)
+        self.vptree.save()
 
     @property
     def sample_map(self) -> SampleMap:
