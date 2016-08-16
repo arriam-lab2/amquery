@@ -30,13 +30,19 @@ class Index:
     @staticmethod
     def build(config: Config, input_files: List[str]):
         sample_map = SampleMap.load(config).register(config, input_files)
+        #sample_map.save()
 
-        pwmatrix = PwMatrix.calculate(config, sample_map)
-        pwmatrix.save()
-        #pwmatrix = PwMatrix.load(config, sample_map)
+        #pwmatrix = PwMatrix.calculate(config, sample_map)
+        #pwmatrix.save()
+        pwmatrix = PwMatrix.load(config, sample_map)
 
-        coord_system = CoordSystem.calculate(config)
+        #coord_system = CoordSystem.calculate(config, pwmatrix)
+        #coord_system.save()
+        coord_system = CoordSystem.load(config)
+        print(coord_system)
+
         vptree = VpTree.build(config, coord_system, pwmatrix)
+
         return Index(config, sample_map, pwmatrix, coord_system, vptree)
 
     @staticmethod

@@ -46,7 +46,7 @@ class Config(ConfigBase):
 
     @property
     def coordsys_path(self):
-        raise os.path.join(self.index_path, "coord_system.txt")
+        return os.path.join(self.index_path, "coord_system.p")
 
     @property
     def vptree_path(self):

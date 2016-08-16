@@ -27,8 +27,8 @@ class SampleMap(dict):
 
         return sample_map
 
-    def save(self):
-        pickle.dump(self, open(self.config.sample_map_path, "wb"))
+    def save(self, config):
+        pickle.dump(self, open(config.sample_map_path, "wb"))
 
     @property
     def labels(self):
