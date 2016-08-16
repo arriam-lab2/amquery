@@ -35,17 +35,6 @@ class LoadApply:
         return counter
 
 
-class PackedTask:
-    def __init__(self, func: Callable, queue: mp.Queue):
-        self.func = func
-        self.queue = queue
-
-    def __call__(self, args):
-        a, b = args
-        self.queue.put(a)
-        return self.func(a, b)
-
-
 class PwMatrix:
     def __init__(self, sample_map: SampleMap, matrix: np.ndarray,
                  filename: str, distance_func: Callable):
@@ -59,14 +48,26 @@ class PwMatrix:
         pairs = list(itertools.combinations(sample_map.paths, 2))
         distance_func = distances[config.dist.func]
 
-        task = LoadApply(distance_func)
-        packed_task = PackedTask(task, queue)
+        packed_task = PackedTask(LoadApply(distance_func), queue)
 
         result = pool.map_async(packed_task, pairs)
         progress_bar(result, queue, len(pairs))
 
         matrix = scipy.spatial.distance.squareform(result.get())
         return PwMatrix(sample_map, matrix, config.pwmatrix_path,
+                        distances[config.dist.func])
+
+    def recalc(self):
+        pairs = list(itertools.combinations(self.sample_map.paths, 2))
+        distance_func = distances[self.config.dist.func]
+
+        packed_task = PackedTask(LoadApply(distance_func), self, queue)
+
+        result = pool.map_async(packed_task, pairs)
+        progress_bar(result, queue, len(pairs))
+
+        matrix = scipy.spatial.distance.squareform(result.get())
+        self = PwMatrix(self.sample_map, matrix, self.config.pwmatrix_path,
                         distances[config.dist.func])
 
     @staticmethod
@@ -100,6 +101,16 @@ class PwMatrix:
 
 
     def __getitem__(self, row, column):
+        self.has_to_recalc = False
+        for sample in [row, column]:
+            if not sample in self.__labels:
+                self.__sample_map.register([sample])
+                self.has_to_recalc = True
+
+        if self.has_to_recalc:
+            self.recalc()
+            self.save()
+
         i = self.__labels.index(row)
         j = self.__labels.index(column)
         return self.__matrix[i, j]
@@ -115,6 +126,28 @@ class PwMatrix:
     @property
     def matrix(self) -> np.matrix:
         return self.__matrix
+
+    @property
+    def hasvalue(self, a: str, b: str) -> bool:
+        return a in self.labels and b in self.labels
+
+
+class PackedTask:
+    def __init__(self,
+                 func: Callable,
+                 queue: mp.Queue,
+                 precalc: PwMatrix = None):
+        self.func = func
+        self.queue = queue
+        self.precalc = precalc
+
+    def __call__(self, args):
+        a, b = args
+        self.queue.put(a)
+        if self.precalc and self.precalc.hasvalue(a, b):
+            return self.precalc[a, b]
+
+        return self.func(a, b)
 
 
 if __name__ == "__main__":

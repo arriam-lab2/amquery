@@ -47,7 +47,7 @@ def cli(config: Config, workon: str, force: bool,
 @cli.command()
 @click.argument('name', type=str, required=True)
 @pass_config
-def init(config: Config, name: str, kmer_size: int, distance: str):
+def init(config: Config, name: str):
     index_path = os.path.join(config.workon, name)
     iof.make_sure_exists(index_path)
     config.current_index = name
@@ -77,9 +77,8 @@ def add(config: Config, input_files: List[str]):
 @cli.command()
 @click.argument('input_files', type=click.Path(exists=True), nargs=-1,
               required=True)
-
 @click.option('--kmer_size', '-k', type=int, help='K-mer size',
-              default=50, required=True)
+              default=50)
 @click.option('--distance', '-d', type=click.Choice(distances.keys()),
               default='jsd', help='A distance metric')
 @click.option('--coord_system_size', '-c', type=int, help='Coord system size',
