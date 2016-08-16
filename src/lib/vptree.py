@@ -10,6 +10,7 @@ from typing import Callable, Mapping, List
 from .pwcomp import PwMatrix
 from .coord_system import CoordSystem
 from .config import Config
+from .metrics import distances
 
 
 class Point:
@@ -27,12 +28,12 @@ class Distance:
                  dist_function: Callable,
                  precalc: PwMatrix):
         self.dist_function = dist_function
-        self.map = dict(zip(pwmatrix.labels, range(len(pwmatrix.labels))))
+        self.map = dict(zip(precalc.labels, range(len(precalc.labels))))
         self.precalc = precalc
 
     def __call__(self, a: Point, b: Point):
         if a in self.precalc.labels and b in self.precalc.labels:
-            return self.precalc.pwmatrix[self.map[a], self.map[b]]
+            return self.precalc.matrix[self.map[a], self.map[b]]
         else:
             raise NotImplementedError()
 
@@ -49,7 +50,7 @@ class CsDistance:
                  pwmatrix: PwMatrix):
 
         self.coord_system = coord_system
-        self.dist = Distance(dist_function, PwMatrix.matrix)
+        self.dist = Distance(dist_function, pwmatrix)
 
     def __call__(self, a: Point, b: Point):
         x = np.array([self.dist(a, c) for c in self.coord_system])
@@ -96,12 +97,11 @@ class VpTree:
 
 
     def save(self, config: Config):
-        vptree_file = config.get_vptree_path()
-        pickle.dump(vptree, open(vptree_file, "wb"))
+        pickle.dump(self, open(config.vptree_path, "wb"))
 
     @staticmethod
     def load(config: Config):
-        with open(config.get_vptree_path(), 'rb') as f:
+        with open(config.vptree_path, 'rb') as f:
             vptree = pickle.load(f)
             return vptree
 
@@ -116,9 +116,13 @@ class VpTree:
         if not pwmatrix:
             pwmatrix = PwMatrix.load(config)
 
-        distance = CsDistance(coord_system, pwmatrix)
+        distance_func = distances[config.dist.func]
+        cs_distance = CsDistance(distance_func, coord_system, pwmatrix)
 
-        vptree = VpTree(labels, distance)
+        #if not config.temp.quiet:
+        #   print("Building a vp-tree...")
+
+        vptree = VpTree(list(pwmatrix.labels), cs_distance)
         vptree.save(config)
         return vptree
 
