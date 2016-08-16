@@ -1,5 +1,5 @@
 import numpy as np
-from lib import vptree
+from lib import tree
 
 #print("vptree test: ", end="")
 

@@ -3,7 +3,7 @@ from typing import List
 from .config import Config
 from .sample_map import SampleMap
 from .distance import PwMatrix
-from .vptree.vptree import VpTree
+from .tree.vptree import VpTree
 from .coord_system import CoordSystem
 
 class Index:
