@@ -27,7 +27,7 @@ class SampleMap(dict):
 
         return sample_map
 
-    def save(self, config):
+    def save(self):
         config = self.config
         del self.config
         pickle.dump(self, open(config.sample_map_path, "wb"))

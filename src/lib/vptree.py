@@ -61,7 +61,9 @@ class CsDistance:
 
 # Vantage-point tree
 class VpTree:
-    def __init__(self, points: np.array, func: Callable):
+    def __init__(self, points: np.array, func: Callable,
+                 config: Config = None):
+        self.config = config
         self.func = func
         self.size = 0
         self.left = None
@@ -96,13 +98,19 @@ class VpTree:
                 self.size += self.right.size
 
 
-    def save(self, config: Config):
+    def save(self):
+        if not hasattr(self, 'config'):
+            raise RuntimeError('You can save only a root-tree')
+
+        config = self.config
+        del self.config
         pickle.dump(self, open(config.vptree_path, "wb"))
 
     @staticmethod
     def load(config: Config):
         with open(config.vptree_path, 'rb') as f:
             vptree = pickle.load(f)
+            vptree.config = config
             return vptree
 
     @staticmethod
@@ -122,8 +130,7 @@ class VpTree:
         #if not config.temp.quiet:
         #   print("Building a vp-tree...")
 
-        vptree = VpTree(list(pwmatrix.labels), cs_distance)
-        vptree.save(config)
+        vptree = VpTree(list(pwmatrix.labels), cs_distance, config)
         return vptree
 
 

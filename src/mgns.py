@@ -81,8 +81,8 @@ def add(config: Config, input_files: List[str]):
               default=50)
 @click.option('--distance', '-d', type=click.Choice(distances.keys()),
               default='jsd', help='A distance metric')
-@click.option('--coord_system_size', '-c', type=int, help='Coord system size',
-              required=True)
+@click.option('--coord_system_size', '-c', type=int,
+              help='Coordinate system size', required=True)
 @click.option('--generations', '-n', type=int, help='Number of generations',
               default=1000)
 @click.option('--mutation_rate', '-m', type=float, help='Mutation rate',
@@ -136,40 +136,61 @@ def build(config: Config, kmer_size: int, distance: str,
 
 
 @cli.command()
+@click.option('--kmer_size', '-k', type=int, help='K-mer size',
+              default=50)
+@click.option('--distance', '-d', type=click.Choice(distances.keys()),
+              default='jsd', help='A distance metric')
+@click.option('--coord_system_size', '-c', type=int,
+              help='Coordinate system size', required=True)
+@click.option('--generations', '-n', type=int, help='Number of generations',
+              default=1000)
+@click.option('--mutation_rate', '-m', type=float, help='Mutation rate',
+              default=0.1)
+@click.option('--population_size', '-p', type=int, help='Population size',
+              default=100)
+@click.option('--select_rate', '-s', type=float,
+              help='Fraction of best individuals to select on each generation',
+              default=0.25)
+@click.option('--random_select_rate', '-r', type=float,
+              help='Fraction of random individuals to select \
+              on each generation', default=0.1)
+@click.option('--legend_size', '-l', type=int,
+              help='Count of best individuals to keep tracking', default=15)
+@click.option('--idle_threshold', '-i', type=int,
+              help='Number of iterations to \
+              continue the evolution at local minimum', default=5)
+
 @pass_config
-def append(config: Config, input_files: List[str]):
+def refine(config: Config, kmer_size: int, distance: str,
+           coord_system_size: int, generations: int,
+           mutation_rate: float, population_size: int,
+           select_rate: float, random_select_rate: float,
+           legend_size: int, idle_threshold: int):
+
     _index_check(config)
-    _build_check(config)
-    mdist.append(config, input_files)
 
+    config.dist = Bunch()
+    config.dist.func = distance
+    config.dist.kmer_size = kmer_size
 
-@cli.command()
-@click.argument('input_dirs', type=click.Path(exists=True), nargs=-1,
-                required=True)
-@click.option('--single-file', '-f', is_flag=True,
-              help='A single file containing reads for all samples')
-@click.option('--max-samples', '-n', type=int,
-              help='Max count of samples to analyze')
-@click.option('--min', type=int, default=109,
-              help='Minimum read length')
-@click.option('--cut', type=int, default=208)
-@click.option('--threshold', type=int, default=5000,
-              help='Required read count per sample')
-@pass_config
-def filter(config, input_dirs, single_file, max_samples,
-           min, cut, threshold):
-    if config.temp.force:
-        iof.clear_dir(config.workon)
+    config.genetic = Bunch()
+    config.genetic.coord_system_size = coord_system_size
+    config.genetic.generations = generations
+    config.genetic.mutation_rate = mutation_rate
+    config.genetic.population_size = population_size
+    config.genetic.select_rate = select_rate
+    config.genetic.random_select_rate = random_select_rate
+    config.genetic.legend_size = legend_size
+    config.genetic.idle_threshold = idle_threshold
 
-    filtered_dirs = pre.filter_reads(config, input_dirs,
-                                     min, None, cut, threshold)
+    config.jellyfish = Bunch()
+    config.jellyfish.tables_count = 10
+    config.jellyfish.hash_size = "100M"
 
-    if max_samples:
-        if single_file:
-            raise NotImplementedError(
-                "--single-file is not implemented yet")
-        else:
-            pre.rarefy(config, filtered_dirs, max_samples)
+    index = Index.refine(config)
+
+    config.built = "true"
+    config.save()
 
 
 @cli.command()
