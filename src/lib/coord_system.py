@@ -19,8 +19,6 @@ class Engine:
         self.names = np.array(list(names))
 
     def __call__(self, val=None, chromosome=None):
-        print("engine: ", val, chromosome)
-        print("names:", self.names)
         elem = random.choice(self.names)
         idx = np.where(self.names == elem)[0][0]
 
@@ -91,8 +89,6 @@ def _crossover(chr1, chr2):
     # note: it's a bit faster to use `unique = set(chr1);
     #       unique.update(chr2)`, though not as functionally pure.
 
-    print("UNIQUE:", unique)
-    print(chr1, chr2)
     return tuple(random.sample(unique, len(chr1)))
 
 
