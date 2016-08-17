@@ -1,11 +1,12 @@
-from typing import List
+from typing import List, Any
+import numpy as np
 
-from vptree import BaseVpTree, TreePoint
+from lib.tree.vptree import BaseVpTree, TreePoint
 
 
-def nearest_neighbors(vptree: BaseVpTree,
-                      x: TreePoint,
-                      k: int) -> List[TreePoint]:
+def _neighbor_subtree(vptree: BaseVpTree,
+                     x: TreePoint,
+                     k: int) -> List[TreePoint]:
     tree = vptree
     func = tree.func
 
@@ -26,12 +27,23 @@ def nearest_neighbors(vptree: BaseVpTree,
 
 
 # depth-first search
-def dfs(self) -> list:
+def dfs(tree: BaseVpTree) -> List[Any]:
     result = []
-    if self.left:
-        result.extend(self.left.dfs())
-    if self.right:
-        result.extend(self.right.dfs())
+    if tree.left:
+        result.extend(dfs(tree.left))
+    if tree.right:
+        result.extend(dfs(tree.right))
 
-    result.append(self.vp)
+    result.append(list(tree.vp))
     return result
+
+
+def neighbors(vptree: BaseVpTree,
+              x: TreePoint,
+              k: int) -> np.ndarray:
+    subtree = _neighbor_subtree(vptree, x, k)
+    points = np.array(dfs(subtree))
+    values = np.array([vptree.func(x, p) for p in points])
+    points = points[values.argsort()]
+    values = np.sort(values)
+    return values[:k], points[:k]

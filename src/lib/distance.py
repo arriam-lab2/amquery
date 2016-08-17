@@ -68,7 +68,7 @@ class PwMatrix:
 
         matrix = scipy.spatial.distance.squareform(result.get())
         self = PwMatrix(self.sample_map, matrix, self.config.pwmatrix_path,
-                        distances[config.dist.func])
+                        distances[config.selfdist.func])
 
     @staticmethod
     def load(config: Config, sample_map: SampleMap = None):
