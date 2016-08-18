@@ -46,5 +46,9 @@ class SampleMap(dict):
         return self.keys()
 
     @property
+    def samples(self):
+        return self.values()
+
+    @property
     def paths(self):
         return [sample.kmer_counter_path for sample in self.values()]

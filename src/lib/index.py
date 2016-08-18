@@ -51,10 +51,10 @@ class Index:
 
 
     def add(self, input_files: List[str]):
-        self.pwmatrix.add(input_files)
+        self.pwmatrix.add_samples(input_files)
         self.pwmatrix.save()
 
-        self.vptree.add(input_files)
+        self.vptree.add_samples(input_files)
         self.vptree.save()
 
 

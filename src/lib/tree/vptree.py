@@ -11,20 +11,13 @@ from ..coord_system import CoordSystem
 from ..config import Config
 from ..metrics import distances
 from lib.kmerize.sample_map import SampleMap
+from lib.kmerize.sample import Sample
 
 
 import numpy as np
 import random
 import itertools
 from typing import Callable
-
-class TreePoint:
-    pass
-
-class Sample(TreePoint):
-    def __init__(self, name: str, *args, **kwargs):
-        super(Sample, self).__init__(*args, **kwargs)
-        self.name = name
 
 
 # Vantage-point tree
@@ -63,15 +56,13 @@ class BaseVpTree:
                 self.right = BaseVpTree(rightside, func)
                 self.size += self.right.size
 
-    def insert(self, point):
-        print("INSERT", point)
+    def insert(self, point: Sample):
         if self.size == 0:
             self.vp = points
         else:
-            print("MEDIAN", self.median)
             x = self.func(point, self.vp)
             y = self.median
-            print(x, "VS. ", y)
+
             if x <= y:
                 if not self.left:
                     self.left = BaseVpTree([point], self.func)
@@ -91,7 +82,7 @@ class Distance:
                  pwmatrix: PwMatrix):
         self.pwmatrix = pwmatrix
 
-    def __call__(self, a: TreePoint, b: TreePoint):
+    def __call__(self, a: Sample, b: Sample):
         return self.pwmatrix[a, b]
 
 
@@ -108,9 +99,9 @@ class TreeDistance:
         self.coord_system = coord_system
         self.pwmatrix = pwmatrix
 
-    def __call__(self, a: TreePoint, b: TreePoint):
-        x = np.array([self.pwmatrix[a, c] for c in self.coord_system])
-        y = np.array([self.pwmatrix[b, c] for c in self.coord_system])
+    def __call__(self, a: Sample, b: Sample):
+        x = np.array([self.pwmatrix[a, c] for c in self.coord_system.values()])
+        y = np.array([self.pwmatrix[b, c] for c in self.coord_system.values()])
         return euclidean(x, y)
 
 
@@ -122,7 +113,10 @@ class VpTree(BaseVpTree):
     def save(self):
         config = self.config
         del self.config
+
         pickle.dump(self, open(config.vptree_path, "wb"))
+
+        self.config = config
 
     @staticmethod
     def load(config: Config):
@@ -148,10 +142,13 @@ class VpTree(BaseVpTree):
         #if not config.temp.quiet:
         #   print("Building a vp-tree...")
 
-        vptree = VpTree(config, list(pwmatrix.labels), tree_distance)
+        vptree = VpTree(config, list(pwmatrix.sample_map.samples), tree_distance)
         return vptree
 
-    def add(self, input_files: List[str]):
-        for sample in input_files:
-            print(sample)
-            self.insert(sample)
+    def add_samples(self, sample_files: List[str]):
+        for sample_file in sample_files:
+            self.add_sample(sample_file)
+
+    def add_sample(self, sample_file: str):
+        sample = self.func.pwmatrix.add_sample(sample_file)
+        self.insert(sample)

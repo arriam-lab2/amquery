@@ -13,7 +13,7 @@ from .ui import progress_bar
 from .config import Config
 from .metrics import distances
 from lib.kmerize.sample_map import SampleMap
-from lib.kmerize.sample import get_sample_name
+from lib.kmerize.sample import Sample, get_sample_name
 from lib.kmerize.kmer_counter import KmerCounter
 
 
@@ -66,7 +66,7 @@ class PwMatrix:
         dataframe = pd.DataFrame(matrix,
                                  index=sample_map.labels,
                                  columns=sample_map.labels)
-        print(dataframe)
+
         return PwMatrix(config, sample_map, dataframe,
                         distances[config.dist.func])
 
@@ -94,49 +94,40 @@ class PwMatrix:
         self.config = config
 
 
-    def add(self, samples: List[str]) -> List[str]:
-        result = []
-
-        for sample in samples:
-            if not sample in self.labels:
-                sample_name = get_sample_name(sample)
-                self.__add_sample(sample_name)
-                print("KMERIZING", sample)
-                new_sample = KmerCounter.kmerize(self.config, sample)
-                self.__sample_map[sample_name] = new_sample
-                result.append(sample_name)
-            else:
-                result.append(sample)
-
-        return result
+    def add_samples(self, sample_files: List[str]) -> List[Sample]:
+        return [self.add_sample(sample_file) for sample_file in sample_files]
 
 
-    def __add_sample(self, sample_name) -> int:
-        initvalues = [np.nan for x in range(len(self.__dataframe))]
-        self.__dataframe[sample_name] = pd.Series(initvalues,
-                                                  index=self.__dataframe.index)
+    def add_sample(self, sample_file: str) -> Sample:
+        sample_name = get_sample_name(sample_file)
+        if not sample_name in self.labels:
+            initvalues = [np.nan for x in range(len(self.__dataframe))]
+            self.__dataframe[sample_name] = pd.Series(initvalues,
+                                                      index=self.__dataframe.index)
+            self.__dataframe.loc[sample_name] = initvalues + [np.nan]
 
-        self.__dataframe.loc[sample_name] = initvalues + [np.nan]
+            new_sample = KmerCounter.kmerize(self.config, sample_file)
+            self.__sample_map[sample_name] = new_sample
+            return new_sample
+        else:
+            return self.sample_map[sample_name]
 
 
     def __getitem__(self, pair):
-        row, column = self.add([*pair])
+        a, b = pair
 
-        print(self.labels)
-        print(self.matrix)
-        i = list(self.labels).index(row)
-        j = list(self.labels).index(column)
+        for x in [a, b]:
+            if not x.sample_name in self.labels:
+                self.add(x)
 
-        print(i, j)
+        if np.isnan(self.dataframe[a.sample_name][b.sample_name]):
+            value = LoadApply(self.__distfunc)(a.kmer_index,
+                                               b.kmer_index)
 
-        if np.isnan(self.matrix[i, j]):
-            print("Load apply", row, column)
-            self.__matrix[i, j] = LoadApply(self.__distfunc)(self.sample_map[row],
-                                                             self.sample_map[column])
+            self.__dataframe[a.sample_name][b.sample_name] = value
 
-        print("PWMATRIX RESULT", self.matrix[i, j], "of", row, column)
-        print(self.matrix)
-        return self.matrix[i, j]
+        return self.dataframe[a.sample_name][b.sample_name]
+
 
     @property
     def sample_map(self) -> SampleMap:
