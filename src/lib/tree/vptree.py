@@ -118,6 +118,7 @@ class VpTree(BaseVpTree):
         del self.config
 
         pickle.dump(self, open(config.vptree_path, "wb"))
+        self.func.pwmatrix.save()
 
         self.config = config
 
@@ -155,3 +156,7 @@ class VpTree(BaseVpTree):
     def add_sample(self, sample_file: str):
         sample = self.func.pwmatrix.add_sample(sample_file)
         self.insert(sample)
+
+    @staticmethod
+    def pwmatrix(self) -> PwMatrix:
+        return self.func.pwmatrix

@@ -9,21 +9,18 @@ from .coord_system import CoordSystem
 class Index:
     def __init__(self,
                  config: Config,
-                 pwmatrix: PwMatrix,
                  coord_system: CoordSystem,
                  vptree: VpTree):
 
         self._config = config
-        self._pwmatrix = pwmatrix
         self._coord_system = coord_system
         self._vptree = vptree
 
     @staticmethod
     def load(config: Config):
-        pwmatrix = PwMatrix.load(config)
         coord_sys = CoordSystem.load(config)
         vptree = VpTree.load(config)
-        return Index(config, pwmatrix, coord_sys, vptree)
+        return Index(config, coord_sys, vptree)
 
     @staticmethod
     def build(config: Config, input_files: List[str]):
@@ -36,12 +33,13 @@ class Index:
         vptree = VpTree.build(config, coord_system, pwmatrix)
         vptree.save()
 
-        return Index(config, pwmatrix, coord_system, vptree)
+        return Index(config, coord_system, vptree)
 
 
     def refine(self):
+        pwmatrix = PwMatrix.load(self.config)
         self._coord_system = CoordSystem.calculate(self.config,
-                                                   self.pwmatrix)
+                                                   pwmatrix)
         self.coord_system.save()
 
         self._vptree = VpTree.build(self.config,
@@ -51,16 +49,8 @@ class Index:
 
 
     def add(self, input_files: List[str]):
-        self.pwmatrix.add_samples(input_files)
-        self.pwmatrix.save()
-
         self.vptree.add_samples(input_files)
         self.vptree.save()
-
-
-    @property
-    def pwmatrix(self) -> PwMatrix:
-        return self._pwmatrix
 
     @property
     def coord_system(self) -> CoordSystem:
