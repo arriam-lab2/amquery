@@ -16,30 +16,28 @@ class SampleMap(dict):
     @staticmethod
     def create(config: Config, sample_files: List[str]):
         sample_map = SampleMap(config)
-        sample_map.register(sample_files)
+        sample_map.add_samples(sample_files)
         return sample_map
 
-    def register(self, sample_files: List[str]) -> Mapping:
+    def add_samples(self, sample_files: List[str]) -> Mapping:
         new_samples = KmerCounter.kmerize_samples(self.config, sample_files)
         self.update(new_samples)
-        return new_samples.keys()
+        return new_samples
 
 
     @staticmethod
     def load(config: Config):
-        try:
-            with open(config.sample_map_path, 'rb') as f:
-                sample_map = pickle.load(f)
-                sample_map.config = config
-        except IOError:
-            sample_map = SampleMap(config)
-
-        return sample_map
+        with open(config.sample_map_path, 'rb') as f:
+            sample_map = pickle.load(f)
+            sample_map.config = config
+            return sample_map
 
     def save(self):
         config = self.config
         del self.config
         pickle.dump(self, open(config.sample_map_path, "wb"))
+        self.config = config
+
 
     @property
     def labels(self):
@@ -51,4 +49,4 @@ class SampleMap(dict):
 
     @property
     def paths(self):
-        return [sample.kmer_counter_path for sample in self.values()]
+        return [sample.kmer_index for sample in self.values()]

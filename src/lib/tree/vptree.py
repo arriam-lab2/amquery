@@ -57,13 +57,16 @@ class BaseVpTree:
                 self.size += self.right.size
 
     def insert(self, point: Sample):
-        if self.size == 0:
-            self.vp = points
-        else:
-            x = self.func(point, self.vp)
-            y = self.median
+        print("INSERTING", point)
 
-            if x <= y:
+        if self.size == 0:
+            self.vp = point
+        else:
+            distance_value = self.func(point, self.vp)
+            if not self.median:
+                self.median = distance_value
+
+            if distance_value <= self.median:
                 if not self.left:
                     self.left = BaseVpTree([point], self.func)
                 else:

@@ -72,10 +72,8 @@ class PwMatrix:
 
 
     @staticmethod
-    def load(config: Config, sample_map: SampleMap = None):
-        if not sample_map:
-            sample_map = SampleMap.load(config)
-
+    def load(config: Config):
+        sample_map = SampleMap.load(config)
         dataframe = pd.read_csv(config.pwmatrix_path, sep='\t', index_col=0)
         distance_func = distances[config.dist.func]
         pwmatrix = PwMatrix(config,
@@ -90,6 +88,7 @@ class PwMatrix:
         del self.config
 
         self.__dataframe.to_csv(config.pwmatrix_path, sep='\t')
+        self.__sample_map.save()
 
         self.config = config
 
@@ -100,6 +99,7 @@ class PwMatrix:
 
     def add_sample(self, sample_file: str) -> Sample:
         sample_name = get_sample_name(sample_file)
+
         if not sample_name in self.labels:
             initvalues = [np.nan for x in range(len(self.__dataframe))]
             self.__dataframe[sample_name] = pd.Series(initvalues,
@@ -153,18 +153,13 @@ class PwMatrix:
 class PackedTask:
     def __init__(self,
                  func: Callable,
-                 queue: mp.Queue,
-                 precalc: PwMatrix = None):
+                 queue: mp.Queue):
         self.func = func
         self.queue = queue
-        self.precalc = precalc
 
     def __call__(self, args):
         a, b = args
         self.queue.put(a)
-        if self.precalc and self.precalc.hasvalue(a, b):
-            return self.precalc[a, b]
-
         return self.func(a, b)
 
 

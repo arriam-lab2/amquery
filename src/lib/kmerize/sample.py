@@ -4,11 +4,11 @@ class Sample:
     def __init__(self,
                  sample_name: str,
                  sample_file: str,
-                 kmer_counter_path: str):
+                 kmer_index: str):
 
         self.sample_name = sample_name
         self.sample_file = sample_file
-        self.kmer_counter_path = kmer_counter_path
+        self.kmer_index = kmer_index
 
 
 def get_sample_name(input_file: str):
