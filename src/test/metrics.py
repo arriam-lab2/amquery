@@ -1,9 +1,7 @@
 from lib.metrics import *
 import random
 
-# TODO create normal unit-test
-
-print("metrics test: ", end="")
+# TODO write an unit-test
 
 t1 = Counter()
 t2 = Counter()
@@ -19,5 +17,3 @@ jcd = jaccard(t1, t2)
 gjcd = generalized_jaccard(t1, t2)
 jsdd = jsd(t1, t2)
 bc = bray_curtis(t1, t2)
-
-print("passed")

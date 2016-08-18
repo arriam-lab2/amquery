@@ -9,7 +9,6 @@ import lib.prebuild as pre
 import lib.iof as iof
 from lib.config import Config
 from lib.metrics import distances
-from lib.sample_map import SampleMap
 from lib.distance import PwMatrix
 from lib.index import Index
 from tools import format_check as fc
@@ -54,24 +53,6 @@ def init(config: Config, name: str):
 
     config.built = "false"
     config.save()
-
-
-@cli.command()
-@click.argument('input_files', type=click.Path(exists=True), nargs=-1,
-                required=True)
-@pass_config
-def add(config: Config, input_files: List[str]):
-    _index_check(config)
-
-    raise NotImplementedError()
-
-
-    if not hasattr(config, "index"):
-        config.index = Bunch()
-        config.index.sample_map_file = "sample_map.p"
-        config.save()
-
-    mdist.add(config, input_files)
 
 
 @cli.command()
@@ -187,10 +168,22 @@ def refine(config: Config, kmer_size: int, distance: str,
     config.jellyfish.tables_count = 10
     config.jellyfish.hash_size = "100M"
 
-    index = Index.refine(config)
+    index = Index.load(config)
+    index.refine()
 
     config.built = "true"
     config.save()
+
+
+@cli.command()
+@click.argument('input_files', type=click.Path(exists=True), nargs=-1,
+                required=True)
+@pass_config
+def add(config: Config, input_files: List[str]):
+    _index_check(config)
+
+    index = Index.load(config)
+    index.add(input_files)
 
 
 @cli.command()

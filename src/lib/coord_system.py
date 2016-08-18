@@ -13,6 +13,7 @@ from genetic.selection import bimodal
 
 from lib.distance import PwMatrix
 from lib.config import Config
+from lib.kmerize.sample_map import SampleMap
 
 
 class Engine:
@@ -61,7 +62,7 @@ def random_chr(names: List[str], k: int):
     return random.sample(range(len(names)), k)
 
 
-class CoordSystem(list):
+class CoordSystem(dict):
     def __init__(self, config: Config, *args, **kwargs):
         self.config = config
         super(CoordSystem, self).__init__(*args, **kwargs)
@@ -101,7 +102,9 @@ class CoordSystem(list):
         labels_idx = population.legends[best_solution][1].genome
 
         labels_array = np.array(list(pwmatrix.labels))
-        basis = list(labels_array[np.ix_(list(labels_idx))])
+        basis_labels = list(labels_array[np.ix_(list(labels_idx))])
+        basis_map = dict((k, pwmatrix.sample_map[k]) for k in basis_labels)
+        basis = SampleMap(config, basis_map)
         return CoordSystem(config, basis)
 
 
@@ -116,6 +119,7 @@ class CoordSystem(list):
         config = self.config
         del self.config
         pickle.dump(self, open(config.coordsys_path, "wb"))
+        self.config = config
 
 
 if __name__ == "__main__":

@@ -1,5 +1,5 @@
 from bunch import Bunch
-from typing import Mapping
+from typing import Mapping, Callable
 import json
 import os
 

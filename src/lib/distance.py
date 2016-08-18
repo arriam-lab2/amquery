@@ -1,6 +1,7 @@
 from typing import Sequence, Callable, List, Mapping
 import itertools
 import numpy as np
+import pandas as pd
 import scipy.spatial.distance
 import multiprocessing as mp
 from collections import Counter
@@ -11,7 +12,9 @@ from .work import N_JOBS
 from .ui import progress_bar
 from .config import Config
 from .metrics import distances
-from .sample_map import SampleMap
+from lib.kmerize.sample_map import SampleMap
+from lib.kmerize.sample import Sample, get_sample_name
+from lib.kmerize.kmer_counter import KmerCounter
 
 
 class LoadApply:
@@ -36,15 +39,21 @@ class LoadApply:
 
 
 class PwMatrix:
-    def __init__(self, sample_map: SampleMap, matrix: np.ndarray,
-                 filename: str, distance_func: Callable):
+    def __init__(self,
+                 config: Config,
+                 sample_map: SampleMap,
+                 dataframe: pd.DataFrame,
+                 distance_func: Callable):
+
+        self.config = config
         self.__sample_map = sample_map
-        self.__matrix = matrix
-        self.__filename = filename
+        self.__dataframe = dataframe
         self.__distfunc = distance_func
 
     @staticmethod
-    def calculate(config: Config, sample_map: SampleMap):
+    def create(config: Config, input_files: List[str]):
+        sample_map = SampleMap.create(config, input_files)
+
         pairs = list(itertools.combinations(sample_map.paths, 2))
         distance_func = distances[config.dist.func]
 
@@ -54,66 +63,71 @@ class PwMatrix:
         progress_bar(result, queue, len(pairs))
 
         matrix = scipy.spatial.distance.squareform(result.get())
-        return PwMatrix(sample_map, matrix, config.pwmatrix_path,
+        dataframe = pd.DataFrame(matrix,
+                                 index=sample_map.labels,
+                                 columns=sample_map.labels)
+
+        return PwMatrix(config, sample_map, dataframe,
                         distances[config.dist.func])
 
-    def recalc(self):
-        pairs = list(itertools.combinations(self.sample_map.paths, 2))
-        distance_func = distances[self.config.dist.func]
-
-        packed_task = PackedTask(LoadApply(distance_func), self, queue)
-
-        result = pool.map_async(packed_task, pairs)
-        progress_bar(result, queue, len(pairs))
-
-        matrix = scipy.spatial.distance.squareform(result.get())
-        self = PwMatrix(self.sample_map, matrix, self.config.pwmatrix_path,
-                        distances[config.dist.func])
 
     @staticmethod
-    def load(config: Config, sample_map: SampleMap = None):
-        if not sample_map:
-            sample_map = SampleMap.load(config)
-
-        filename = config.pwmatrix_path
-        matrix = []
-        with open(filename) as f:
-            labels = f.readline()[:-1].split("\t")[1:]
-
-            for line in f.readlines():
-                values = line[:-1].split("\t")[1:]
-                matrix.append(values)
-
-            matrix = [list(map(float, l)) for l in matrix]
-
-
+    def load(config: Config):
+        sample_map = SampleMap.load(config)
+        dataframe = pd.read_csv(config.pwmatrix_path, sep='\t', index_col=0)
         distance_func = distances[config.dist.func]
-        return PwMatrix(sample_map, np.matrix(matrix), filename,
-                        distance_func)
+        pwmatrix = PwMatrix(config,
+                            sample_map,
+                            dataframe,
+                            distance_func)
+        return pwmatrix
 
 
     def save(self):
-        labels = self.__sample_map.labels
-        with open(self.__filename, "w") as f:
-            print("", *map(str, labels), sep="\t", file=f)
-            for label, row in zip(labels, self.__matrix):
-                print(label, *map(str, row), sep="\t", file=f)
+        config = self.config
+        del self.config
+
+        self.__dataframe.to_csv(config.pwmatrix_path, sep='\t')
+        self.__sample_map.save()
+
+        self.config = config
 
 
-    def __getitem__(self, row, column):
-        self.has_to_recalc = False
-        for sample in [row, column]:
-            if not sample in self.__labels:
-                self.__sample_map.register([sample])
-                self.has_to_recalc = True
+    def add_samples(self, sample_files: List[str]) -> List[Sample]:
+        return [self.add_sample(sample_file) for sample_file in sample_files]
 
-        if self.has_to_recalc:
-            self.recalc()
-            self.save()
 
-        i = self.__labels.index(row)
-        j = self.__labels.index(column)
-        return self.__matrix[i, j]
+    def add_sample(self, sample_file: str) -> Sample:
+        sample_name = get_sample_name(sample_file)
+
+        if not sample_name in self.labels:
+            initvalues = [np.nan for x in range(len(self.__dataframe))]
+            self.__dataframe[sample_name] = pd.Series(initvalues,
+                                                      index=self.__dataframe.index)
+            self.__dataframe.loc[sample_name] = initvalues + [np.nan]
+
+            new_sample = KmerCounter.kmerize(self.config, sample_file)
+            self.__sample_map[sample_name] = new_sample
+            return new_sample
+        else:
+            return self.sample_map[sample_name]
+
+
+    def __getitem__(self, pair):
+        a, b = pair
+
+        for x in [a, b]:
+            if not x.sample_name in self.labels:
+                self.add(x)
+
+        if np.isnan(self.dataframe[a.sample_name][b.sample_name]):
+            value = LoadApply(self.__distfunc)(a.kmer_index,
+                                               b.kmer_index)
+
+            self.__dataframe[a.sample_name][b.sample_name] = value
+
+        return self.dataframe[a.sample_name][b.sample_name]
+
 
     @property
     def sample_map(self) -> SampleMap:
@@ -121,11 +135,15 @@ class PwMatrix:
 
     @property
     def labels(self) -> List[str]:
-        return self.sample_map.labels
+        return self.__dataframe.columns
 
     @property
-    def matrix(self) -> np.matrix:
-        return self.__matrix
+    def dataframe(self) -> pd.DataFrame:
+        return self.__dataframe
+
+    @property
+    def matrix(self) -> np.ndarray:
+        return self.__dataframe.as_matrix()
 
     @property
     def hasvalue(self, a: str, b: str) -> bool:
@@ -135,18 +153,13 @@ class PwMatrix:
 class PackedTask:
     def __init__(self,
                  func: Callable,
-                 queue: mp.Queue,
-                 precalc: PwMatrix = None):
+                 queue: mp.Queue):
         self.func = func
         self.queue = queue
-        self.precalc = precalc
 
     def __call__(self, args):
         a, b = args
         self.queue.put(a)
-        if self.precalc and self.precalc.hasvalue(a, b):
-            return self.precalc[a, b]
-
         return self.func(a, b)
 
 
