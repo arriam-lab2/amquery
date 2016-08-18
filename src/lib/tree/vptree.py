@@ -10,6 +10,7 @@ from ..distance import PwMatrix
 from ..coord_system import CoordSystem
 from ..config import Config
 from ..metrics import distances
+from lib.kmerize.sample_map import SampleMap
 
 
 import numpy as np
@@ -63,30 +64,35 @@ class BaseVpTree:
                 self.size += self.right.size
 
     def insert(self, point):
-        if len(points) == 0:
+        print("INSERT", point)
+        if self.size == 0:
             self.vp = points
         else:
-            if self.func(point, self.vp) <= self.median:
-                self.left.insert(point)
+            print("MEDIAN", self.median)
+            x = self.func(point, self.vp)
+            y = self.median
+            print(x, "VS. ", y)
+            if x <= y:
+                if not self.left:
+                    self.left = BaseVpTree([point], self.func)
+                else:
+                    self.left.insert(point)
             else:
-                self.right.insert(point)
+                if not self.right:
+                    self.right = BaseVpTree([point], self.func)
+                else:
+                    self.right.insert(point)
 
         self.size += 1
 
 
 class Distance:
     def __init__(self,
-                 dist_function: Callable,
-                 precalc: PwMatrix):
-        self.dist_function = dist_function
-        self.map = dict(zip(precalc.labels, range(len(precalc.labels))))
-        self.precalc = precalc
+                 pwmatrix: PwMatrix):
+        self.pwmatrix = pwmatrix
 
     def __call__(self, a: TreePoint, b: TreePoint):
-        if a in self.precalc.labels and b in self.precalc.labels:
-            return self.precalc.matrix[self.map[a], self.map[b]]
-        else:
-            raise NotImplementedError()
+        return self.pwmatrix[a, b]
 
 
 def euclidean(a: np.ndarray, b: np.ndarray):
@@ -96,16 +102,15 @@ def euclidean(a: np.ndarray, b: np.ndarray):
 # Euclidean distance in a proper coordinate system
 class TreeDistance:
     def __init__(self,
-                 dist_function: Callable,
                  coord_system: CoordSystem,
                  pwmatrix: PwMatrix):
 
         self.coord_system = coord_system
-        self.dist = Distance(dist_function, pwmatrix)
+        self.pwmatrix = pwmatrix
 
     def __call__(self, a: TreePoint, b: TreePoint):
-        x = np.array([self.dist(a, c) for c in self.coord_system])
-        y = np.array([self.dist(b, c) for c in self.coord_system])
+        x = np.array([self.pwmatrix[a, c] for c in self.coord_system])
+        y = np.array([self.pwmatrix[b, c] for c in self.coord_system])
         return euclidean(x, y)
 
 
@@ -138,7 +143,7 @@ class VpTree(BaseVpTree):
             pwmatrix = PwMatrix.load(config)
 
         distance_func = distances[config.dist.func]
-        tree_distance = TreeDistance(distance_func, coord_system, pwmatrix)
+        tree_distance = TreeDistance(coord_system, pwmatrix)
 
         #if not config.temp.quiet:
         #   print("Building a vp-tree...")
@@ -147,4 +152,6 @@ class VpTree(BaseVpTree):
         return vptree
 
     def add(self, input_files: List[str]):
-        raise NotImplementedError()
+        for sample in input_files:
+            print(sample)
+            self.insert(sample)

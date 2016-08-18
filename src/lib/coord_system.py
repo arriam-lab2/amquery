@@ -116,6 +116,7 @@ class CoordSystem(list):
         config = self.config
         del self.config
         pickle.dump(self, open(config.coordsys_path, "wb"))
+        self.config = config
 
 
 if __name__ == "__main__":

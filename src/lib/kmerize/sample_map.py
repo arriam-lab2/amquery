@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 
-from typing import List
+from typing import List, Mapping
 import pickle
 
-from .config import Config
-from .kmerize import KmerCounter
+from lib.config import Config
+from lib.kmerize.kmer_counter import KmerCounter
+from lib.kmerize.sample import Sample
 
 
 class SampleMap(dict):
@@ -12,9 +13,17 @@ class SampleMap(dict):
         self.config = config
         super(SampleMap, self).__init__(*args, **kwargs)
 
-    def register(self, sample_files: List[str]):
-        self.update(KmerCounter.kmerize_samples(self.config, sample_files))
-        return self
+    @staticmethod
+    def create(config: Config, sample_files: List[str]):
+        sample_map = SampleMap(config)
+        sample_map.register(sample_files)
+        return sample_map
+
+    def register(self, sample_files: List[str]) -> Mapping:
+        new_samples = KmerCounter.kmerize_samples(self.config, sample_files)
+        self.update(new_samples)
+        return new_samples.keys()
+
 
     @staticmethod
     def load(config: Config):
@@ -38,4 +47,4 @@ class SampleMap(dict):
 
     @property
     def paths(self):
-        return self.values()
+        return [sample.kmer_counter_path for sample in self.values()]
