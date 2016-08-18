@@ -1,5 +1,5 @@
 from bunch import Bunch
-from typing import Mapping
+from typing import Mapping, Callable
 import json
 import os
 
@@ -36,14 +36,27 @@ class ConfigBase(Bunch):
 
 
 class Config(ConfigBase):
-    def get_pwmatrix_path(self):
-        return os.path.join(self.workon, self.current_index,
-                            self.dist.func + "_" +
-                            str(self.dist.kmer_size) + ".txt")
+    @property
+    def index_path(self):
+        return os.path.join(self.workon, self.current_index)
 
-    def get_coordsys_path(self):
-        raise NotImplementedError()
+    @property
+    def pwmatrix_path(self):
+        return os.path.join(self.index_path, "pwmatrix.txt")
 
-    def get_vptree_path(self):
-        return os.path.join(self.workon, self.current_index,
-                            'vptree.p')
+    @property
+    def coordsys_path(self):
+        return os.path.join(self.index_path, "coord_system.p")
+
+    @property
+    def vptree_path(self):
+        return os.path.join(self.index_path, "vptree.p")
+
+    @property
+    def sample_map_path(self):
+        return os.path.join(self.index_path, "sample_map.p")
+
+    @property
+    def kmers_dir(self):
+        return os.path.join(self.index_path,
+                            "kmers." + str(self.dist.kmer_size))

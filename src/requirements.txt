@@ -6,3 +6,4 @@ joblib>=0.9.4
 multiprocess>=0.70.4
 Comparable>=1.0
 bunch>=1.0.1
+genetic>=0.1.dev3

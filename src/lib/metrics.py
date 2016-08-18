@@ -53,5 +53,8 @@ def jsd(hx: Counter, hy: Counter) -> float:
     return np.sqrt(0.5 * np.sum(d1 + d2))
 
 
+distances = {'jaccard': jaccard, 'jsd': jsd, 'bc': bray_curtis,
+             'gji': generalized_jaccard}
+
 if __name__ == "__main__":
     pass

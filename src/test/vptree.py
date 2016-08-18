@@ -1,19 +1,17 @@
 import numpy as np
-from lib import vptree
+from lib import tree
 
-print("vptree test: ", end="")
+#print("vptree test: ", end="")
 
-n = 1000
-x = np.random.uniform(0, 10, n)
-y = np.random.uniform(0, 10, n)
-points = np.array(list(zip(x, y)))
+#n = 1000
+#x = np.random.uniform(0, 10, n)
+#y = np.random.uniform(0, 10, n)
+#points = np.array(list(zip(x, y)))
 
-tree = vptree.VpTree(points, vptree.euclidean)
+#tree = vptree.VpTree(points, vptree.euclidean)
 
-for p in points:
-    nns = vptree.nearest_neighbors(tree, p, 3)
+#for p in points:
+#    nns = vptree.nearest_neighbors(tree, p, 3)
 
 # print(nns.dfs())
 # print(vptree.dfs())
-
-print("passed")
