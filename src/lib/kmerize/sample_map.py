@@ -5,7 +5,6 @@ import pickle
 
 from lib.config import Config
 from lib.kmerize.kmer_counter import KmerCounter
-from lib.kmerize.sample import Sample
 
 
 class SampleMap(dict):
@@ -24,7 +23,6 @@ class SampleMap(dict):
         self.update(new_samples)
         return new_samples
 
-
     @staticmethod
     def load(config: Config):
         with open(config.sample_map_path, 'rb') as f:
@@ -37,7 +35,6 @@ class SampleMap(dict):
         del self.config
         pickle.dump(self, open(config.sample_map_path, "wb"))
         self.config = config
-
 
     @property
     def labels(self):
