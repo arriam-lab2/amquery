@@ -1,5 +1,4 @@
 # import zlib
-from typing import Set
 from collections import OrderedDict, Counter
 
 from lib.config import Config
@@ -35,7 +34,3 @@ class PrimaryKmerIndex:
 
         sample.kmers_distribution = [kmer_ref[1]
                                      for kmer_ref in sorted_by_appereance]
-
-    def register_samples(self, samples: Set[Sample]):
-        for sample in samples:
-            self.register(sample)

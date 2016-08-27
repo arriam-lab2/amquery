@@ -4,7 +4,7 @@ from typing import List, Mapping
 import pickle
 
 from lib.config import Config
-from lib.kmerize.kmer_counter import KmerCounter
+from lib.kmerize.sample import Sample
 
 
 class SampleMap(dict):
@@ -17,11 +17,6 @@ class SampleMap(dict):
         sample_map = SampleMap(config)
         sample_map.add_samples(sample_files)
         return sample_map
-
-    def add_samples(self, sample_files: List[str]) -> Mapping:
-        new_samples = KmerCounter.kmerize_samples(self.config, sample_files)
-        self.update(new_samples)
-        return new_samples
 
     @staticmethod
     def load(config: Config):

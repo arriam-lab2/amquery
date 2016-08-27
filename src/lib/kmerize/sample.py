@@ -1,6 +1,5 @@
 import os
 from Bio import SeqIO
-from collections import Counter
 
 
 class SampleFile:
@@ -15,11 +14,6 @@ class SampleFile:
     @property
     def file_format(self) -> str:
         return self._format
-
-
-class KmerRefView:
-    def __init__(self):
-        pass
 
 
 class Sample:

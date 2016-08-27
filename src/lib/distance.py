@@ -13,8 +13,7 @@ from .ui import progress_bar
 from .config import Config
 from .metrics import distances
 from lib.kmerize.sample_map import SampleMap
-from lib.kmerize.sample import Sample, get_sample_name
-from lib.kmerize.kmer_counter import KmerCounter
+from lib.kmerize.sample import Sample
 
 
 class LoadApply:
@@ -90,23 +89,13 @@ class PwMatrix:
 
         self.config = config
 
-    def add_samples(self, sample_files: List[str]) -> List[Sample]:
-        return [self.add_sample(sample_file) for sample_file in sample_files]
-
-    def add_sample(self, sample_file: str) -> Sample:
-        sample_name = get_sample_name(sample_file)
-
-        if sample_name not in self.labels:
+    def add_sample(self, sample: Sample) -> Sample:
+        if sample.name not in self.labels:
             initvalues = [np.nan for x in range(len(self.__dataframe))]
-            self.__dataframe[sample_name] = pd.Series(initvalues,
-                                                      index=self.__dataframe.index)
-            self.__dataframe.loc[sample_name] = initvalues + [np.nan]
-
-            new_sample = KmerCounter.kmerize(self.config, sample_file)
-            self.__sample_map[sample_name] = new_sample
-            return new_sample
-        else:
-            return self.sample_map[sample_name]
+            self.__dataframe[sample.name] = pd.Series(initvalues,
+                                                      index=self.dataframe.index)
+            self.__dataframe.loc[sample.name] = initvalues + [np.nan]
+            self.__sample_map[sample.name] = sample
 
     def __getitem__(self, pair):
         a, b = pair

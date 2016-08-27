@@ -33,7 +33,7 @@ def _build_check(config: Config):
               help='Force overwrite output directory')
 @click.option('--quiet', '-q', is_flag=True, help='Be quiet')
 @click.option('--njobs', '-n', type=int, default=1,
-              helpr='Number of jobs to start in parallel')
+              help='Number of jobs to start in parallel')
 @pass_config
 def cli(config: Config, workon: str, force: bool,
         quiet: bool, njobs: int):

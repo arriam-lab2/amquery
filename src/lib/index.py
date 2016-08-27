@@ -4,6 +4,8 @@ from .config import Config
 from .distance import PwMatrix
 from .tree.vptree import VpTree
 from .coord_system import CoordSystem
+from lib.kmerize.kmer_index import PrimaryKmerIndex
+from lib.kmerize.sample import Sample
 
 
 class Index:
@@ -15,6 +17,7 @@ class Index:
         self._config = config
         self._coord_system = coord_system
         self._vptree = vptree
+        self._kmer_index = PrimaryKmerIndex(config)
 
     @staticmethod
     def load(config: Config):
@@ -47,7 +50,13 @@ class Index:
         self.vptree.save()
 
     def add(self, input_files: List[str]):
-        self.vptree.add_samples(input_files)
+        sample_map = {}
+        for sample_file in input_files:
+            sample = Sample(sample_file)
+            self.kmer_index.register(sample)
+            sample_map[sample_file] = sample
+
+        self.vptree.add_samples(sample_map)
         self.vptree.save()
 
     @property
