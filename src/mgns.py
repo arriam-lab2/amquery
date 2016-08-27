@@ -197,3 +197,16 @@ def use(config: Config, name: str):
 
     config.current_index = name
     config.save()
+
+
+@cli.command()
+@pass_config
+def stats(config: Config):
+    _index_check(config)
+
+    index = Index.load(config)
+    indexed = len(index.sample_map)
+
+    print("Current index:", config.current_index)
+    print("Indexed:", indexed, "samples")
+    print("Coordinate system size:", config.genetic.coord_system_size)
