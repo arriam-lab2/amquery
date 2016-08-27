@@ -77,16 +77,16 @@ class PwMatrix:
         a, b = pair
 
         for x in [a, b]:
-            if x.sample_name not in self.labels:
-                self.add(x)
+            if x.name not in self.labels:
+                self.add_sample(x)
 
-        if np.isnan(self.dataframe[a.sample_name][b.sample_name]):
-            value = LoadApply(self.__distfunc)(a.kmer_index,
-                                               b.kmer_index)
+        if np.isnan(self.dataframe[a.name][b.name]):
+            value = self.__distfunc(a.kmers_distribution,
+                                    b.kmers_distribution)
 
-            self.__dataframe[a.sample_name][b.sample_name] = value
+            self.__dataframe[a.name][b.name] = value
 
-        return self.dataframe[a.sample_name][b.sample_name]
+        return self.dataframe[a.name][b.name]
 
     @property
     def sample_map(self) -> SampleMap:

@@ -15,12 +15,20 @@ def _register(config: Config,
 
     sample_map = {}
     for sample_file in sample_files:
-        print("Registering", sample_file)
         sample = Sample(sample_file)
         kmer_index.register(sample)
         sample_map[sample_file] = sample
 
     return SampleMap(config, sample_map)
+
+
+def _unify(sample_map: SampleMap,
+           kmer_index: PrimaryKmerIndex) -> SampleMap:
+
+    for sample in sample_map.values():
+        kmer_index.extend_sample_distribution(sample)
+
+    return sample_map
 
 
 class Index:
@@ -45,6 +53,7 @@ class Index:
     def build(config: Config, sample_files: List[str]):
         kmer_index = PrimaryKmerIndex(config)
         sample_map = _register(config, sample_files, kmer_index)
+        sample_map = _unify(sample_map, kmer_index)
 
         pwmatrix = PwMatrix.create(config, sample_map)
         pwmatrix.save()

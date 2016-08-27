@@ -11,8 +11,6 @@ def jsd(x_distr: np.array,
     x = x_distr / sum(x_distr)
     y = y_distr / sum(y_distr)
 
-    print(len(x), len(y))
-
     z = x + y
     d1 = x * np.log2(2 * x / z)
     d2 = y * np.log2(2 * y / z)

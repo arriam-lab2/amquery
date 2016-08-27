@@ -1,3 +1,4 @@
+import numpy as np
 from collections import Counter
 
 from lib.config import Config
@@ -16,6 +17,9 @@ class OrderedSet():
 
         return self.map[key]
 
+    def __len__(self):
+        return len(self.map)
+
 
 def _kmerize_string(string: str, k: int):
                     # compression: int=9):)
@@ -31,16 +35,17 @@ class PrimaryKmerIndex:
 
     def register(self, sample: Sample):
         k = self.config.dist.kmer_size
-        kmer_primary_refs = [(kmer, self.kmer_set.setdefault(kmer))
+        kmer_primary_refs = [self.kmer_set.setdefault(kmer)
                              for seq in sample.sequences()
                              for kmer in _kmerize_string(seq, k)]
 
         kmer_ref_counter = Counter(kmer_primary_refs)
 
-        sorted_by_appereance = sorted(kmer_ref_counter.items(),
-                                      key=lambda t: t[0][1])
-        print(sorted_by_appereance)
-        raise ValueError()
-        sample.kmers_distribution = [kmer_ref[1]
-                                     for kmer_ref in sorted_by_appereance]
-        print(sample.kmers_distribution)
+        sample.kmers_distribution = np.zeros(len(self.kmer_set))
+        for kmer_ref, count in kmer_ref_counter.items():
+            sample.kmers_distribution[kmer_ref] = count
+
+    def extend_sample_distribution(self, sample: Sample):
+        zeros = np.zeros(len(self.kmer_set) - len(sample.kmers_distribution))
+        sample.kmers_distribution = np.concatenate((sample.kmers_distribution,
+                                                   zeros))
