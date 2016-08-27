@@ -1,4 +1,4 @@
-from typing import Sequence, Callable, List, Mapping
+from typing import Callable, List
 import itertools
 import numpy as np
 import pandas as pd
@@ -70,7 +70,6 @@ class PwMatrix:
         return PwMatrix(config, sample_map, dataframe,
                         distances[config.dist.func])
 
-
     @staticmethod
     def load(config: Config):
         sample_map = SampleMap.load(config)
@@ -82,7 +81,6 @@ class PwMatrix:
                             distance_func)
         return pwmatrix
 
-
     def save(self):
         config = self.config
         del self.config
@@ -92,15 +90,13 @@ class PwMatrix:
 
         self.config = config
 
-
     def add_samples(self, sample_files: List[str]) -> List[Sample]:
         return [self.add_sample(sample_file) for sample_file in sample_files]
-
 
     def add_sample(self, sample_file: str) -> Sample:
         sample_name = get_sample_name(sample_file)
 
-        if not sample_name in self.labels:
+        if sample_name not in self.labels:
             initvalues = [np.nan for x in range(len(self.__dataframe))]
             self.__dataframe[sample_name] = pd.Series(initvalues,
                                                       index=self.__dataframe.index)
@@ -112,12 +108,11 @@ class PwMatrix:
         else:
             return self.sample_map[sample_name]
 
-
     def __getitem__(self, pair):
         a, b = pair
 
         for x in [a, b]:
-            if not x.sample_name in self.labels:
+            if x.sample_name not in self.labels:
                 self.add(x)
 
         if np.isnan(self.dataframe[a.sample_name][b.sample_name]):
@@ -127,7 +122,6 @@ class PwMatrix:
             self.__dataframe[a.sample_name][b.sample_name] = value
 
         return self.dataframe[a.sample_name][b.sample_name]
-
 
     @property
     def sample_map(self) -> SampleMap:

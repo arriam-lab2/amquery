@@ -55,6 +55,3 @@ def jsd(hx: Counter, hy: Counter) -> float:
 
 distances = {'jaccard': jaccard, 'jsd': jsd, 'bc': bray_curtis,
              'gji': generalized_jaccard}
-
-if __name__ == "__main__":
-    pass

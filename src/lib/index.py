@@ -35,7 +35,6 @@ class Index:
 
         return Index(config, coord_system, vptree)
 
-
     def refine(self):
         pwmatrix = PwMatrix.load(self.config)
         self._coord_system = CoordSystem.calculate(self.config,
@@ -46,7 +45,6 @@ class Index:
                                     self.coord_system,
                                     self.pwmatrix)
         self.vptree.save()
-
 
     def add(self, input_files: List[str]):
         self.vptree.add_samples(input_files)
