@@ -2,10 +2,9 @@
 
 import itertools
 import random
-import click
 import numpy as np
 import pickle
-from typing import Sequence, Callable, Any, Tuple, List
+from typing import List
 
 from genetic.individuals import SingleChromosomeIndividual
 from genetic.populations import PanmicticPopulation
@@ -88,14 +87,11 @@ class CoordSystem(dict):
                                                            coord_system_size))
                      ] * 2
 
-
         selection = bimodal(fittest_fraction=select_rate,
                             other_random_survival=random_select_rate)
 
         population = PanmicticPopulation(ancestors, population_size, fitness,
                                          selection, legend_size)
-
-
 
         average_fitness = list(population.evolve(generations))
         best_solution = np.argmin([legend[0] for legend in population.legends])
@@ -106,7 +102,6 @@ class CoordSystem(dict):
         basis_map = dict((k, pwmatrix.sample_map[k]) for k in basis_labels)
         basis = SampleMap(config, basis_map)
         return CoordSystem(config, basis)
-
 
     @staticmethod
     def load(config: Config):

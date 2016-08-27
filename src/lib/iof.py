@@ -1,7 +1,6 @@
 from collections import defaultdict
 import glob
 import os
-import numpy as np
 from Bio import SeqIO
 from typing import Mapping, List
 
@@ -52,17 +51,6 @@ def clear(path):
     for f in files:
         os.remove(f)
 
+
 def read_coords(filename: str) -> List[str]:
     return [line.rstrip('\n') for line in open(filename)]
-
-
-if __name__ == "__main__":
-    # TODO tests
-    #filename = 'data/seqs.fna'
-    #data = load_seqs(filename)
-    #print(data['wood1']['wood1_8560'])
-
-    filename = "../../out/w_unifrac/wu_full.txt"
-    keys, dmatrix = read_distance_matrix(filename)
-    print(keys)
-    print(dmatrix)

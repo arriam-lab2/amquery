@@ -1,17 +1,39 @@
 import os
+from Bio import SeqIO
+
+
+class SampleFile:
+    def __init__(self, path: str):
+        self._path = path
+        self._format = os.path.splitext(os.path.basename(path))[1][1:]
+
+    @property
+    def path(self) -> str:
+        return self._path
+
+    @property
+    def file_format(self) -> str:
+        return self._format
+
 
 class Sample:
     def __init__(self,
-                 sample_name: str,
-                 sample_file: str,
-                 kmer_index: str):
+                 source_file: str):
 
-        self.sample_name = sample_name
-        self.sample_file = sample_file
-        self.kmer_index = kmer_index
+        self._name = os.path.splitext(os.path.basename(source_file))[0]
+        self._source_file = SampleFile(source_file)
+        self.kmers_distribution = None
 
+    @property
+    def name(self) -> str:
+        return self._name
 
-def get_sample_name(input_file: str):
-    shortname = os.path.split(input_file)[1]
-    sample_name, _ = os.path.splitext(shortname)
-    return sample_name
+    @property
+    def source_file(self) -> str:
+        return self._source_file
+
+    def sequences(self) -> str:
+        seqs_records = SeqIO.parse(open(self.source_file.path),
+                                   self.source_file.file_format)
+        for seq_record in seqs_records:
+            yield str(seq_record.seq)

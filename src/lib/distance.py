@@ -1,41 +1,16 @@
-from typing import Sequence, Callable, List, Mapping
+from typing import Callable, List
 import itertools
 import numpy as np
 import pandas as pd
 import scipy.spatial.distance
 import multiprocessing as mp
-from collections import Counter
-from Bio import SeqIO
-import functools
 
 from .work import N_JOBS
 from .ui import progress_bar
 from .config import Config
 from .metrics import distances
 from lib.kmerize.sample_map import SampleMap
-from lib.kmerize.sample import Sample, get_sample_name
-from lib.kmerize.kmer_counter import KmerCounter
-
-
-class LoadApply:
-    def __init__(self, func: Callable):
-        self.func = func
-
-    def __call__(self, x_kmer_file: str, y_kmer_file: str):
-        xcounter = LoadApply._load_kmer_index(x_kmer_file)
-        ycounter = LoadApply._load_kmer_index(y_kmer_file)
-        return self.func(xcounter, ycounter)
-
-    @staticmethod
-    @functools.lru_cache(maxsize=32)
-    def _load_kmer_index(counter_file: str) -> Counter:
-        counter = Counter()
-        seqs = SeqIO.parse(open(counter_file), "fasta")
-        for seq_record in seqs:
-            count, sequence = seq_record.id, str(seq_record.seq)
-            counter[sequence] = int(count)
-
-        return counter
+from lib.kmerize.sample import Sample
 
 
 class PwMatrix:
@@ -51,13 +26,13 @@ class PwMatrix:
         self.__distfunc = distance_func
 
     @staticmethod
-    def create(config: Config, input_files: List[str]):
-        sample_map = SampleMap.create(config, input_files)
-
-        pairs = list(itertools.combinations(sample_map.paths, 2))
+    def create(config: Config, sample_map: SampleMap):
+        distributions = [np.array(x.kmers_distribution)
+                         for x in sample_map.values()]
+        pairs = list(itertools.combinations(distributions, 2))
         distance_func = distances[config.dist.func]
 
-        packed_task = PackedTask(LoadApply(distance_func), queue)
+        packed_task = PackedTask(distance_func, queue)
 
         result = pool.map_async(packed_task, pairs)
         progress_bar(result, queue, len(pairs))
@@ -70,7 +45,6 @@ class PwMatrix:
         return PwMatrix(config, sample_map, dataframe,
                         distances[config.dist.func])
 
-
     @staticmethod
     def load(config: Config):
         sample_map = SampleMap.load(config)
@@ -82,7 +56,6 @@ class PwMatrix:
                             distance_func)
         return pwmatrix
 
-
     def save(self):
         config = self.config
         del self.config
@@ -92,42 +65,28 @@ class PwMatrix:
 
         self.config = config
 
-
-    def add_samples(self, sample_files: List[str]) -> List[Sample]:
-        return [self.add_sample(sample_file) for sample_file in sample_files]
-
-
-    def add_sample(self, sample_file: str) -> Sample:
-        sample_name = get_sample_name(sample_file)
-
-        if not sample_name in self.labels:
+    def add_sample(self, sample: Sample) -> Sample:
+        if sample.name not in self.labels:
             initvalues = [np.nan for x in range(len(self.__dataframe))]
-            self.__dataframe[sample_name] = pd.Series(initvalues,
-                                                      index=self.__dataframe.index)
-            self.__dataframe.loc[sample_name] = initvalues + [np.nan]
-
-            new_sample = KmerCounter.kmerize(self.config, sample_file)
-            self.__sample_map[sample_name] = new_sample
-            return new_sample
-        else:
-            return self.sample_map[sample_name]
-
+            self.__dataframe[sample.name] = pd.Series(initvalues,
+                                                      index=self.dataframe.index)
+            self.__dataframe.loc[sample.name] = initvalues + [np.nan]
+            self.__sample_map[sample.name] = sample
 
     def __getitem__(self, pair):
         a, b = pair
 
         for x in [a, b]:
-            if not x.sample_name in self.labels:
-                self.add(x)
+            if x.name not in self.labels:
+                self.add_sample(x)
 
-        if np.isnan(self.dataframe[a.sample_name][b.sample_name]):
-            value = LoadApply(self.__distfunc)(a.kmer_index,
-                                               b.kmer_index)
+        if np.isnan(self.dataframe[a.name][b.name]):
+            value = self.__distfunc(a.kmers_distribution,
+                                    b.kmers_distribution)
 
-            self.__dataframe[a.sample_name][b.sample_name] = value
+            self.__dataframe[a.name][b.name] = value
 
-        return self.dataframe[a.sample_name][b.sample_name]
-
+        return self.dataframe[a.name][b.name]
 
     @property
     def sample_map(self) -> SampleMap:

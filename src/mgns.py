@@ -5,21 +5,21 @@ import os
 from bunch import Bunch
 from typing import List
 
-import lib.prebuild as pre
 import lib.iof as iof
 from lib.config import Config
 from lib.metrics import distances
-from lib.distance import PwMatrix
 from lib.index import Index
 from tools import format_check as fc
 
 
 pass_config = click.make_pass_decorator(Config, ensure=True)
 
+
 def _index_check(config: Config):
     if "current_index" not in config:
         raise ValueError("There is no index created. Run 'mgns init' \
                          or 'mgns use' first")
+
 
 def _build_check(config: Config):
     if not config.built:
@@ -57,7 +57,7 @@ def init(config: Config, name: str):
 
 @cli.command()
 @click.argument('input_files', type=click.Path(exists=True), nargs=-1,
-              required=True)
+                required=True)
 @click.option('--kmer_size', '-k', type=int, help='K-mer size',
               default=50)
 @click.option('--distance', '-d', type=click.Choice(distances.keys()),
@@ -81,7 +81,6 @@ def init(config: Config, name: str):
 @click.option('--idle_threshold', '-i', type=int,
               help='Number of iterations to \
               continue the evolution at local minimum', default=5)
-
 @pass_config
 def build(config: Config, kmer_size: int, distance: str,
           input_files: List[str], coord_system_size: int,
@@ -111,6 +110,7 @@ def build(config: Config, kmer_size: int, distance: str,
 
     input_files = fc.format_check(input_files)
     index = Index.build(config, input_files)
+    index.save()
 
     config.built = "true"
     config.save()
@@ -140,7 +140,6 @@ def build(config: Config, kmer_size: int, distance: str,
 @click.option('--idle_threshold', '-i', type=int,
               help='Number of iterations to \
               continue the evolution at local minimum', default=5)
-
 @pass_config
 def refine(config: Config, kmer_size: int, distance: str,
            coord_system_size: int, generations: int,
@@ -170,6 +169,7 @@ def refine(config: Config, kmer_size: int, distance: str,
 
     index = Index.load(config)
     index.refine()
+    index.save()
 
     config.built = "true"
     config.save()
@@ -184,6 +184,7 @@ def add(config: Config, input_files: List[str]):
 
     index = Index.load(config)
     index.add(input_files)
+    index.save()
 
 
 @cli.command()
@@ -196,8 +197,3 @@ def use(config: Config, name: str):
 
     config.current_index = name
     config.save()
-
-
-
-if __name__ == "__main__":
-    pass

@@ -1,23 +1,16 @@
 #!/usr/bin/env python3
 
+import itertools
 import random
 import numpy as np
 import pickle
-import os
-from typing import Callable, Mapping, List
+from typing import Callable
 
 from ..distance import PwMatrix
 from ..coord_system import CoordSystem
 from ..config import Config
-from ..metrics import distances
-from lib.kmerize.sample_map import SampleMap
 from lib.kmerize.sample import Sample
-
-
-import numpy as np
-import random
-import itertools
-from typing import Callable
+from lib.kmerize.sample_map import SampleMap
 
 
 # Vantage-point tree
@@ -57,8 +50,6 @@ class BaseVpTree:
                 self.size += self.right.size
 
     def insert(self, point: Sample):
-        print("INSERTING", point)
-
         if self.size == 0:
             self.vp = point
         else:
@@ -89,7 +80,7 @@ class Distance:
         return self.pwmatrix[a, b]
 
 
-def euclidean(a: np.ndarray, b: np.ndarray):
+def euclidean(a: np.array, b: np.array):
     return np.linalg.norm(a - b)
 
 
@@ -118,6 +109,7 @@ class VpTree(BaseVpTree):
         del self.config
 
         pickle.dump(self, open(config.vptree_path, "wb"))
+        self.pwmatrix.save()
 
         self.config = config
 
@@ -139,19 +131,19 @@ class VpTree(BaseVpTree):
         if not pwmatrix:
             pwmatrix = PwMatrix.load(config)
 
-        distance_func = distances[config.dist.func]
         tree_distance = TreeDistance(coord_system, pwmatrix)
+        return VpTree(config,
+                      list(pwmatrix.sample_map.samples),
+                      tree_distance)
 
-        #if not config.temp.quiet:
-        #   print("Building a vp-tree...")
-
-        vptree = VpTree(config, list(pwmatrix.sample_map.samples), tree_distance)
-        return vptree
-
-    def add_samples(self, sample_files: List[str]):
-        for sample_file in sample_files:
+    def add_samples(self, sample_map: SampleMap):
+        for sample_file in sample_map.values():
             self.add_sample(sample_file)
 
-    def add_sample(self, sample_file: str):
-        sample = self.func.pwmatrix.add_sample(sample_file)
+    def add_sample(self, sample: Sample):
+        self.pwmatrix.add_sample(sample)
         self.insert(sample)
+
+    @property
+    def pwmatrix(self) -> PwMatrix:
+        return self.func.pwmatrix

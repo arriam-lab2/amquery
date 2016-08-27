@@ -1,5 +1,5 @@
 from bunch import Bunch
-from typing import Mapping, Callable
+from typing import Mapping
 import json
 import os
 
@@ -39,6 +39,10 @@ class Config(ConfigBase):
     @property
     def index_path(self):
         return os.path.join(self.workon, self.current_index)
+
+    @property
+    def primary_kmer_index_path(self):
+        return os.path.join(self.index_path, "primary_index.p")
 
     @property
     def pwmatrix_path(self):
