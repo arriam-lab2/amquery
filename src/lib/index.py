@@ -34,20 +34,26 @@ def _unify(sample_map: SampleMap,
 class Index:
     def __init__(self,
                  config: Config,
+                 kmer_index: PrimaryKmerIndex,
                  coord_system: CoordSystem,
-                 vptree: VpTree,
-                 kmer_index: PrimaryKmerIndex):
+                 vptree: VpTree):
 
         self._config = config
+        self._kmer_index = kmer_index
         self._coord_system = coord_system
         self._vptree = vptree
-        self._kmer_index = kmer_index
+
+    def save(self):
+        self.kmer_index.save()
+        self.coord_system.save()
+        self.vptree.save()
 
     @staticmethod
     def load(config: Config):
         coord_sys = CoordSystem.load(config)
         vptree = VpTree.load(config)
-        return Index(config, coord_sys, vptree)
+        kmer_index = PrimaryKmerIndex.load(config)
+        return Index(config, kmer_index, coord_sys, vptree)
 
     @staticmethod
     def build(config: Config, sample_files: List[str]):
@@ -56,33 +62,25 @@ class Index:
         sample_map = _unify(sample_map, kmer_index)
 
         pwmatrix = PwMatrix.create(config, sample_map)
-        pwmatrix.save()
-
         coord_system = CoordSystem.calculate(config, pwmatrix)
-        coord_system.save()
-
         vptree = VpTree.build(config, coord_system, pwmatrix)
-        vptree.save()
 
-        return Index(config, coord_system, vptree, kmer_index)
+        return Index(config, kmer_index, coord_system, vptree)
 
     def refine(self):
         pwmatrix = PwMatrix.load(self.config)
         self._coord_system = CoordSystem.calculate(self.config,
                                                    pwmatrix)
-        self.coord_system.save()
-
         self._vptree = VpTree.build(self.config,
                                     self.coord_system,
                                     self.pwmatrix)
-        self.vptree.save()
 
     def add(self, sample_files: List[str]):
         sample_map = _register(self.config,
                                sample_files,
                                self.kmer_index)
+        sample_map = _unify(sample_map, self.kmer_index)
         self.vptree.add_samples(sample_map)
-        self.vptree.save()
 
     @property
     def coord_system(self) -> CoordSystem:
@@ -95,3 +93,7 @@ class Index:
     @property
     def config(self) -> Config:
         return self._config
+
+    @property
+    def kmer_index(self) -> PrimaryKmerIndex:
+        return self._kmer_index

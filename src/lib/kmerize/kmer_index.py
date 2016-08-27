@@ -1,4 +1,5 @@
 import numpy as np
+import pickle
 from collections import Counter
 
 from lib.config import Config
@@ -32,6 +33,19 @@ class PrimaryKmerIndex:
         self.config = config
         self.kmer_set = OrderedSet()
         # self.kmer_counter = KmerCounter(config)
+
+    @staticmethod
+    def load(config: Config):
+        with open(config.primary_kmer_index_path, 'rb') as f:
+            kmer_index = pickle.load(f)
+            kmer_index.config = config
+            return kmer_index
+
+    def save(self):
+        config = self.config
+        del self.config
+        pickle.dump(self, open(config.primary_kmer_index_path, "wb"))
+        self.config = config
 
     def register(self, sample: Sample):
         k = self.config.dist.kmer_size

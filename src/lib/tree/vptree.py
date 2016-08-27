@@ -50,8 +50,6 @@ class BaseVpTree:
                 self.size += self.right.size
 
     def insert(self, point: Sample):
-        print("INSERTING", point)
-
         if self.size == 0:
             self.vp = point
         else:
@@ -82,7 +80,7 @@ class Distance:
         return self.pwmatrix[a, b]
 
 
-def euclidean(a: np.ndarray, b: np.ndarray):
+def euclidean(a: np.array, b: np.array):
     return np.linalg.norm(a - b)
 
 
@@ -111,7 +109,7 @@ class VpTree(BaseVpTree):
         del self.config
 
         pickle.dump(self, open(config.vptree_path, "wb"))
-        self.func.pwmatrix.save()
+        self.pwmatrix.save()
 
         self.config = config
 
@@ -139,13 +137,13 @@ class VpTree(BaseVpTree):
                       tree_distance)
 
     def add_samples(self, sample_map: SampleMap):
-        for sample_file in sample_map:
+        for sample_file in sample_map.values():
             self.add_sample(sample_file)
 
     def add_sample(self, sample: Sample):
         self.pwmatrix.add_sample(sample)
         self.insert(sample)
 
-    @staticmethod
+    @property
     def pwmatrix(self) -> PwMatrix:
         return self.func.pwmatrix

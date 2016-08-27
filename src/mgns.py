@@ -109,7 +109,8 @@ def build(config: Config, kmer_size: int, distance: str,
     config.jellyfish.hash_size = "100M"
 
     input_files = fc.format_check(input_files)
-    Index.build(config, input_files)
+    index = Index.build(config, input_files)
+    index.save()
 
     config.built = "true"
     config.save()
@@ -168,6 +169,7 @@ def refine(config: Config, kmer_size: int, distance: str,
 
     index = Index.load(config)
     index.refine()
+    index.save()
 
     config.built = "true"
     config.save()
@@ -182,6 +184,7 @@ def add(config: Config, input_files: List[str]):
 
     index = Index.load(config)
     index.add(input_files)
+    index.save()
 
 
 @cli.command()
