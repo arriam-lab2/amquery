@@ -17,7 +17,7 @@ def _register(config: Config,
     for sample_file in sample_files:
         sample = Sample(sample_file)
         kmer_index.register(sample)
-        sample_map[sample_file] = sample
+        sample_map[sample.name] = sample
 
     return SampleMap(config, sample_map)
 
@@ -81,8 +81,8 @@ class Index:
                                self.kmer_index)
         new_samples = sample_map.values()
 
-        self.vptree.sample_map.update(sample_map)
-        sample_map = _unify(self.vptree.sample_map, self.kmer_index)
+        self.sample_map.update(sample_map)
+        sample_map = _unify(self.sample_map, self.kmer_index)
 
         self.vptree.add_samples(new_samples)
 
