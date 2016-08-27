@@ -79,8 +79,12 @@ class Index:
         sample_map = _register(self.config,
                                sample_files,
                                self.kmer_index)
-        sample_map = _unify(sample_map, self.kmer_index)
-        self.vptree.add_samples(sample_map)
+        new_samples = sample_map.values()
+
+        self.vptree.sample_map.update(sample_map)
+        sample_map = _unify(self.vptree.sample_map, self.kmer_index)
+
+        self.vptree.add_samples(new_samples)
 
     @property
     def coord_system(self) -> CoordSystem:
@@ -89,6 +93,10 @@ class Index:
     @property
     def vptree(self) -> VpTree:
         return self._vptree
+
+    @property
+    def sample_map(self) -> SampleMap:
+        return self.vptree.sample_map
 
     @property
     def config(self) -> Config:
