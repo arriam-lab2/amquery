@@ -1,22 +1,14 @@
 #!/usr/bin/env python3
 
-from typing import List, Mapping
 import pickle
 
 from lib.config import Config
-from lib.kmerize.sample import Sample
 
 
 class SampleMap(dict):
     def __init__(self, config: Config, *args, **kwargs):
         self.config = config
         super(SampleMap, self).__init__(*args, **kwargs)
-
-    @staticmethod
-    def create(config: Config, sample_files: List[str]):
-        sample_map = SampleMap(config)
-        sample_map.add_samples(sample_files)
-        return sample_map
 
     @staticmethod
     def load(config: Config):

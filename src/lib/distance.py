@@ -4,9 +4,6 @@ import numpy as np
 import pandas as pd
 import scipy.spatial.distance
 import multiprocessing as mp
-from collections import Counter
-from Bio import SeqIO
-import functools
 
 from .work import N_JOBS
 from .ui import progress_bar
@@ -14,27 +11,6 @@ from .config import Config
 from .metrics import distances
 from lib.kmerize.sample_map import SampleMap
 from lib.kmerize.sample import Sample
-
-
-class LoadApply:
-    def __init__(self, func: Callable):
-        self.func = func
-
-    def __call__(self, x_kmer_file: str, y_kmer_file: str):
-        xcounter = LoadApply._load_kmer_index(x_kmer_file)
-        ycounter = LoadApply._load_kmer_index(y_kmer_file)
-        return self.func(xcounter, ycounter)
-
-    @staticmethod
-    @functools.lru_cache(maxsize=32)
-    def _load_kmer_index(counter_file: str) -> Counter:
-        counter = Counter()
-        seqs = SeqIO.parse(open(counter_file), "fasta")
-        for seq_record in seqs:
-            count, sequence = seq_record.id, str(seq_record.seq)
-            counter[sequence] = int(count)
-
-        return counter
 
 
 class PwMatrix:
@@ -50,13 +26,13 @@ class PwMatrix:
         self.__distfunc = distance_func
 
     @staticmethod
-    def create(config: Config, input_files: List[str]):
-        sample_map = SampleMap.create(config, input_files)
-
-        pairs = list(itertools.combinations(sample_map.paths, 2))
+    def create(config: Config, sample_map: SampleMap):
+        distributions = [np.array(x.kmers_distribution)
+                         for x in sample_map.values()]
+        pairs = list(itertools.combinations(distributions, 2))
         distance_func = distances[config.dist.func]
 
-        packed_task = PackedTask(LoadApply(distance_func), queue)
+        packed_task = PackedTask(distance_func, queue)
 
         result = pool.map_async(packed_task, pairs)
         progress_bar(result, queue, len(pairs))

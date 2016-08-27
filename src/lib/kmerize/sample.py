@@ -5,7 +5,7 @@ from Bio import SeqIO
 class SampleFile:
     def __init__(self, path: str):
         self._path = path
-        self._format = os.path.splitext(os.path.basename(path))[1]
+        self._format = os.path.splitext(os.path.basename(path))[1][1:]
 
     @property
     def path(self) -> str:
@@ -21,7 +21,7 @@ class Sample:
                  source_file: str):
 
         self._name = os.path.splitext(os.path.basename(source_file))[0]
-        self._file = SampleFile(source_file)
+        self._source_file = SampleFile(source_file)
         self.kmers_distribution = None
 
     @property
