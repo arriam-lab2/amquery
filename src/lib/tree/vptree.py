@@ -4,7 +4,7 @@ import itertools
 import random
 import numpy as np
 import pickle
-from typing import Callable
+from typing import Callable, Any, Sequence
 
 from ..distance import PwMatrix
 from ..coord_system import CoordSystem
@@ -49,7 +49,7 @@ class BaseVpTree:
                 self.right = BaseVpTree(rightside, func)
                 self.size += self.right.size
 
-    def insert(self, point: Sample):
+    def insert(self, point: Any):
         if self.size == 0:
             self.vp = point
         else:
@@ -69,15 +69,6 @@ class BaseVpTree:
                     self.right.insert(point)
 
         self.size += 1
-
-
-class Distance:
-    def __init__(self,
-                 pwmatrix: PwMatrix):
-        self.pwmatrix = pwmatrix
-
-    def __call__(self, a: Sample, b: Sample):
-        return self.pwmatrix[a, b]
 
 
 def euclidean(a: np.array, b: np.array):
@@ -136,8 +127,8 @@ class VpTree(BaseVpTree):
                       list(pwmatrix.sample_map.samples),
                       tree_distance)
 
-    def add_samples(self, sample_map: SampleMap):
-        for sample_file in sample_map.values():
+    def add_samples(self, samples: Sequence[Sample]):
+        for sample_file in samples:
             self.add_sample(sample_file)
 
     def add_sample(self, sample: Sample):
@@ -147,3 +138,7 @@ class VpTree(BaseVpTree):
     @property
     def pwmatrix(self) -> PwMatrix:
         return self.func.pwmatrix
+
+    @property
+    def sample_map(self) -> SampleMap:
+        return self.pwmatrix.sample_map

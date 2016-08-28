@@ -3,6 +3,7 @@ from typing import List
 from .config import Config
 from .distance import PwMatrix
 from .tree.vptree import VpTree
+from .tree.search import neighbors
 from .coord_system import CoordSystem
 from lib.kmerize.kmer_index import PrimaryKmerIndex
 from lib.kmerize.sample import Sample
@@ -17,7 +18,7 @@ def _register(config: Config,
     for sample_file in sample_files:
         sample = Sample(sample_file)
         kmer_index.register(sample)
-        sample_map[sample_file] = sample
+        sample_map[sample.name] = sample
 
     return SampleMap(config, sample_map)
 
@@ -50,9 +51,9 @@ class Index:
 
     @staticmethod
     def load(config: Config):
+        kmer_index = PrimaryKmerIndex.load(config)
         coord_sys = CoordSystem.load(config)
         vptree = VpTree.load(config)
-        kmer_index = PrimaryKmerIndex.load(config)
         return Index(config, kmer_index, coord_sys, vptree)
 
     @staticmethod
@@ -73,14 +74,29 @@ class Index:
                                                    pwmatrix)
         self._vptree = VpTree.build(self.config,
                                     self.coord_system,
-                                    self.pwmatrix)
+                                    pwmatrix)
 
     def add(self, sample_files: List[str]):
         sample_map = _register(self.config,
                                sample_files,
                                self.kmer_index)
-        sample_map = _unify(sample_map, self.kmer_index)
-        self.vptree.add_samples(sample_map)
+        new_samples = sample_map.values()
+
+        self.sample_map.update(sample_map)
+        sample_map = _unify(self.sample_map, self.kmer_index)
+
+        self.vptree.add_samples(new_samples)
+
+    def find(self, sample_file: str, k: int):
+        sample_map = _register(self.config,
+                               [sample_file],
+                               self.kmer_index)
+        sample = list(sample_map.values())[0]
+
+        _unify(self.sample_map, self.kmer_index)
+
+        values, points = neighbors(self.vptree, sample, k)
+        return values, points
 
     @property
     def coord_system(self) -> CoordSystem:
@@ -89,6 +105,10 @@ class Index:
     @property
     def vptree(self) -> VpTree:
         return self._vptree
+
+    @property
+    def sample_map(self) -> SampleMap:
+        return self.vptree.sample_map
 
     @property
     def config(self) -> Config:

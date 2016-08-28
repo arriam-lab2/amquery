@@ -1,49 +1,53 @@
-from typing import List, Any
+from typing import Any, Tuple
 import numpy as np
+import queue
 
-from lib.tree.vptree import BaseVpTree, TreePoint
-
-
-def _neighbor_subtree(vptree: BaseVpTree,
-                     x: TreePoint,
-                     k: int) -> List[TreePoint]:
-    tree = vptree
-    func = tree.func
-
-    while tree.size > k:
-        dist = func(tree.vp, x)
-        if tree.median and dist <= tree.median:
-            if tree.left.size < k:
-                return tree
-            tree = tree.left
-        elif tree.median and dist > tree.median:
-            if tree.right.size < k:
-                return tree
-            tree = tree.right
-        else:
-            return tree
-
-    return tree
+from lib.tree.vptree import BaseVpTree
 
 
-# depth-first search
-def dfs(tree: BaseVpTree) -> List[Any]:
-    result = []
-    if tree.left:
-        result.extend(dfs(tree.left))
-    if tree.right:
-        result.extend(dfs(tree.right))
+def _neighbors(tree: BaseVpTree, x: Any, k: int):
+    tau = np.inf
+    neighbors = queue.PriorityQueue()
+    node_queue = queue.Queue()
+    node_queue.put(tree)
 
-    result.append(list(tree.vp))
-    return result
+    while not node_queue.empty():
+        node = node_queue.get()
+        if node:
+            d = tree.func(x, node.vp)
+
+            if len(neighbors.queue) < k:
+                neighbors.put((-d, node.vp))
+            elif d < tau:
+                neighbors.put((-d, node.vp))
+                if len(neighbors.queue) > k:
+                    neighbors.get()
+
+                tau, _ = neighbors.queue[0]
+                tau *= -1
+
+            if not node.median:
+                continue
+
+            if d < node.median:
+                if d < node.median + tau:
+                    node_queue.put(node.left)
+                if d >= node.median - tau:
+                    node_queue.put(node.right)
+            else:
+                if d < node.median + tau:
+                    node_queue.put(node.left)
+                if d >= node.median - tau:
+                    node_queue.put(node.right)
+
+    return neighbors.queue
 
 
 def neighbors(vptree: BaseVpTree,
-              x: TreePoint,
-              k: int) -> np.ndarray:
-    subtree = _neighbor_subtree(vptree, x, k)
-    points = np.array(dfs(subtree))
-    values = np.array([vptree.func(x, p) for p in points])
-    points = points[values.argsort()]
-    values = np.sort(values)
-    return values[:k], points[:k]
+              x: Any,
+              k: int) -> Tuple[np.array, np.array]:
+
+    result = _neighbors(vptree, x, k)
+    result = sorted([(-value, point) for value, point in result])
+    values, points = zip(*result)
+    return np.array(values), np.array(points)
