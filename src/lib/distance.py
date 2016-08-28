@@ -11,6 +11,7 @@ from .config import Config
 from .metrics import distances
 from lib.kmerize.sample_map import SampleMap
 from lib.kmerize.sample import Sample
+from lib.benchmarking import measure_time
 
 
 class PwMatrix:
@@ -26,6 +27,7 @@ class PwMatrix:
         self.__distfunc = distance_func
 
     @staticmethod
+    @measure_time(enabled=True)
     def create(config: Config, sample_map: SampleMap):
         distributions = [np.array(x.kmers_distribution)
                          for x in sample_map.values()]

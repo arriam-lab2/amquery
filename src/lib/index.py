@@ -8,8 +8,10 @@ from .coord_system import CoordSystem
 from lib.kmerize.kmer_index import PrimaryKmerIndex
 from lib.kmerize.sample import Sample
 from lib.kmerize.sample_map import SampleMap
+from lib.benchmarking import measure_time
 
 
+@measure_time(enabled=True)
 def _register(config: Config,
               sample_files: List[str],
               kmer_index: PrimaryKmerIndex) -> SampleMap:
@@ -23,6 +25,7 @@ def _register(config: Config,
     return SampleMap(config, sample_map)
 
 
+@measure_time(enabled=True)
 def _unify(sample_map: SampleMap,
            kmer_index: PrimaryKmerIndex) -> SampleMap:
 
@@ -44,6 +47,7 @@ class Index:
         self._coord_system = coord_system
         self._vptree = vptree
 
+    @measure_time(enabled=True)
     def save(self):
         self.kmer_index.save()
         self.coord_system.save()

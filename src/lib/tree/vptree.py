@@ -11,6 +11,7 @@ from ..coord_system import CoordSystem
 from ..config import Config
 from lib.kmerize.sample import Sample
 from lib.kmerize.sample_map import SampleMap
+from lib.benchmarking import measure_time
 
 
 # Vantage-point tree
@@ -112,6 +113,7 @@ class VpTree(BaseVpTree):
             return vptree
 
     @staticmethod
+    @measure_time(enabled=True)
     def build(config: Config,
               coord_system: CoordSystem = None,
               pwmatrix: PwMatrix = None):
@@ -127,6 +129,7 @@ class VpTree(BaseVpTree):
                       list(pwmatrix.sample_map.samples),
                       tree_distance)
 
+    @measure_time(enabled=True)
     def add_samples(self, samples: Sequence[Sample]):
         for sample_file in samples:
             self.add_sample(sample_file)

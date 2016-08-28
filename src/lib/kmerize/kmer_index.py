@@ -32,7 +32,6 @@ class PrimaryKmerIndex:
     def __init__(self, config: Config):
         self.config = config
         self.kmer_set = OrderedSet()
-        # self.kmer_counter = KmerCounter(config)
 
     @staticmethod
     def load(config: Config):
