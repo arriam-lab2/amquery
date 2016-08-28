@@ -88,7 +88,13 @@ class Index:
         self.vptree.add_samples(new_samples)
 
     def find(self, sample_file: str, k: int):
-        sample = Sample(sample_file)
+        sample_map = _register(self.config,
+                               [sample_file],
+                               self.kmer_index)
+        sample = list(sample_map.values())[0]
+
+        _unify(self.sample_map, self.kmer_index)
+
         values, points = neighbors(self.vptree, sample, k)
         return values, points
 
