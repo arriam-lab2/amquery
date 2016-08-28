@@ -206,7 +206,7 @@ def stats(config: Config):
 
     index = Index.load(config)
     indexed = len(index.sample_map)
-    coord_system_size = len(index.coord_system)
+    coord_system_size = len(index.coord_system.keys())
 
     print("Current index:", config.current_index)
     print("Indexed:", indexed, "samples")

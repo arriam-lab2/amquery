@@ -5,6 +5,8 @@ import random
 import numpy as np
 import pickle
 from typing import List
+import scipy
+from scipy import stats
 
 from genetic.individuals import SingleChromosomeIndividual
 from genetic.populations import PanmicticPopulation
@@ -43,18 +45,16 @@ class Fitness:
         self.pwmatrix = pwmatrix
 
     def __call__(self, indiv: SingleChromosomeIndividual):
-        return self._total_corr(indiv.genome)
+        return self.fitness_function(indiv.genome)
 
     def _choose(self, names_idx: List[int]):
         names_idx = sorted(names_idx)
         return self.pwmatrix.matrix[np.ix_(names_idx, names_idx)]
 
-    def _total_corr(self, names_idx: List[int]):
-        dmx = self._choose(names_idx)
-        corrs = np.corrcoef(dmx)
-        sums = np.apply_along_axis(sum, 1, corrs)
-        total_pc = np.apply_along_axis(sum, 0, sums)
-        return -1. * float(total_pc)
+    def fitness_function(self, names_idx: List[int]):
+        submatrix = self._choose(names_idx)
+        singular_values = np.linalg.svd(np.cov(submatrix))[1]
+        return scipy.stats.mstats.gmean(singular_values)
 
 
 def random_chr(names: List[str], k: int):
