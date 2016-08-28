@@ -50,9 +50,9 @@ class Index:
 
     @staticmethod
     def load(config: Config):
+        kmer_index = PrimaryKmerIndex.load(config)
         coord_sys = CoordSystem.load(config)
         vptree = VpTree.load(config)
-        kmer_index = PrimaryKmerIndex.load(config)
         return Index(config, kmer_index, coord_sys, vptree)
 
     @staticmethod
@@ -73,7 +73,7 @@ class Index:
                                                    pwmatrix)
         self._vptree = VpTree.build(self.config,
                                     self.coord_system,
-                                    self.pwmatrix)
+                                    pwmatrix)
 
     def add(self, sample_files: List[str]):
         sample_map = _register(self.config,

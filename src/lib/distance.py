@@ -48,7 +48,10 @@ class PwMatrix:
     @staticmethod
     def load(config: Config):
         sample_map = SampleMap.load(config)
-        dataframe = pd.read_csv(config.pwmatrix_path, sep='\t', index_col=0)
+        dataframe = pd.read_csv(config.pwmatrix_path,
+                                sep='\t')
+        dataframe['id'] = dataframe.keys()
+        dataframe = dataframe.set_index('id')
         distance_func = distances[config.dist.func]
         pwmatrix = PwMatrix(config,
                             sample_map,
@@ -60,7 +63,10 @@ class PwMatrix:
         config = self.config
         del self.config
 
-        self.__dataframe.to_csv(config.pwmatrix_path, sep='\t')
+        self.__dataframe.to_csv(config.pwmatrix_path,
+                                sep='\t',
+                                na_rep="N/A",
+                                index=False)
         self.__sample_map.save()
 
         self.config = config

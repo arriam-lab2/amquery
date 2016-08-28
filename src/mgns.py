@@ -206,7 +206,8 @@ def stats(config: Config):
 
     index = Index.load(config)
     indexed = len(index.sample_map)
+    coord_system_size = len(index.coord_system)
 
     print("Current index:", config.current_index)
     print("Indexed:", indexed, "samples")
-    print("Coordinate system size:", config.genetic.coord_system_size)
+    print("Coordinate system size:", coord_system_size)
