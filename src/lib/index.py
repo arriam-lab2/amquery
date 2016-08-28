@@ -3,6 +3,7 @@ from typing import List
 from .config import Config
 from .distance import PwMatrix
 from .tree.vptree import VpTree
+from .tree.search import neighbors
 from .coord_system import CoordSystem
 from lib.kmerize.kmer_index import PrimaryKmerIndex
 from lib.kmerize.sample import Sample
@@ -85,6 +86,11 @@ class Index:
         sample_map = _unify(self.sample_map, self.kmer_index)
 
         self.vptree.add_samples(new_samples)
+
+    def find(self, sample_file: str, k: int):
+        sample = Sample(sample_file)
+        values, points = neighbors(self.vptree, sample, k)
+        return values, points
 
     @property
     def coord_system(self) -> CoordSystem:

@@ -211,3 +211,19 @@ def stats(config: Config):
     print("Current index:", config.current_index)
     print("Indexed:", indexed, "samples")
     print("Coordinate system size:", coord_system_size)
+
+
+@cli.command()
+@click.argument('input_file', type=click.Path(exists=True),
+                required=True)
+@click.option('-k', type=int, required=True,
+              help='Count of nearest neighbors')
+@pass_config
+def find(config: Config, input_file: str, k: int):
+    _index_check(config)
+    _build_check(config)
+
+    index = Index.load(config)
+    _, points = index.find(input_file, k)
+    print(k, "nearest neighbors:",
+          ', '.join(sample.name for sample in points))

@@ -1,12 +1,12 @@
-from typing import List, Any
+from typing import List, Any, Tuple
 import numpy as np
 
-from lib.tree.vptree import BaseVpTree, TreePoint
+from lib.tree.vptree import BaseVpTree
 
 
 def _neighbor_subtree(vptree: BaseVpTree,
-                     x: TreePoint,
-                     k: int) -> List[TreePoint]:
+                      x: Any,
+                      k: int) -> BaseVpTree:
     tree = vptree
     func = tree.func
 
@@ -34,13 +34,14 @@ def dfs(tree: BaseVpTree) -> List[Any]:
     if tree.right:
         result.extend(dfs(tree.right))
 
-    result.append(list(tree.vp))
+    result.append(tree.vp)
     return result
 
 
 def neighbors(vptree: BaseVpTree,
-              x: TreePoint,
-              k: int) -> np.ndarray:
+              x: Any,
+              k: int) -> Tuple[np.array, np.array]:
+
     subtree = _neighbor_subtree(vptree, x, k)
     points = np.array(dfs(subtree))
     values = np.array([vptree.func(x, p) for p in points])
