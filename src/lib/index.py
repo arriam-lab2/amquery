@@ -54,6 +54,7 @@ class Index:
         self.vptree.save()
 
     @staticmethod
+    @measure_time(enabled=True)
     def load(config: Config):
         kmer_index = PrimaryKmerIndex.load(config)
         coord_sys = CoordSystem.load(config)
