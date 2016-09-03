@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import pickle
+import joblib
 
 from lib.config import Config
 
@@ -12,15 +12,14 @@ class SampleMap(dict):
 
     @staticmethod
     def load(config: Config):
-        with open(config.sample_map_path, 'rb') as f:
-            sample_map = pickle.load(f)
-            sample_map.config = config
-            return sample_map
+        sample_map = joblib.load(config.sample_map_path)
+        sample_map.config = config
+        return sample_map
 
     def save(self):
         config = self.config
         del self.config
-        pickle.dump(self, open(config.sample_map_path, "wb"))
+        joblib.dump(self, config.sample_map_path)
         self.config = config
 
     @property

@@ -1,4 +1,3 @@
-import numpy as np
 import operator as op
 import itertools
 from collections import Counter
@@ -34,7 +33,7 @@ def _isvalid(x: List, alphabet=acgt_alphabet):
 
 
 def create_kmer_index(sample: Sample, k):
-    print(sample.name)
+    # print(sample.name)
     precalc = LexicRankPrecalc(k, acgt_alphabet)
     kmer_refs = [_lexicographic_rank(kmer, precalc, acgt_alphabet)
                  for seq in sample.sequences() if _isvalid(seq)

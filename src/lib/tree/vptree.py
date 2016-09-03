@@ -3,7 +3,7 @@
 import itertools
 import random
 import numpy as np
-import pickle
+import joblib
 from typing import Callable, Any, Sequence
 
 from ..distance import PwMatrix
@@ -100,17 +100,16 @@ class VpTree(BaseVpTree):
         config = self.config
         del self.config
 
-        pickle.dump(self, open(config.vptree_path, "wb"))
+        joblib.dump(self, config.vptree_path)
         self.pwmatrix.save()
 
         self.config = config
 
     @staticmethod
     def load(config: Config):
-        with open(config.vptree_path, 'rb') as f:
-            vptree = pickle.load(f)
-            vptree.config = config
-            return vptree
+        vptree = joblib.load(config.vptree_path)
+        vptree.config = config
+        return vptree
 
     @staticmethod
     @measure_time(enabled=True)
