@@ -3,15 +3,14 @@ import itertools
 import numpy as np
 import pandas as pd
 import scipy.spatial.distance
-import multiprocessing as mp
 
-from .work import N_JOBS
 from .ui import progress_bar
 from .config import Config
 from .metrics import distances
 from lib.kmerize.sample_map import SampleMap
 from lib.kmerize.sample import Sample
 from lib.benchmarking import measure_time
+from lib.multiprocess import Pool, PackedBinaryFunction
 
 
 class PwMatrix:
@@ -34,12 +33,13 @@ class PwMatrix:
         pairs = list(itertools.combinations(distributions, 2))
         distance_func = distances[config.dist.func]
 
-        packed_task = PackedTask(distance_func, queue)
+        packed_task = PackedBinaryFunction(distance_func, Pool.instance().queue)
+        result = Pool.instance().map_async(packed_task, pairs)
+        progress_bar(result, Pool.instance().queue, len(pairs))
 
-        result = pool.map_async(packed_task, pairs)
-        progress_bar(result, queue, len(pairs))
-
-        matrix = scipy.spatial.distance.squareform(result.get())
+        data = result.get()
+        Pool.instance().clear()
+        matrix = scipy.spatial.distance.squareform(data)
         dataframe = pd.DataFrame(matrix,
                                  index=sample_map.labels,
                                  columns=sample_map.labels)
@@ -115,24 +115,3 @@ class PwMatrix:
     @property
     def hasvalue(self, a: str, b: str) -> bool:
         return a in self.labels and b in self.labels
-
-
-class PackedTask:
-    def __init__(self,
-                 func: Callable,
-                 queue: mp.Queue):
-        self.func = func
-        self.queue = queue
-
-    def __call__(self, args):
-        a, b = args
-        self.queue.put(a)
-        return self.func(a, b)
-
-
-if __name__ == "__main__":
-    raise RuntimeError
-else:
-    pool = mp.Pool(processes=N_JOBS)
-    manager = mp.Manager()
-    queue = manager.Queue()

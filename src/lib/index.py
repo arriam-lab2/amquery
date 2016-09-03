@@ -5,8 +5,7 @@ from .distance import PwMatrix
 from .tree.vptree import VpTree
 from .tree.search import neighbors
 from .coord_system import CoordSystem
-from lib.kmerize.kmer_index import create_kmer_index
-from lib.kmerize.sample import Sample
+from lib.kmerize.kmer_index import kmerize_samples
 from lib.kmerize.sample_map import SampleMap
 from lib.benchmarking import measure_time
 
@@ -34,19 +33,8 @@ class Index:
         return Index(config, coord_sys, vptree)
 
     @staticmethod
-    @measure_time(enabled=True)
-    def _register(sample_files: List[str], k: int):
-        sample_map = {}
-        for sample_file in sample_files:
-            sample = Sample(sample_file)
-            sample.kmer_index = create_kmer_index(sample, k)
-            sample_map[sample.name] = sample
-
-        return sample_map
-
-    @staticmethod
     def build(config: Config, sample_files: List[str]):
-        sample_map = SampleMap(config, Index._register(sample_files,
+        sample_map = SampleMap(config, kmerize_samples(sample_files,
                                                        config.dist.kmer_size))
         pwmatrix = PwMatrix.create(config, sample_map)
         coord_system = CoordSystem.calculate(config, pwmatrix)
@@ -63,12 +51,19 @@ class Index:
                                     pwmatrix)
 
     def add(self, sample_files: List[str]):
-        sample_map = Index._register(sample_files, self.config.dist.kmer_size)
+        sample_map = SampleMap(self.config,
+                               kmerize_samples(sample_files,
+                                               self.config.dist.kmer_size)
+                               )
+
         self.sample_map.update(sample_map)
         self.vptree.add_samples(sample_map.values())
 
     def find(self, sample_file: str, k: int):
-        sample_map = Index._register([sample_file], self.config.dist.kmer_size)
+        sample_map = SampleMap(self.config,
+                               kmerize_samples([sample_file],
+                                               self.config.dist.kmer_size)
+                               )
         sample = list(sample_map.values())[0]
 
         values, points = neighbors(self.vptree, sample, k)
