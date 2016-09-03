@@ -1,65 +1,42 @@
-import numpy as np
-import pickle
+import operator as op
+import itertools
 from collections import Counter
+from typing import List
+from functools import reduce
 
-from lib.config import Config
 from lib.kmerize.sample import Sample
 
-
-class OrderedSet():
-    def __init__(self):
-        self.map = {}
-        self.counter = -1
-
-    def setdefault(self, key):
-        if key not in self.map:
-            self.counter += 1
-            self.map[key] = self.counter
-
-        return self.map[key]
-
-    def __len__(self):
-        return len(self.map)
+acgt_alphabet = dict(zip([char for char in ('A', 'C', 'G', 'T')],
+                         itertools.count()))
 
 
 def _kmerize_string(string: str, k: int):
-                    # compression: int=9):)
-    byte_string = bytes(string, encoding="utf8")
-    return (byte_string[i:i+k] for i in range(len(string)-k+1))
+    return (string[i:i+k] for i in range(len(string)-k+1))
 
 
-class PrimaryKmerIndex:
-    def __init__(self, config: Config):
-        self.config = config
-        self.kmer_set = OrderedSet()
-        # self.kmer_counter = KmerCounter(config)
+class LexicRankPrecalc:
+    def __init__(self, kmer_size, alphabet=acgt_alphabet):
+        n = len(alphabet)
+        self.power = dict([(x, n ** x) for x in range(0, kmer_size)])
 
-    @staticmethod
-    def load(config: Config):
-        with open(config.primary_kmer_index_path, 'rb') as f:
-            kmer_index = pickle.load(f)
-            kmer_index.config = config
-            return kmer_index
+    def __getitem__(self, i):
+        return self.power[i]
 
-    def save(self):
-        config = self.config
-        del self.config
-        pickle.dump(self, open(config.primary_kmer_index_path, "wb"))
-        self.config = config
 
-    def register(self, sample: Sample):
-        k = self.config.dist.kmer_size
-        kmer_primary_refs = [self.kmer_set.setdefault(kmer)
-                             for seq in sample.sequences()
-                             for kmer in _kmerize_string(seq, k)]
+def _lexicographic_rank(x: List, precalc: LexicRankPrecalc, alphabet) -> int:
+    return sum(alphabet[x[i]] * precalc[len(x) - i - 1]
+               for i in range(len(x)))
 
-        kmer_ref_counter = Counter(kmer_primary_refs)
 
-        sample.kmers_distribution = np.zeros(len(self.kmer_set))
-        for kmer_ref, count in kmer_ref_counter.items():
-            sample.kmers_distribution[kmer_ref] = count
+def _isvalid(x: List, alphabet=acgt_alphabet):
+    return reduce(op.and_, [char in alphabet for char in x])
 
-    def extend_sample_distribution(self, sample: Sample):
-        zeros = np.zeros(len(self.kmer_set) - len(sample.kmers_distribution))
-        sample.kmers_distribution = np.concatenate((sample.kmers_distribution,
-                                                   zeros))
+
+def create_kmer_index(sample: Sample, k):
+    # print(sample.name)
+    precalc = LexicRankPrecalc(k, acgt_alphabet)
+    kmer_refs = [_lexicographic_rank(kmer, precalc, acgt_alphabet)
+                 for seq in sample.sequences() if _isvalid(seq)
+                 for kmer in _kmerize_string(seq, k)]
+
+    return Counter(kmer_refs)

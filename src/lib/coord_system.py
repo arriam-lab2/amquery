@@ -3,7 +3,7 @@
 import itertools
 import random
 import numpy as np
-import pickle
+import joblib
 from typing import List
 import scipy
 from scipy import stats
@@ -15,6 +15,7 @@ from genetic.selection import bimodal
 from lib.distance import PwMatrix
 from lib.config import Config
 from lib.kmerize.sample_map import SampleMap
+from lib.benchmarking import measure_time
 
 
 class Engine:
@@ -67,6 +68,7 @@ class CoordSystem(dict):
         super(CoordSystem, self).__init__(*args, **kwargs)
 
     @staticmethod
+    @measure_time(enabled=True)
     def calculate(config: Config, pwmatrix: PwMatrix = None):
         coord_system_size = config.genetic.coord_system_size
         generations = config.genetic.generations
@@ -105,15 +107,14 @@ class CoordSystem(dict):
 
     @staticmethod
     def load(config: Config):
-        with open(config.coordsys_path, 'rb') as f:
-            coord_system = pickle.load(f)
-            coord_system.config = config
-            return coord_system
+        coord_system = joblib.load(config.coordsys_path)
+        coord_system.config = config
+        return coord_system
 
     def save(self):
         config = self.config
         del self.config
-        pickle.dump(self, open(config.coordsys_path, "wb"))
+        joblib.dump(self, config.coordsys_path)
         self.config = config
 
 
