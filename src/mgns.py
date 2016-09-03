@@ -118,7 +118,7 @@ def build(config: Config, kmer_size: int, distance: str,
 
 @cli.command()
 @click.option('--kmer_size', '-k', type=int, help='K-mer size',
-              default=50)
+              default=29)
 @click.option('--distance', '-d', type=click.Choice(distances.keys()),
               default='jsd', help='A distance metric')
 @click.option('--coord_system_size', '-c', type=int,
