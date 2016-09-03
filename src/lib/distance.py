@@ -29,8 +29,8 @@ class PwMatrix:
     @staticmethod
     @measure_time(enabled=True)
     def create(config: Config, sample_map: SampleMap):
-        distributions = [np.array(x.kmers_distribution)
-                         for x in sample_map.values()]
+        distributions = [x.kmer_index
+                         for x in sample_map.samples]
         pairs = list(itertools.combinations(distributions, 2))
         distance_func = distances[config.dist.func]
 
@@ -89,8 +89,8 @@ class PwMatrix:
                 self.add_sample(x)
 
         if np.isnan(self.dataframe[a.name][b.name]):
-            value = self.__distfunc(a.kmers_distribution,
-                                    b.kmers_distribution)
+            value = self.__distfunc(a.kmer_index,
+                                    b.kmer_index)
 
             self.__dataframe[a.name][b.name] = value
 

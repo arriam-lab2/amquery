@@ -22,7 +22,7 @@ class Sample:
 
         self._name = os.path.splitext(os.path.basename(source_file))[0]
         self._source_file = SampleFile(source_file)
-        self.kmers_distribution = None
+        self.kmer_index = None
 
     @property
     def name(self) -> str:
