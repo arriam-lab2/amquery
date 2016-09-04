@@ -1,7 +1,7 @@
 import operator as op
 import itertools
 from collections import Counter
-from typing import List
+from typing import List, Mapping
 from functools import reduce
 
 from lib.kmerize.sample import Sample
@@ -9,6 +9,7 @@ from lib.benchmarking import measure_time
 from lib.ui import progress_bar
 from lib.multiprocess import Pool
 
+from lib.kmerize import rank
 
 acgt_alphabet = dict(zip([char for char in ('A', 'C', 'G', 'T')],
                          itertools.count()))
@@ -18,18 +19,9 @@ def _kmerize_string(string: str, k: int):
     return (string[i:i+k] for i in range(len(string)-k+1))
 
 
-class LexicRankPrecalc:
-    def __init__(self, kmer_size, alphabet=acgt_alphabet):
-        n = len(alphabet)
-        self.power = dict([(x, n ** x) for x in range(0, kmer_size)])
-
-    def __getitem__(self, i):
-        return self.power[i]
-
-
-def _lexicographic_rank(x: List, precalc: LexicRankPrecalc, alphabet) -> int:
-    return sum(alphabet[x[i]] * precalc[len(x) - i - 1]
-               for i in range(len(x)))
+@measure_time(False)
+def _lexicographic_rank(x: List, alphabet: Mapping) -> int:
+    return rank.lexicographic_rank(x, alphabet)
 
 
 def _isvalid(x: List, alphabet=acgt_alphabet):
@@ -38,13 +30,12 @@ def _isvalid(x: List, alphabet=acgt_alphabet):
 
 class KmerCountFunction:
     def __init__(self, k, queue):
-        self.precalc = LexicRankPrecalc(k, acgt_alphabet)
         self.k = k
         self.queue = queue
 
     def __call__(self, sample_file: str):
         sample = Sample(sample_file)
-        kmer_refs = [_lexicographic_rank(kmer, self.precalc, acgt_alphabet)
+        kmer_refs = [_lexicographic_rank(kmer, acgt_alphabet)
                      for seq in sample.sequences() if _isvalid(seq)
                      for kmer in _kmerize_string(seq, self.k)]
 
