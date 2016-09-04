@@ -1,4 +1,5 @@
 import operator as op
+import numpy as np
 import itertools
 from collections import Counter
 from typing import List, Mapping
@@ -8,7 +9,6 @@ from lib.kmerize.sample import Sample
 from lib.benchmarking import measure_time
 from lib.ui import progress_bar
 from lib.multiprocess import Pool
-
 from lib.kmerize import rank
 
 acgt_alphabet = dict(zip([char for char in ('A', 'C', 'G', 'T')],
@@ -35,10 +35,8 @@ class KmerCountFunction:
 
     def __call__(self, sample_file: str):
         sample = Sample(sample_file)
-        kmer_refs = [_lexicographic_rank(kmer, acgt_alphabet)
-                     for seq in sample.sequences() if _isvalid(seq)
-                     for kmer in _kmerize_string(seq, self.k)]
-
+        kmer_refs = np.concatenate(list(rank.count_kmer_ranks(seq, self.k, acgt_alphabet)
+                                        for seq in sample.sequences() if _isvalid(seq)))
         self.queue.put(1)
 
         sample.kmer_index = Counter(kmer_refs)
