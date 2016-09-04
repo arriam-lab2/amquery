@@ -2,7 +2,7 @@ from typing import List
 
 from .config import Config
 from .distance import PwMatrix
-from .tree.vptree import VpTree
+from .tree.vptree import VpTree, TreeDistance
 from .tree.search import neighbors
 from .coord_system import CoordSystem
 from lib.kmerize.kmer_index import kmerize_samples
@@ -14,23 +14,27 @@ class Index:
     def __init__(self,
                  config: Config,
                  coord_system: CoordSystem,
+                 pwmatrix: PwMatrix,
                  vptree: VpTree):
 
         self._config = config
         self._coord_system = coord_system
+        self._pwmatrix = pwmatrix
         self._vptree = vptree
 
     @measure_time(enabled=True)
     def save(self):
         self.coord_system.save()
+        self.pwmatrix.save()
         self.vptree.save()
 
     @staticmethod
     @measure_time(enabled=True)
     def load(config: Config):
-        coord_sys = CoordSystem.load(config)
+        coord_system = CoordSystem.load(config)
+        pwmatrix = PwMatrix.load(config)
         vptree = VpTree.load(config)
-        return Index(config, coord_sys, vptree)
+        return Index(config, coord_system, pwmatrix, vptree)
 
     @staticmethod
     def build(config: Config, sample_files: List[str]):
@@ -38,17 +42,16 @@ class Index:
                                                        config.dist.kmer_size))
         pwmatrix = PwMatrix.create(config, sample_map)
         coord_system = CoordSystem.calculate(config, pwmatrix)
-        vptree = VpTree.build(config, coord_system, pwmatrix)
+        tree_distance = TreeDistance(coord_system, pwmatrix)
+        vptree = VpTree.build(config, tree_distance)
 
-        return Index(config, coord_system, vptree)
+        return Index(config, coord_system, pwmatrix, vptree)
 
     def refine(self):
-        pwmatrix = PwMatrix.load(self.config)
         self._coord_system = CoordSystem.calculate(self.config,
-                                                   pwmatrix)
-        self._vptree = VpTree.build(self.config,
-                                    self.coord_system,
-                                    pwmatrix)
+                                                   self.pwmatrix)
+        tree_distance = TreeDistance(self.coord_system, self.pwmatrix)
+        self._vptree = VpTree.build(self.config, tree_distance)
 
     def add(self, sample_files: List[str]):
         sample_map = SampleMap(self.config,
@@ -57,7 +60,10 @@ class Index:
                                )
 
         self.sample_map.update(sample_map)
-        self.vptree.add_samples(sample_map.values())
+        self._coord_system = CoordSystem.calculate(self.config,
+                                                   self.pwmatrix)
+        tree_distance = TreeDistance(self.coord_system, self.pwmatrix)
+        self.vptree.add_samples(sample_map.values(), tree_distance)
 
     def find(self, sample_file: str, k: int):
         sample_map = SampleMap(self.config,
@@ -65,13 +71,22 @@ class Index:
                                                self.config.dist.kmer_size)
                                )
         sample = list(sample_map.values())[0]
-
-        values, points = neighbors(self.vptree, sample, k)
+        
+        tree_distance = TreeDistance(self.coord_system, self.pwmatrix)
+        values, points = neighbors(self.vptree, sample, k, tree_distance)
         return values, points
+
+    @property
+    def config(self) -> Config:
+        return self._config
 
     @property
     def coord_system(self) -> CoordSystem:
         return self._coord_system
+
+    @property
+    def pwmatrix(self) -> PwMatrix:
+        return self._pwmatrix
 
     @property
     def vptree(self) -> VpTree:
@@ -79,8 +94,4 @@ class Index:
 
     @property
     def sample_map(self) -> SampleMap:
-        return self.vptree.sample_map
-
-    @property
-    def config(self) -> Config:
-        return self._config
+        return self.pwmatrix.sample_map
