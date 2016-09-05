@@ -2,6 +2,7 @@ import numpy as np
 from collections import Counter
 from typing import List
 from ctypes import cdll, POINTER, c_uint8, c_uint64, c_size_t, c_int
+from scipy import sparse as sparse
 
 import src.lib.iof as iof
 from src.lib.kmerize.sample import Sample
@@ -34,7 +35,16 @@ class KmerCountFunction:
         kmer_refs = np.concatenate(
             list(self._count_seq(seq) for seq in sample.iter_seqs())
         )
-        sample.kmer_index = Counter(kmer_refs)
+
+        counter = Counter(kmer_refs)
+        cols = np.array(sorted(list(counter.keys())), dtype=np.uint64)
+        rows = np.array([0 for _ in range(len(cols))], dtype=np.uint64)
+
+        data = np.array([counter[key] for key in cols], dtype=np.float)
+        sample.kmer_index = sparse.csr_matrix((data, (rows, data)),
+                                              shape=(1, 4 ** self.k),
+                                              dtype=np.float)
+
         self.queue.put(1)
         return sample
 
