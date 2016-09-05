@@ -35,13 +35,13 @@ class KmerCountFunction:
         kmer_refs = np.concatenate(
             list(self._count_seq(seq) for seq in sample.iter_seqs())
         )
-
         counter = Counter(kmer_refs)
         cols = np.array(sorted(list(counter.keys())), dtype=np.uint64)
         rows = np.array([0 for _ in range(len(cols))], dtype=np.uint64)
 
         data = np.array([counter[key] for key in cols], dtype=np.float)
-        sample.kmer_index = sparse.csr_matrix((data, (rows, data)),
+
+        sample.kmer_index = sparse.csr_matrix((data, (rows, cols)),
                                               shape=(1, 4 ** self.k),
                                               dtype=np.float)
 
