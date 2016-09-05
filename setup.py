@@ -22,5 +22,8 @@ setup(
         [console_scripts]
         mgns=src.mgns:cli
     ''',
-    ext_modules=[Extension('src.lib.kmerize.rank', sources=['src/lib/kmerize/rank.cpp'])],
+    ext_modules=[Extension('src.lib.kmerize.rank', 
+                           sources=['src/lib/kmerize/rank.cpp'],
+                           extra_compile_args=['-std=c++11'],
+                           )],
 )
