@@ -1,6 +1,12 @@
 import os
 from Bio import SeqIO
 
+import functools
+import itertools
+import operator as op
+from typing import Sequence, Any, List
+import numpy as np
+
 
 class SampleFile:
     def __init__(self, path: str):
@@ -16,10 +22,24 @@ class SampleFile:
         return self._format
 
 
-class Sample:
-    def __init__(self,
-                 source_file: str):
+_alphabet = dict(zip([char for char in ('A', 'C', 'G', 'T')],
+                     itertools.count()))
 
+
+def _isvalid(sequence: Sequence[Any]) -> bool:
+    return functools.reduce(op.and_, [char in _alphabet for char in sequence])
+
+
+def _validate(sequence: Sequence[Any]):
+    return sequence if _isvalid(sequence) else []
+
+
+def _transform(sequence: Sequence[Any]) -> List:
+    return np.array([_alphabet[char] for char in sequence], dtype=np.uint8)
+
+
+class Sample:
+    def __init__(self, source_file: str):
         self._name = os.path.splitext(os.path.basename(source_file))[0]
         self._source_file = SampleFile(source_file)
         self.kmer_index = None
@@ -32,8 +52,8 @@ class Sample:
     def source_file(self) -> str:
         return self._source_file
 
-    def sequences(self) -> str:
+    def iter_seqs(self):
         seqs_records = SeqIO.parse(open(self.source_file.path),
                                    self.source_file.file_format)
-        for seq_record in seqs_records:
-            yield str(seq_record.seq)
+        for seq_rec in seqs_records:
+            yield _transform(_validate(seq_rec.seq))

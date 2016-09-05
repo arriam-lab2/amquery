@@ -1,31 +1,12 @@
-import operator as op
 import numpy as np
-import itertools
 from collections import Counter
-from typing import List, Mapping
-from functools import reduce
+from typing import List
 
 from lib.kmerize.sample import Sample
 from lib.benchmarking import measure_time
 from lib.ui import progress_bar
 from lib.multiprocess import Pool
 from lib.kmerize import rank
-
-acgt_alphabet = dict(zip([char for char in ('A', 'C', 'G', 'T')],
-                         itertools.count()))
-
-
-def _kmerize_string(string: str, k: int):
-    return (string[i:i+k] for i in range(len(string)-k+1))
-
-
-@measure_time(False)
-def _lexicographic_rank(x: List, alphabet: Mapping) -> int:
-    return rank.lexicographic_rank(x, alphabet)
-
-
-def _isvalid(x: List, alphabet=acgt_alphabet):
-    return reduce(op.and_, [char in alphabet for char in x])
 
 
 class KmerCountFunction:
@@ -35,11 +16,12 @@ class KmerCountFunction:
 
     def __call__(self, sample_file: str):
         sample = Sample(sample_file)
-        kmer_refs = np.concatenate(list(rank.count_kmer_ranks(seq, self.k, acgt_alphabet)
-                                        for seq in sample.sequences() if _isvalid(seq)))
-        self.queue.put(1)
-
+        kmer_refs = np.concatenate(
+            list(rank.count_kmer_ranks(seq, self.k)
+                 for seq in sample.iter_seqs())
+        )
         sample.kmer_index = Counter(kmer_refs)
+        self.queue.put(1)
         return sample
 
 

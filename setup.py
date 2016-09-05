@@ -1,5 +1,5 @@
 from setuptools import setup
-from distutils.extension import Extension
+from Cython.Build import cythonize
 import numpy
 
 setup(
@@ -24,7 +24,8 @@ setup(
         [console_scripts]
         mgns=mgns:cli
     ''',
-    ext_modules=[
-        Extension("mgns.rank", ["lib/kmerize/rank.c"])
-    ],
+    ext_modules=
+        cythonize("src/lib/kmerize/rank.pyx"),
+        #Extension("mgns.rank", ["lib/kmerize/rank.c"])
+
 )
