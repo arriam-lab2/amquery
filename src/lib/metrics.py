@@ -1,28 +1,10 @@
-import warnings
 import numpy as np
 import operator as op
 import scipy
 from scipy import sparse
-from collections import Counter
-from typing import Tuple, Any
-
-warnings.filterwarnings("ignore", category=RuntimeWarning)
-
-
-def normalize(hx: Counter, hy: Counter) -> Tuple[Any]:
-    key_union = hx.keys() | hy.keys()
-
-    x = np.array([hx[key] for key in key_union])
-    y = np.array([hy[key] for key in key_union])
-
-    return x / np.sum(x), y / np.sum(y)
-
 
 # Jenson-Shanon divergence
 def jsd(x, y) -> float:
-    x = x._divide(x.sum())
-    y = y._divide(y.sum())
-
     z = x + y
     d1 = x.multiply(2).divide(z).log2().multiply(x)
     d2 = y.multiply(2).divide(z).log2().multiply(y)

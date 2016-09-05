@@ -40,7 +40,7 @@ class KmerCountFunction:
         rows = np.array([0 for _ in range(len(cols))], dtype=np.uint64)
 
         data = np.array([counter[key] for key in cols], dtype=np.float)
-
+        data /= np.sum(data)
         sample.kmer_index = sparse.csr_matrix((data, (rows, cols)),
                                               shape=(1, 4 ** self.k),
                                               dtype=np.float)
