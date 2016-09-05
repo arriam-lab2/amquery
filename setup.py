@@ -1,11 +1,10 @@
 from setuptools import setup
-from Cython.Build import cythonize
-import numpy
+from distutils.core import Extension
 
 setup(
     name='mgns',
     version='0.1',
-    py_modules=['mgns'],
+    py_modules=['src/mgns'],
     install_requires=[
         'numpy>=1.11.0',
         'scipy>=0.17.0',
@@ -19,13 +18,9 @@ setup(
         'tqdm>=4.7.0',
         'pandas>=0.18.0'
     ],
-    include_dirs=[numpy.get_include()],
     entry_points='''
         [console_scripts]
-        mgns=mgns:cli
+        mgns=src.mgns:cli
     ''',
-    ext_modules=
-        cythonize("src/lib/kmerize/rank.pyx"),
-        #Extension("mgns.rank", ["lib/kmerize/rank.c"])
-
+    ext_modules=[Extension('src.lib.kmerize.rank', sources=['src/lib/kmerize/rank.cpp'])],
 )

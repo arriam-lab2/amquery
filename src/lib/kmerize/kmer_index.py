@@ -3,13 +3,13 @@ from collections import Counter
 from typing import List
 from ctypes import cdll, POINTER, c_uint8, c_uint64, c_size_t, c_int
 
+import src.lib.iof as iof
 from src.lib.kmerize.sample import Sample
 from src.lib.benchmarking import measure_time
 from src.lib.ui import progress_bar
 from src.lib.multiprocess import Pool
 
-
-ranklib = cdll.LoadLibrary("src/lib/kmerize/rank.so")
+ranklib = cdll.LoadLibrary(iof.find_lib("src/lib/kmerize", "rank"))
 ranklib.count_kmer_ranks.argtypes = [POINTER(c_uint8), POINTER(c_uint64),
                                      c_size_t, c_int]
 
