@@ -60,8 +60,6 @@ class Index:
                                )
 
         self.sample_map.update(sample_map)
-        self._coord_system = CoordSystem.calculate(self.config,
-                                                   self.pwmatrix)
         tree_distance = TreeDistance(self.coord_system, self.pwmatrix)
         self.vptree.add_samples(sample_map.values(), tree_distance)
 

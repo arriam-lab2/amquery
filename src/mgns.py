@@ -226,6 +226,7 @@ def stats(config: Config):
     print("Average count of unique k-mers: %.2f" % unique,
           "(%.2f %%)" % fraction)
 
+
 @cli.command()
 @click.argument('input_file', type=click.Path(exists=True),
                 required=True)
