@@ -1,56 +1,51 @@
-import operator as op
-import itertools
+import numpy as np
 from collections import Counter
 from typing import List
-from functools import reduce
+from ctypes import cdll, POINTER, c_uint8, c_uint64, c_size_t, c_int
+from scipy import sparse as sparse
 
-from lib.kmerize.sample import Sample
-from lib.benchmarking import measure_time
-from lib.ui import progress_bar
-from lib.multiprocess import Pool
+import src.lib.iof as iof
+from src.lib.kmerize.sample import Sample
+from src.lib.benchmarking import measure_time
+from src.lib.ui import progress_bar
+from src.lib.multiprocess import Pool
 
-
-acgt_alphabet = dict(zip([char for char in ('A', 'C', 'G', 'T')],
-                         itertools.count()))
-
-
-def _kmerize_string(string: str, k: int):
-    return (string[i:i+k] for i in range(len(string)-k+1))
-
-
-class LexicRankPrecalc:
-    def __init__(self, kmer_size, alphabet=acgt_alphabet):
-        n = len(alphabet)
-        self.power = dict([(x, n ** x) for x in range(0, kmer_size)])
-
-    def __getitem__(self, i):
-        return self.power[i]
-
-
-def _lexicographic_rank(x: List, precalc: LexicRankPrecalc, alphabet) -> int:
-    return sum(alphabet[x[i]] * precalc[len(x) - i - 1]
-               for i in range(len(x)))
-
-
-def _isvalid(x: List, alphabet=acgt_alphabet):
-    return reduce(op.and_, [char in alphabet for char in x])
+ranklib = cdll.LoadLibrary(iof.find_lib("src/lib/kmerize", "rank"))
+ranklib.count_kmer_ranks.argtypes = [POINTER(c_uint8), POINTER(c_uint64),
+                                     c_size_t, c_int]
 
 
 class KmerCountFunction:
     def __init__(self, k, queue):
-        self.precalc = LexicRankPrecalc(k, acgt_alphabet)
         self.k = k
         self.queue = queue
 
+    def _count_seq(self, seq: np.array):
+        if seq.size > 0:
+            ranks = np.zeros(len(seq) - self.k + 1, dtype=np.uint64)
+            seq_pointer = seq.ctypes.data_as(POINTER(c_uint8))
+            ranks_pointer = ranks.ctypes.data_as(POINTER(c_uint64))
+            ranklib.count_kmer_ranks(seq_pointer, ranks_pointer, len(seq), self.k)
+            return ranks
+        else:
+            return seq
+
     def __call__(self, sample_file: str):
         sample = Sample(sample_file)
-        kmer_refs = [_lexicographic_rank(kmer, self.precalc, acgt_alphabet)
-                     for seq in sample.sequences() if _isvalid(seq)
-                     for kmer in _kmerize_string(seq, self.k)]
+        kmer_refs = np.concatenate(
+            list(self._count_seq(seq) for seq in sample.iter_seqs())
+        )
+
+        counter = Counter(kmer_refs)
+        cols = np.array(sorted(list(counter.keys())), dtype=np.uint64)
+        rows = np.array([0 for _ in range(len(cols))], dtype=np.uint64)
+
+        data = np.array([counter[key] for key in cols], dtype=np.float)
+        sample.kmer_index = sparse.csr_matrix((data, (rows, data)),
+                                              shape=(1, 4 ** self.k),
+                                              dtype=np.float)
 
         self.queue.put(1)
-
-        sample.kmer_index = Counter(kmer_refs)
         return sample
 
 

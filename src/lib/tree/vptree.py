@@ -6,18 +6,16 @@ import numpy as np
 import joblib
 from typing import Callable, Any, Sequence
 
-from ..distance import PwMatrix
-from ..coord_system import CoordSystem
-from ..config import Config
-from lib.kmerize.sample import Sample
-from lib.kmerize.sample_map import SampleMap
-from lib.benchmarking import measure_time
+from src.lib.distance import PwMatrix
+from src.lib.coord_system import CoordSystem
+from src.lib.config import Config
+from src.lib.kmerize.sample import Sample
+from src.lib.benchmarking import measure_time
 
 
 # Vantage-point tree
 class BaseVpTree:
     def __init__(self, points: np.array, func: Callable):
-        self.func = func
         self.size = 0
         self.left = None
         self.right = None
@@ -33,7 +31,7 @@ class BaseVpTree:
             self.size = 1
             points = np.delete(points, vpi, 0)
 
-            dists = map(self.func, points, itertools.repeat(self.vp))
+            dists = map(func, points, itertools.repeat(self.vp))
             distarr = np.array(list(dists))
             self.median = np.median(distarr)
 
@@ -50,24 +48,24 @@ class BaseVpTree:
                 self.right = BaseVpTree(rightside, func)
                 self.size += self.right.size
 
-    def insert(self, point: Any):
+    def insert(self, point: Any, func: Callable):
         if self.size == 0:
             self.vp = point
         else:
-            distance_value = self.func(point, self.vp)
+            distance_value = func(point, self.vp)
             if not self.median:
                 self.median = distance_value
 
             if distance_value <= self.median:
                 if not self.left:
-                    self.left = BaseVpTree([point], self.func)
+                    self.left = BaseVpTree([point], func)
                 else:
-                    self.left.insert(point)
+                    self.left.insert(point, func)
             else:
                 if not self.right:
-                    self.right = BaseVpTree([point], self.func)
+                    self.right = BaseVpTree([point], func)
                 else:
-                    self.right.insert(point)
+                    self.right.insert(point, func)
 
         self.size += 1
 
@@ -90,6 +88,10 @@ class TreeDistance:
         y = np.array([self.pwmatrix[b, c] for c in self.coord_system.values()])
         return euclidean(x, y)
 
+    @property
+    def samples(self) -> Sequence[Any]:
+        return self.pwmatrix.sample_map.samples
+
 
 class VpTree(BaseVpTree):
     def __init__(self, config: Config, *args, **kwargs):
@@ -101,7 +103,6 @@ class VpTree(BaseVpTree):
         del self.config
 
         joblib.dump(self, config.vptree_path)
-        self.pwmatrix.save()
 
         self.config = config
 
@@ -113,34 +114,20 @@ class VpTree(BaseVpTree):
 
     @staticmethod
     @measure_time(enabled=True)
-    def build(config: Config,
-              coord_system: CoordSystem = None,
-              pwmatrix: PwMatrix = None):
-
-        if not coord_system:
-            coord_system = CoordSystem.load(config)
-
-        if not pwmatrix:
-            pwmatrix = PwMatrix.load(config)
-
-        tree_distance = TreeDistance(coord_system, pwmatrix)
+    def build(config: Config, tree_distance: Callable):
         return VpTree(config,
-                      list(pwmatrix.sample_map.samples),
+                      list(tree_distance.samples),
                       tree_distance)
 
     @measure_time(enabled=True)
-    def add_samples(self, samples: Sequence[Sample]):
+    def add_samples(self,
+                    samples: Sequence[Sample],
+                    tree_distance: Callable):
         for sample_file in samples:
-            self.add_sample(sample_file)
+            self.add_sample(sample_file, tree_distance)
 
-    def add_sample(self, sample: Sample):
-        self.pwmatrix.add_sample(sample)
-        self.insert(sample)
-
-    @property
-    def pwmatrix(self) -> PwMatrix:
-        return self.func.pwmatrix
-
-    @property
-    def sample_map(self) -> SampleMap:
-        return self.pwmatrix.sample_map
+    def add_sample(self,
+                   sample: Sample,
+                   tree_distance: Callable):
+        tree_distance.pwmatrix.add_sample(sample)
+        self.insert(sample, tree_distance)

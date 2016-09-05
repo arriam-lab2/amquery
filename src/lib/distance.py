@@ -7,10 +7,10 @@ import scipy.spatial.distance
 from .ui import progress_bar
 from .config import Config
 from .metrics import distances
-from lib.kmerize.sample_map import SampleMap
-from lib.kmerize.sample import Sample
-from lib.benchmarking import measure_time
-from lib.multiprocess import Pool, PackedBinaryFunction
+from src.lib.kmerize.sample_map import SampleMap
+from src.lib.kmerize.sample import Sample
+from src.lib.benchmarking import measure_time
+from src.lib.multiprocess import Pool, PackedBinaryFunction
 
 
 class PwMatrix:

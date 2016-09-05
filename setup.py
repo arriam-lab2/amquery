@@ -1,9 +1,10 @@
 from setuptools import setup
+from distutils.core import Extension
 
 setup(
     name='mgns',
     version='0.1',
-    py_modules=['mgns'],
+    py_modules=['src/mgns'],
     install_requires=[
         'numpy>=1.11.0',
         'scipy>=0.17.0',
@@ -19,6 +20,7 @@ setup(
     ],
     entry_points='''
         [console_scripts]
-        mgns=mgns:cli
+        mgns=src.mgns:cli
     ''',
+    ext_modules=[Extension('src.lib.kmerize.rank', sources=['src/lib/kmerize/rank.cpp'])],
 )

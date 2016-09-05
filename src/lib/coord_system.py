@@ -12,10 +12,10 @@ from genetic.individuals import SingleChromosomeIndividual
 from genetic.populations import PanmicticPopulation
 from genetic.selection import bimodal
 
-from lib.distance import PwMatrix
-from lib.config import Config
-from lib.kmerize.sample_map import SampleMap
-from lib.benchmarking import measure_time
+from src.lib.distance import PwMatrix
+from src.lib.config import Config
+from src.lib.kmerize.sample_map import SampleMap
+from src.lib.benchmarking import measure_time
 
 
 class Engine:

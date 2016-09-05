@@ -54,3 +54,13 @@ def clear(path):
 
 def read_coords(filename: str) -> List[str]:
     return [line.rstrip('\n') for line in open(filename)]
+
+
+def find_lib(directory: str, prefix: str) -> str:
+    for f in os.listdir(directory):
+        fullname = os.path.join(directory, f)
+        if os.path.isfile(fullname) and f.startswith(prefix) \
+            and f.endswith("so"):
+            return fullname
+
+    raise ValueError("Library '%s' not found" % prefix)
