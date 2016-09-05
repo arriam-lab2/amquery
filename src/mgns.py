@@ -108,7 +108,7 @@ def build(config: Config, kmer_size: int, distance: str,
     config.jellyfish.tables_count = 10
     config.jellyfish.hash_size = "100M"
 
-    input_files = fc.format_check(input_files)
+    # input_files = fc.format_check(input_files)
     index = Index.build(config, input_files)
     index.save()
 

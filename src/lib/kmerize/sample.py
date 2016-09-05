@@ -6,6 +6,8 @@ class SampleFile:
     def __init__(self, path: str):
         self._path = path
         self._format = os.path.splitext(os.path.basename(path))[1][1:]
+        if self._format == 'fna':
+            self._format = 'fasta'
 
     @property
     def path(self) -> str:
