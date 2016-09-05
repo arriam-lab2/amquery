@@ -3,7 +3,7 @@ from typing import Mapping
 import json
 import os
 
-import lib.iof as iof
+import src.lib.iof as iof
 
 
 class ConfigBase(Bunch):

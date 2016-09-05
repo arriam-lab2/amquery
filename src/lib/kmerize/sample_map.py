@@ -2,7 +2,7 @@
 
 import joblib
 
-from lib.config import Config
+from src.lib.config import Config
 
 
 class SampleMap(dict):

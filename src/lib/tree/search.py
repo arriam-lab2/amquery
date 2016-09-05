@@ -2,7 +2,7 @@ from typing import Any, Tuple, Callable
 import numpy as np
 import queue
 
-from lib.tree.vptree import BaseVpTree
+from src.lib.tree.vptree import BaseVpTree
 
 
 def _neighbors(tree: BaseVpTree,

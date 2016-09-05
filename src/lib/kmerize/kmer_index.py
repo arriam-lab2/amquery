@@ -1,12 +1,17 @@
 import numpy as np
 from collections import Counter
 from typing import List
+from ctypes import cdll, POINTER, c_uint8, c_uint64, c_size_t, c_int
 
-from lib.kmerize.sample import Sample
-from lib.benchmarking import measure_time
-from lib.ui import progress_bar
-from lib.multiprocess import Pool
-from lib.kmerize import rank
+from src.lib.kmerize.sample import Sample
+from src.lib.benchmarking import measure_time
+from src.lib.ui import progress_bar
+from src.lib.multiprocess import Pool
+
+
+ranklib = cdll.LoadLibrary("src/lib/kmerize/rank.so")
+ranklib.count_kmer_ranks.argtypes = [POINTER(c_uint8), POINTER(c_uint64),
+                                     c_size_t, c_int]
 
 
 class KmerCountFunction:
@@ -14,11 +19,20 @@ class KmerCountFunction:
         self.k = k
         self.queue = queue
 
+    def _count_seq(self, seq: np.array):
+        if seq.size > 0:
+            ranks = np.zeros(len(seq) - self.k + 1, dtype=np.uint64)
+            seq_pointer = seq.ctypes.data_as(POINTER(c_uint8))
+            ranks_pointer = ranks.ctypes.data_as(POINTER(c_uint64))
+            ranklib.count_kmer_ranks(seq_pointer, ranks_pointer, len(seq), self.k)
+            return ranks
+        else:
+            return seq
+
     def __call__(self, sample_file: str):
         sample = Sample(sample_file)
         kmer_refs = np.concatenate(
-            list(rank.count_kmer_ranks(seq, self.k)
-                 for seq in sample.iter_seqs())
+            list(self._count_seq(seq) for seq in sample.iter_seqs())
         )
         sample.kmer_index = Counter(kmer_refs)
         self.queue.put(1)

@@ -5,9 +5,9 @@ from .distance import PwMatrix
 from .tree.vptree import VpTree, TreeDistance
 from .tree.search import neighbors
 from .coord_system import CoordSystem
-from lib.kmerize.kmer_index import kmerize_samples
-from lib.kmerize.sample_map import SampleMap
-from lib.benchmarking import measure_time
+from src.lib.kmerize.kmer_index import kmerize_samples
+from src.lib.kmerize.sample_map import SampleMap
+from src.lib.benchmarking import measure_time
 
 
 class Index:
@@ -71,7 +71,7 @@ class Index:
                                                self.config.dist.kmer_size)
                                )
         sample = list(sample_map.values())[0]
-        
+
         tree_distance = TreeDistance(self.coord_system, self.pwmatrix)
         values, points = neighbors(self.vptree, sample, k, tree_distance)
         return values, points

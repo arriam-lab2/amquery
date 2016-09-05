@@ -5,11 +5,11 @@ import os
 from bunch import Bunch
 from typing import List
 
-import lib.iof as iof
-from lib.config import Config
-from lib.metrics import distances
-from lib.index import Index
-from tools import format_check as fc
+import src.lib.iof as iof
+from src.lib.config import Config
+from src.lib.metrics import distances
+from src.lib.index import Index
+from src.tools import format_check as fc
 
 
 pass_config = click.make_pass_decorator(Config, ensure=True)
