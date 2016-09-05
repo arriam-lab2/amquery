@@ -2,6 +2,7 @@
 
 import click
 import os
+import numpy as np
 from bunch import Bunch
 from typing import List
 
@@ -9,7 +10,6 @@ import src.lib.iof as iof
 from src.lib.config import Config
 from src.lib.metrics import distances
 from src.lib.index import Index
-from src.tools import format_check as fc
 
 
 pass_config = click.make_pass_decorator(Config, ensure=True)
@@ -203,15 +203,28 @@ def use(config: Config, name: str):
 @pass_config
 def stats(config: Config):
     _index_check(config)
+    _build_check(config)
 
     index = Index.load(config)
     indexed = len(index.sample_map)
     coord_system_size = len(index.coord_system.keys())
 
+    unique, total = 0, 0
+    for sample in index.sample_map.values():
+        total += sample.kmer_index.getnnz()
+        _, counts = np.unique(sample.kmer_index.data, return_counts=True)
+        counts = np.bincount(counts)
+        unique += counts[1] if len(counts) > 0 else 0
+
+    unique /= len(index.sample_map)
+    total /= len(index.sample_map)
+    fraction = unique / total * 100
+
     print("Current index:", config.current_index)
     print("Indexed:", indexed, "samples")
     print("Coordinate system size:", coord_system_size)
-
+    print("Average count of unique k-mers: %.2f" % unique,
+          "(%.2f %%)" % fraction)
 
 @cli.command()
 @click.argument('input_file', type=click.Path(exists=True),
