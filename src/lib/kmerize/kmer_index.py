@@ -21,7 +21,7 @@ class KmerCountFunction:
         self.queue = queue
 
     def _count_seq(self, seq: np.array):
-        if seq.size > 0:
+        if seq.size > 0 and seq.size >= self.k:
             ranks = np.zeros(len(seq) - self.k + 1, dtype=np.uint64)
             seq_pointer = seq.ctypes.data_as(POINTER(c_uint8))
             ranks_pointer = ranks.ctypes.data_as(POINTER(c_uint64))
