@@ -6,9 +6,6 @@
 #include <cmath>
 #include <numeric>
 
-#include <iostream>
-#include <fstream>
-
 typedef double num_t;
 typedef uint64_t index_t;
 typedef std::function<num_t(num_t, num_t)> transformer;
@@ -209,20 +206,4 @@ extern "C" {
     {
         return _jsd(x_pos, x_val, x_len, y_pos, y_val, y_len);
     }
-}
-
-
-int main()
-{
-    std::vector<index_t> xpos = {8, 15, 17, 32, 57, 60, 63, 72, 97};
-    std::vector<num_t> xval = {0.198113, 0.115566, 0.0636792, 0.0306604,
-         0.148585, 0.00943396, 0.117925, 0.132075, 0.183962};
-
-    std::vector<index_t> ypos = {0, 13, 29, 34, 57, 75, 89, 92, 97, 98};
-    std::vector<num_t> yval = {0.10992, 0.0107239, 0.0080429, 0.0107239,
-         0.225201, 0.187668, 0.00536193, 0.131367, 0.235925, 0.075067 };
-
-    std::cout << jsd(&xpos[0], &xval[0], xpos.size(),
-                     &ypos[0], &yval[0], ypos.size()) << std::endl;
-
 }
