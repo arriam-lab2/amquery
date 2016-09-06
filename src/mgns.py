@@ -136,7 +136,7 @@ def build(config: Config, kmer_size: int, distance: str,
               help='Fraction of random individuals to select \
               on each generation', default=0.1)
 @click.option('--legend_size', '-l', type=int,
-              help='Count of best individuals to keep tracking', default=15)
+              help='Count of best individuals to keep tracking', default=100)
 @click.option('--idle_threshold', '-i', type=int,
               help='Number of iterations to \
               continue the evolution at local minimum', default=5)
