@@ -2,6 +2,16 @@ import numpy as np
 import operator as op
 import scipy
 from scipy import sparse
+from ctypes import cdll, POINTER, c_uint8, c_uint64, c_size_t, c_int
+
+import src.lib.iof as iof
+
+
+jsdlib = cdll.LoadLibrary(iof.find_lib("src/lib", "jsd"))
+jsdlib.jsd.argtypes = [POINTER(c_uint8), POINTER(c_uint64),
+                       c_size_t, c_int]
+
+
 
 # Jenson-Shanon divergence
 def jsd(x, y) -> float:
