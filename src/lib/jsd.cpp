@@ -52,10 +52,11 @@ struct sparse_array_t
         return result;
     }
 
-    void apply(const std::function<T(T)>& f)
+    sparse_array_t&& apply(const std::function<T(T)>& f)
     {
         std::transform(data.begin(), data.end(),
                        data.begin(), f);
+        return std::move(*this);
     }
 
     void push_back(const IndexType& i, const T& value)
@@ -106,8 +107,8 @@ sparse_array positional_merge(sparse_array&& x, sparse_array&& y,
     sparse_array result;
     result.reserve(std::max(x.size(), y.size()));
 
-    int i = 0, j = 0;
-    size_t xsize = x.size(), ysize = y.size();
+    long i = 0, j = 0;
+    long xsize = x.size(), ysize = y.size();
     while (i >= 0 || j >= 0)
     {
         num_t temp = 0;
@@ -177,16 +178,12 @@ double _jsd(const index_t* x_pos, const num_t* x_val,
 
     sparse_array z = positional_merge(std::move(x), std::move(y), sum);
 
-    sparse_array d1 = x.copy();
-    d1.apply(mul2);
-    d1 = positional_map(std::move(d1), std::move(z), divide);
-    d1.apply(log2);
+    sparse_array d1 = x.copy().apply(mul2);
+    d1 = positional_map(std::move(d1), std::move(z), divide).apply(log2);
     d1 = positional_map(std::move(d1), std::move(x), mul);
 
-    sparse_array d2 = y.copy();
-    d2.apply(mul2);
-    d2 = positional_map(std::move(d2), std::move(z), divide);
-    d2.apply(log2);
+    sparse_array d2 = y.copy().apply(mul2);
+    d2 = positional_map(std::move(d2), std::move(z), divide).apply(log2);
     d2 = positional_map(std::move(d2), std::move(y), mul);
 
     d1 = positional_merge(std::move(d1), std::move(d2), sum);
