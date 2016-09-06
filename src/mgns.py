@@ -211,7 +211,7 @@ def stats(config: Config):
 
     unique, total = 0, 0
     for sample in index.sample_map.values():
-        total += sample.kmer_index.getnnz()
+        total += len(sample.kmer_index)
         _, counts = np.unique(sample.kmer_index.data, return_counts=True)
         counts = np.bincount(counts)
         unique += counts[1] if len(counts) > 0 else 0
