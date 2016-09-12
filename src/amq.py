@@ -118,10 +118,10 @@ def build(config: Config, kmer_size: int, distance: str,
 
 @cli.command()
 @click.option('--kmer_size', '-k', type=int, help='K-mer size',
-              default=29)
+              default=27)
 @click.option('--distance', '-d', type=click.Choice(distances.keys()),
               default='jsd', help='A distance metric')
-@click.option('--coord_system_size', '-c', type=int,
+@click.option('--coord_system_size', '-c', type=int, default=29,
               help='Coordinate system size', required=True)
 @click.option('--generations', '-n', type=int, help='Number of generations',
               default=1000)

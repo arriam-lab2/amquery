@@ -10,7 +10,7 @@ class ConfigBase(Bunch):
     def __init__(self, *args, **kwargs):
         super(ConfigBase, self).__init__(*args, **kwargs)
         self.temp = Bunch()
-        self.temp.config_path = '.mgns.config'
+        self.temp.config_path = '.amq.config'
 
     def load(self, workon: str):
         self.workon = iof.make_sure_exists(workon)
