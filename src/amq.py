@@ -17,14 +17,12 @@ pass_config = click.make_pass_decorator(Config, ensure=True)
 
 def _index_check(config: Config):
     if "current_index" not in config:
-        raise ValueError("There is no index created. Run 'amq init' \
-                         or 'amq use' first")
+        raise ValueError("There is no index created. Run 'amq init' or 'amq use' first")
 
 
 def _build_check(config: Config):
     if not config.built:
-        raise ValueError("First you have to build the index. Run \
-                         'amq build'")
+        raise ValueError("First you have to build the index. Run 'amq build'")
 
 
 @click.group()
