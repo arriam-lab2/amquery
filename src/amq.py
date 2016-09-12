@@ -190,22 +190,9 @@ def stats(config: Config):
     indexed = len(index.sample_map)
     coord_system_size = len(index.coord_system.keys())
 
-    unique, total = 0, 0
-    for sample in index.sample_map.values():
-        total += len(sample.kmer_index)
-        _, counts = np.unique(sample.kmer_index.data, return_counts=True)
-        counts = np.bincount(counts)
-        unique += counts[1] if len(counts) > 0 else 0
-
-    unique /= len(index.sample_map)
-    total /= len(index.sample_map)
-    fraction = unique / total * 100
-
     print("Current index:", config.current_index)
     print("Indexed:", indexed, "samples")
     print("Coordinate system size:", coord_system_size)
-    print("Average count of unique k-mers: %.2f" % unique,
-          "(%.2f %%)" % fraction)
 
 
 @cli.command()
