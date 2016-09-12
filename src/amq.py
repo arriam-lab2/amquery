@@ -59,17 +59,17 @@ def init(config: Config, name: str):
 @click.argument('input_files', type=click.Path(exists=True), nargs=-1,
                 required=True)
 @click.option('--kmer_size', '-k', type=int, help='K-mer size',
-              default=50)
+              default=27)
 @click.option('--distance', '-d', type=click.Choice(distances.keys()),
               default='jsd', help='A distance metric')
-@click.option('--coord_system_size', '-c', type=int,
-              help='Coordinate system size', required=True)
+@click.option('--coord_system_size', '-c', type=int, default=29,
+              help='Coordinate system size')
 @click.option('--generations', '-n', type=int, help='Number of generations',
               default=1000)
 @click.option('--mutation_rate', '-m', type=float, help='Mutation rate',
               default=0.1)
 @click.option('--population_size', '-p', type=int, help='Population size',
-              default=100)
+              default=150)
 @click.option('--select_rate', '-s', type=float,
               help='Fraction of best individuals to select on each generation',
               default=0.25)
@@ -77,16 +77,13 @@ def init(config: Config, name: str):
               help='Fraction of random individuals to select \
               on each generation', default=0.1)
 @click.option('--legend_size', '-l', type=int,
-              help='Count of best individuals to keep tracking', default=15)
-@click.option('--idle_threshold', '-i', type=int,
-              help='Number of iterations to \
-              continue the evolution at local minimum', default=5)
+              help='Count of best individuals to keep tracking', default=100)
 @pass_config
 def build(config: Config, kmer_size: int, distance: str,
           input_files: List[str], coord_system_size: int,
           generations: int, mutation_rate: float, population_size: int,
           select_rate: float, random_select_rate: float,
-          legend_size: int, idle_threshold: int):
+          legend_size: int):
 
     _index_check(config)
 
@@ -102,13 +99,7 @@ def build(config: Config, kmer_size: int, distance: str,
     config.genetic.select_rate = select_rate
     config.genetic.random_select_rate = random_select_rate
     config.genetic.legend_size = legend_size
-    config.genetic.idle_threshold = idle_threshold
 
-    config.jellyfish = Bunch()
-    config.jellyfish.tables_count = 10
-    config.jellyfish.hash_size = "100M"
-
-    # input_files = fc.format_check(input_files)
     index = Index.build(config, input_files)
     index.save()
 
@@ -128,7 +119,7 @@ def build(config: Config, kmer_size: int, distance: str,
 @click.option('--mutation_rate', '-m', type=float, help='Mutation rate',
               default=0.1)
 @click.option('--population_size', '-p', type=int, help='Population size',
-              default=100)
+              default=150)
 @click.option('--select_rate', '-s', type=float,
               help='Fraction of best individuals to select on each generation',
               default=0.25)
@@ -137,15 +128,12 @@ def build(config: Config, kmer_size: int, distance: str,
               on each generation', default=0.1)
 @click.option('--legend_size', '-l', type=int,
               help='Count of best individuals to keep tracking', default=100)
-@click.option('--idle_threshold', '-i', type=int,
-              help='Number of iterations to \
-              continue the evolution at local minimum', default=5)
 @pass_config
 def refine(config: Config, kmer_size: int, distance: str,
            coord_system_size: int, generations: int,
            mutation_rate: float, population_size: int,
            select_rate: float, random_select_rate: float,
-           legend_size: int, idle_threshold: int):
+           legend_size: int):
 
     _index_check(config)
 
@@ -161,11 +149,6 @@ def refine(config: Config, kmer_size: int, distance: str,
     config.genetic.select_rate = select_rate
     config.genetic.random_select_rate = random_select_rate
     config.genetic.legend_size = legend_size
-    config.genetic.idle_threshold = idle_threshold
-
-    config.jellyfish = Bunch()
-    config.jellyfish.tables_count = 10
-    config.jellyfish.hash_size = "100M"
 
     index = Index.load(config)
     index.refine()
