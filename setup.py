@@ -6,9 +6,9 @@ import os
 os.environ["CC"] = "g++"
 
 setup(
-    name='mgns',
-    version='0.1',
-    py_modules=['src/mgns'],
+    name='amq',
+    version='0.2',
+    py_modules=['src/amq'],
     install_requires=[
         'numpy>=1.11.0',
         'scipy>=0.17.0',
@@ -24,7 +24,7 @@ setup(
     ],
     entry_points='''
         [console_scripts]
-        mgns=src.mgns:cli
+        amq=src.amq:cli
     ''',
     ext_modules=[Extension('src.lib.kmerize.rank',
                            sources=['src/lib/kmerize/rank.cpp'],
