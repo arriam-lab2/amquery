@@ -122,7 +122,7 @@ def build(config: Config, kmer_size: int, distance: str,
 @click.option('--distance', '-d', type=click.Choice(distances.keys()),
               default='jsd', help='A distance metric')
 @click.option('--coord_system_size', '-c', type=int, default=29,
-              help='Coordinate system size', required=True)
+              help='Coordinate system size')
 @click.option('--generations', '-n', type=int, help='Number of generations',
               default=1000)
 @click.option('--mutation_rate', '-m', type=float, help='Mutation rate',
