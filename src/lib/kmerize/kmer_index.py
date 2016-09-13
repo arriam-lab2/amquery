@@ -2,7 +2,7 @@ import numpy as np
 from collections import Counter
 from typing import List
 from ctypes import cdll, POINTER, c_uint8, c_uint64, c_size_t, c_int
-
+import os
 
 import src.lib.iof as iof
 from src.lib.kmerize.sample import Sample
@@ -11,9 +11,8 @@ from src.lib.ui import progress_bar
 from src.lib.multiprocess import Pool
 from src.lib.sparse import SparseArray
 
-ranklib = cdll.LoadLibrary(iof.find_lib("src/lib/kmerize", "rank"))
-ranklib.count_kmer_ranks.argtypes = [POINTER(c_uint8), POINTER(c_uint64),
-                                     c_size_t, c_int]
+
+ranklib = None
 
 
 class KmerCountFunction:
@@ -57,3 +56,12 @@ def kmerize_samples(sample_files: List[str], k: int):
     samples = result.get()
     Pool.instance().clear()
     return dict([(sample.name, sample) for sample in samples])
+
+
+if __name__ == "__main__":
+    raise RuntimeError()
+else:
+    libdir = os.path.dirname(os.path.abspath(__file__))
+    ranklib = cdll.LoadLibrary(iof.find_lib(libdir, "rank"))
+    ranklib.count_kmer_ranks.argtypes = [POINTER(c_uint8), POINTER(c_uint64),
+                                         c_size_t, c_int]

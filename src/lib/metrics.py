@@ -1,3 +1,4 @@
+import os
 from ctypes import cdll, POINTER, c_uint64, c_size_t, c_double
 
 from src.lib.sparse import SparseArray
@@ -23,7 +24,8 @@ distances = {'jsd': jsd}
 if __name__ == "__main__":
     raise RuntimeError()
 else:
-    jsdlib = cdll.LoadLibrary(iof.find_lib("src/lib", "jsd"))
+    libdir = os.path.dirname(os.path.abspath(__file__))
+    jsdlib = cdll.LoadLibrary(iof.find_lib(libdir, "jsd"))
     jsdlib.jsd.argtypes = [POINTER(c_uint64), POINTER(c_double), c_size_t,
                            POINTER(c_uint64), POINTER(c_double), c_size_t]
     jsdlib.jsd.restype = c_double
