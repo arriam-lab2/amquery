@@ -21,7 +21,8 @@ setup(
         'bunch>=1.0.1',
         'genetic>=0.1.dev3',
         'tqdm>=4.7.0',
-        'pandas>=0.18.0'
+        'pandas>=0.18.0',
+        'scikit-learn>=0.17.1'
     ],
     entry_points='''
         [console_scripts]

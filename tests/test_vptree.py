@@ -2,8 +2,8 @@ import unittest
 import numpy as np
 from sklearn.neighbors import NearestNeighbors
 
-from lib.tree.vptree import BaseVpTree, euclidean
-import lib.tree.search as vpsearch
+from amquery.lib.tree.vptree import BaseVpTree, euclidean
+import amquery.lib.tree.search as vpsearch
 
 
 class TestVptree(unittest.TestCase):
@@ -19,7 +19,7 @@ class TestVptree(unittest.TestCase):
                                 algorithm='ball_tree').fit(points)
 
         for p in points:
-            y1, _ = vpsearch.neighbors(tree, p, k)
+            y1, _ = vpsearch.neighbors(tree, p, k, euclidean)
             y2, _ = nbrs.kneighbors([p])
             y2 = y2[0]
             self.assertTrue(np.array_equal(y1, y2))
