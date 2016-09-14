@@ -6,11 +6,11 @@ import numpy as np
 import joblib
 from typing import Callable, Any, Sequence
 
-from src.lib.distance import PwMatrix
-from src.lib.coord_system import CoordSystem
-from src.lib.config import Config
-from src.lib.kmerize.sample import Sample
-from src.lib.benchmarking import measure_time
+from amquery.lib.distance import PwMatrix
+from amquery.lib.coord_system import CoordSystem
+from amquery.lib.config import Config
+from amquery.lib.kmerize.sample import Sample
+from amquery.lib.benchmarking import measure_time
 
 
 # Vantage-point tree

@@ -4,12 +4,12 @@ from typing import List
 from ctypes import cdll, POINTER, c_uint8, c_uint64, c_size_t, c_int
 import os
 
-import src.lib.iof as iof
-from src.lib.kmerize.sample import Sample
-from src.lib.benchmarking import measure_time
-from src.lib.ui import progress_bar
-from src.lib.multiprocess import Pool
-from src.lib.sparse import SparseArray
+import amquery.lib.iof as iof
+from amquery.lib.kmerize.sample import Sample
+from amquery.lib.benchmarking import measure_time
+from amquery.lib.ui import progress_bar
+from amquery.lib.multiprocess import Pool
+from amquery.lib.sparse import SparseArray
 
 
 ranklib = None

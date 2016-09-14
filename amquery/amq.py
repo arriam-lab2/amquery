@@ -2,14 +2,13 @@
 
 import click
 import os
-import numpy as np
 from bunch import Bunch
 from typing import List
 
-import src.lib.iof as iof
-from src.lib.config import Config
-from src.lib.metrics import distances
-from src.lib.index import Index
+import amquery.lib.iof as iof
+from amquery.lib.config import Config
+from amquery.lib.metrics import distances
+from amquery.lib.index import Index
 
 
 pass_config = click.make_pass_decorator(Config, ensure=True)
