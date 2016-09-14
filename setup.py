@@ -26,6 +26,7 @@ setup(
     entry_points='''
         [console_scripts]
         amq=amquery.amq:cli
+        amquery=amquery.amq:cli
     ''',
     ext_modules=[Extension('amquery.lib.kmerize.rank',
                            sources=['amquery/lib/kmerize/rank.cpp'],
