@@ -22,7 +22,7 @@ amq init index
 amq build <your-data-path>/*.fasta
 amq stats
 ```
-Note that any input file must contain only sequences from single sample. If it doesn't, you can use our [split_fasta.py](https://github.com/nromashchenko/amquery/blob/develop/src/tools/split_fasta.py) script.
+Note that any input file must contain only sequences from single sample. If it doesn't, you can use our [split_fasta.py](https://github.com/nromashchenko/amquery/blob/master/amquery/tools/split_fasta.py) script.
 
 #####Search query
 ```
