@@ -31,7 +31,8 @@ def make_sure_exists(path: str):
 
 
 def load_seqs(filename: str, named: bool=False) -> Mapping:
-    data = defaultdict(lambda: defaultdict(str)) if named else defaultdict(list)
+    data = defaultdict(lambda: defaultdict(
+        str)) if named else defaultdict(list)
 
     fasta_sequences = SeqIO.parse(open(filename), "fasta")
     for seq_record in fasta_sequences:
@@ -60,7 +61,7 @@ def find_lib(directory: str, prefix: str) -> str:
     for f in os.listdir(directory):
         fullname = os.path.join(directory, f)
         if os.path.isfile(fullname) and f.startswith(prefix) \
-            and f.endswith("so"):
+                and f.endswith("so"):
             return fullname
 
     raise ValueError("Library '%s' not found" % prefix)

@@ -16,6 +16,7 @@ ranklib = None
 
 
 class KmerCountFunction:
+
     def __init__(self, k, queue):
         self.k = k
         self.queue = queue

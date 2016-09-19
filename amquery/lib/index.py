@@ -12,6 +12,7 @@ from amquery.lib.benchmarking import measure_time
 
 
 class Index:
+
     def __init__(self,
                  config: Config,
                  coord_system: CoordSystem,

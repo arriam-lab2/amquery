@@ -14,6 +14,7 @@ class FileFormat(Enum):
 
 
 class UnknownFormatException(Exception):
+
     def __init__(self, filename):
         self.filename = filename
 
@@ -22,6 +23,7 @@ class UnknownFormatException(Exception):
 
 
 class FilenameParser:
+
     @staticmethod
     def parse(filename: str) -> FileFormat:
         parser_mapping = {
@@ -61,7 +63,7 @@ class FilenameParser:
 
             if (first_line and first_line[0] == '@' and
                 second_line and second_line[0] == '+' and
-                third_line and third_line[0] == '!'):
+                    third_line and third_line[0] == '!'):
                 return True
 
             return False

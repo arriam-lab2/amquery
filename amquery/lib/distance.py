@@ -14,6 +14,7 @@ from amquery.lib.multiprocess import Pool, PackedBinaryFunction
 
 
 class PwMatrix:
+
     def __init__(self,
                  config: Config,
                  sample_map: SampleMap,
@@ -33,7 +34,8 @@ class PwMatrix:
         pairs = list(itertools.combinations(distributions, 2))
         distance_func = distances[config.dist.func]
 
-        packed_task = PackedBinaryFunction(distance_func, Pool.instance().queue)
+        packed_task = PackedBinaryFunction(
+            distance_func, Pool.instance().queue)
         result = Pool.instance().map_async(packed_task, pairs)
         progress_bar(result, Pool.instance().queue, len(pairs))
 
@@ -76,8 +78,9 @@ class PwMatrix:
     def add_sample(self, sample: Sample) -> Sample:
         if sample.name not in self.labels:
             initvalues = [np.nan for x in range(len(self.__dataframe))]
-            self.__dataframe[sample.name] = pd.Series(initvalues,
-                                                      index=self.dataframe.index)
+            self.__dataframe[sample.name] = pd.Series(
+                initvalues,
+                index=self.dataframe.index)
             self.__dataframe.loc[sample.name] = initvalues + [np.nan]
             self.__sample_map[sample.name] = sample
 
