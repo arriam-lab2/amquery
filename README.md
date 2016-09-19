@@ -1,6 +1,9 @@
 # AmQuery
 _(ver. 0.2)_
 
+[![Build Status](https://semaphoreci.com/api/v1/nromashchenko/amquery/branches/develop/shields_badge.svg)](https://semaphoreci.com/nromashchenko/amquery)
+[![Code Climate](https://codeclimate.com/github/nromashchenko/amquery/badges/gpa.svg)](https://codeclimate.com/github/nromashchenko/amquery)
+
 AmQuery: a unified searchable database of amplicon libraries
 
 *Note: this package is under active development.*
