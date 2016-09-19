@@ -9,6 +9,7 @@ import numpy as np
 
 
 class SampleFile:
+
     def __init__(self, path: str):
         self._path = path
         self._format = os.path.splitext(os.path.basename(path))[1][1:]
@@ -41,6 +42,7 @@ def _transform(sequence: Sequence[Any]) -> List:
 
 
 class Sample:
+
     def __init__(self, source_file: str):
         self._name = os.path.splitext(os.path.basename(source_file))[0]
         self._source_file = SampleFile(source_file)

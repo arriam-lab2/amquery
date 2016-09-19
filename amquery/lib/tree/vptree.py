@@ -15,6 +15,7 @@ from amquery.lib.benchmarking import measure_time
 
 # Vantage-point tree
 class BaseVpTree:
+
     def __init__(self, points: np.array, func: Callable):
         self.size = 0
         self.left = None
@@ -76,6 +77,7 @@ def euclidean(a: np.array, b: np.array):
 
 # Euclidean distance in a proper coordinate system
 class TreeDistance:
+
     def __init__(self,
                  coord_system: CoordSystem,
                  pwmatrix: PwMatrix):
@@ -94,6 +96,7 @@ class TreeDistance:
 
 
 class VpTree(BaseVpTree):
+
     def __init__(self, config: Config, *args, **kwargs):
         super(VpTree, self).__init__(*args, **kwargs)
         self.config = config
