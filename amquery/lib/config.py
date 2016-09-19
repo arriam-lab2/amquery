@@ -7,6 +7,7 @@ import amquery.lib.iof as iof
 
 
 class ConfigBase(Bunch):
+
     def __init__(self, *args, **kwargs):
         super(ConfigBase, self).__init__(*args, **kwargs)
         self.temp = Bunch()
@@ -36,6 +37,7 @@ class ConfigBase(Bunch):
 
 
 class Config(ConfigBase):
+
     @property
     def index_path(self):
         return os.path.join(self.workon, self.current_index)

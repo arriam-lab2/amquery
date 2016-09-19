@@ -6,6 +6,7 @@ from amquery.lib.config import Config
 
 
 class SampleMap(dict):
+
     def __init__(self, config: Config, *args, **kwargs):
         self.config = config
         super(SampleMap, self).__init__(*args, **kwargs)

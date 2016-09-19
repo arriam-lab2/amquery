@@ -19,6 +19,7 @@ from amquery.lib.benchmarking import measure_time
 
 
 class Engine:
+
     def __init__(self, names):
         self.names = np.array(list(names))
 
@@ -42,6 +43,7 @@ def _crossover(chr1, chr2):
 
 
 class Fitness:
+
     def __init__(self, pwmatrix: PwMatrix):
         self.pwmatrix = pwmatrix
 
@@ -63,6 +65,7 @@ def random_chr(names: List[str], k: int):
 
 
 class CoordSystem(dict):
+
     def __init__(self, config: Config, *args, **kwargs):
         self.config = config
         super(CoordSystem, self).__init__(*args, **kwargs)

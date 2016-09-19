@@ -14,6 +14,7 @@ from amquery.lib.multiprocess import Pool, PackedBinaryFunction
 
 
 class PwMatrix:
+
     def __init__(self,
                  config: Config,
                  sample_map: SampleMap,
@@ -33,7 +34,8 @@ class PwMatrix:
         pairs = list(itertools.combinations(distributions, 2))
         distance_func = distances[config.dist.func]
 
-        packed_task = PackedBinaryFunction(distance_func, Pool.instance().queue)
+        packed_task = PackedBinaryFunction(
+            distance_func, Pool.instance().queue)
         result = Pool.instance().map_async(packed_task, pairs)
         progress_bar(result, Pool.instance().queue, len(pairs))
 
