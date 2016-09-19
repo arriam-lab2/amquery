@@ -78,8 +78,9 @@ class PwMatrix:
     def add_sample(self, sample: Sample) -> Sample:
         if sample.name not in self.labels:
             initvalues = [np.nan for x in range(len(self.__dataframe))]
-            self.__dataframe[sample.name] = pd.Series(initvalues,
-                                                      index=self.dataframe.index)
+            self.__dataframe[sample.name] = pd.Series(
+                initvalues,
+                index=self.dataframe.index)
             self.__dataframe.loc[sample.name] = initvalues + [np.nan]
             self.__sample_map[sample.name] = sample
 
