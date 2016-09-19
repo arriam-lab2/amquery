@@ -21,8 +21,9 @@ def _index_check(config: Config):
 
 
 def _build_check(config: Config):
-    if not config.built:
+    if config.built.lower() is not "false":
         raise ValueError("First you have to build the index. Run 'amq build'")
+
 
 
 @click.group()
