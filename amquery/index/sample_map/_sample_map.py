@@ -2,7 +2,7 @@
 
 import joblib
 
-from amquery.lib.config import Config
+from amquery.utils.config import Config
 
 
 class SampleMap(dict):

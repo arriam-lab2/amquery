@@ -4,13 +4,14 @@ import numpy as np
 import pandas as pd
 import scipy.spatial.distance
 
-from amquery.lib.ui import progress_bar
-from amquery.lib.config import Config
-from amquery.lib.metrics import distances
-from amquery.lib.kmerize.sample_map import SampleMap
-from amquery.lib.kmerize.sample import Sample
-from amquery.lib.benchmarking import measure_time
-from amquery.lib.multiprocess import Pool, PackedBinaryFunction
+from ._metrics import distances
+from amquery.index.sample_map import SampleMap
+from amquery.index.sample import Sample
+
+from amquery.utils.ui import progress_bar
+from amquery.utils.config import Config
+from amquery.utils.benchmarking import measure_time
+from amquery.utils.multiprocess import Pool, PackedBinaryFunction
 
 
 class PwMatrix:

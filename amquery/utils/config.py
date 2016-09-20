@@ -3,7 +3,7 @@ from typing import Mapping
 import json
 import os
 
-import amquery.lib.iof as iof
+import amquery.utils.iof as iof
 
 
 class ConfigBase(Bunch):

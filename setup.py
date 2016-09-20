@@ -7,7 +7,7 @@ os.environ["CC"] = "g++"
 
 setup(
     name='amq',
-    version='0.2',
+    version='0.2.1',
     packages=find_packages(),
     include_package_data=True,
     install_requires=[
@@ -22,19 +22,20 @@ setup(
         'genetic>=0.1.dev3',
         'tqdm>=4.7.0',
         'pandas>=0.18.0',
-        'scikit-learn>=0.17.1'
+        'scikit-learn>=0.17.1',
+        'codeclimate-test-reporter>=0.1.2'
     ],
     entry_points='''
         [console_scripts]
-        amq=amquery.amq:cli
-        amquery=amquery.amq:cli
+        amq=amquery.cli.amq:cli
+        amquery=amquery.cli.amq:cli
     ''',
-    ext_modules=[Extension('amquery.lib.kmerize.rank',
-                           sources=['amquery/lib/kmerize/rank.cpp'],
+    ext_modules=[Extension('amquery.index.kmers_distr.rank',
+                           sources=['amquery/index/kmers_distr/rank.cpp'],
                            extra_compile_args=['-std=c++11'],
                            ),
-                 Extension('amquery.lib.jsd',
-                           sources=['amquery/lib/jsd.cpp'],
+                 Extension('amquery.index.distance.jsd',
+                           sources=['amquery/index/distance/jsd.cpp'],
                            extra_compile_args=['-std=c++11'],
                            )
                  ],

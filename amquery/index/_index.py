@@ -1,14 +1,13 @@
 from typing import List
 
-from amquery.lib.config import Config
-from amquery.lib.distance import PwMatrix
-import amquery.lib.tree
-from amquery.lib.tree.vptree import VpTree, TreeDistance
-from amquery.lib.tree.search import neighbors
-from amquery.lib.coord_system import CoordSystem
-from amquery.lib.kmerize.kmer_index import kmerize_samples
-from amquery.lib.kmerize.sample_map import SampleMap
-from amquery.lib.benchmarking import measure_time
+from ..utils.config import Config
+from .distance import PwMatrix
+from .tree import VpTree, TreeDistance, neighbors
+
+from amquery.index.coord_system import CoordSystem
+from amquery.index.kmers_distr import kmerize_samples
+from amquery.index.sample_map import SampleMap
+from amquery.utils.benchmarking import measure_time
 
 
 class Index:

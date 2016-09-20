@@ -5,10 +5,10 @@ import os
 from bunch import Bunch
 from typing import List
 
-import amquery.lib.iof as iof
-from amquery.lib.config import Config
-from amquery.lib.metrics import distances
-from amquery.lib.index import Index
+import amquery.utils.iof as iof
+from amquery.utils.config import Config
+from amquery.index.distance import distances
+from amquery.index import Index
 
 
 pass_config = click.make_pass_decorator(Config, ensure=True)
@@ -21,9 +21,8 @@ def _index_check(config: Config):
 
 
 def _build_check(config: Config):
-    if config.built.lower() is not "false":
+    if config.built.lower() != "true":
         raise ValueError("First you have to build the index. Run 'amq build'")
-
 
 
 @click.group()

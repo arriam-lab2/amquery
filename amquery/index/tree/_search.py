@@ -2,7 +2,7 @@ from typing import Any, Tuple, Callable
 import numpy as np
 import queue
 
-from amquery.lib.tree.vptree import BaseVpTree
+from amquery.index.tree import BaseVpTree
 
 
 def _neighbors(tree: BaseVpTree,
