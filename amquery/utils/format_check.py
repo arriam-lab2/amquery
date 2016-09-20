@@ -4,7 +4,7 @@ import os
 from typing import List
 from enum import Enum
 
-import amquery.lib.iof as iof
+import amquery.utils.iof as iof
 
 
 class FileFormat(Enum):
