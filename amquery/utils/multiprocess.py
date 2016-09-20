@@ -3,7 +3,7 @@ import itertools
 import os
 import multiprocessing as mp
 
-from amquery.lib.utils import singleton
+from amquery.utils.decorators import singleton
 
 N_JOBS = int(os.getenv("PWM_JOBS", 1))
 

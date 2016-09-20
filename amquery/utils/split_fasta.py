@@ -6,7 +6,7 @@ import os.path
 import collections
 from Bio import SeqIO
 
-from amquery.lib.iof import make_sure_exists
+from amquery.utils.iof import make_sure_exists
 
 
 # Split a fasta by sample names

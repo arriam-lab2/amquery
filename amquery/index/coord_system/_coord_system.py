@@ -12,10 +12,11 @@ from genetic.individuals import SingleChromosomeIndividual
 from genetic.populations import PanmicticPopulation
 from genetic.selection import bimodal
 
-from amquery.lib.distance import PwMatrix
-from amquery.lib.config import Config
-from amquery.lib.kmerize.sample_map import SampleMap
-from amquery.lib.benchmarking import measure_time
+from amquery.index.distance import PwMatrix
+from amquery.index.sample_map import SampleMap
+
+from amquery.utils.config import Config
+from amquery.utils.benchmarking import measure_time
 
 
 class Engine:

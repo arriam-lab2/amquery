@@ -6,11 +6,12 @@ import numpy as np
 import joblib
 from typing import Callable, Any, Sequence
 
-from amquery.lib.distance import PwMatrix
-from amquery.lib.coord_system import CoordSystem
-from amquery.lib.config import Config
-from amquery.lib.kmerize.sample import Sample
-from amquery.lib.benchmarking import measure_time
+from amquery.index.distance import PwMatrix
+from amquery.index.coord_system import CoordSystem
+from amquery.index.sample import Sample
+
+from amquery.utils.config import Config
+from amquery.utils.benchmarking import measure_time
 
 
 # Vantage-point tree
