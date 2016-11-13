@@ -22,7 +22,7 @@ function runqiime {
 }
 
 function split {
-    output_dir=$(mktemp -dp .)
+    output_dir=$(mktemp -dp $3)
 
     shuffled_samples=($(ls -df ${1}/* | sort -R))
     len=$(ls ${1} | wc -l)
@@ -36,9 +36,9 @@ function split {
 }
 
 
-if [[ $# -ne 2 ]]; then
-    echo "Usage: bash bench.sh <input-dir> <main-file-size>"
+if [[ $# -ne 3 ]]; then
+    echo "Usage: bash bench.sh <input-dir> <main-file-size> <output-dir>"
 else
-    split $1 $2 > /dev/null
+    split $1 $2 $3> /dev/null
     runqiime $output_dir
 fi
