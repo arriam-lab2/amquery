@@ -20,7 +20,6 @@ def split_fasta(input_file: str, output_dir: str):
             read_mapping[sample_name].append(seq_record)
 
     # creating a folder for splitted files
-    output_dir = os.path.join(output_dir, "splitted")
     output_dir = make_sure_exists(output_dir)
 
     # writing splitted files

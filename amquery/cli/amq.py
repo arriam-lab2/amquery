@@ -98,8 +98,9 @@ def build(config: Config, kmer_size: int, distance: str,
     config.genetic.random_select_rate = random_select_rate
     config.genetic.legend_size = legend_size
 
-    index = Index.build(config, input_files)
+    index, elapsed_time = Index.build(config, input_files)
     index.save()
+    print("Elapsed time:", elapsed_time, sum(elapsed_time))
 
     config.built = "true"
     config.save()
@@ -164,8 +165,9 @@ def add(config: Config, input_files: List[str]):
     _index_check(config)
 
     index = Index.load(config)
-    index.add(input_files)
+    elapsed_time = index.add(input_files)
     index.save()
+    print("Elapsed time:", elapsed_time, sum(elapsed_time))
 
 
 @cli.command()

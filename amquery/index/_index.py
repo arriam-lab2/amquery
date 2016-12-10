@@ -9,6 +9,8 @@ from amquery.index.kmers_distr import kmerize_samples
 from amquery.index.sample_map import SampleMap
 from amquery.utils.benchmarking import measure_time
 
+import time
+
 
 class Index:
 
@@ -39,14 +41,27 @@ class Index:
 
     @staticmethod
     def build(config: Config, sample_files: List[str]):
+        elapsed_time = []
+        start = time.time()
         sample_map = SampleMap(config, kmerize_samples(sample_files,
                                                        config.dist.kmer_size))
+
+        elapsed_time.append(time.time() - start)
+        start = time.time()
+
         pwmatrix = PwMatrix.create(config, sample_map)
+        elapsed_time.append(time.time() - start)
+        start = time.time()
+
         coord_system = CoordSystem.calculate(config, pwmatrix)
+        elapsed_time.append(time.time() - start)
+        start = time.time()
+
         tree_distance = TreeDistance(coord_system, pwmatrix)
         vptree = VpTree.build(config, tree_distance)
+        elapsed_time.append(time.time() - start)
 
-        return Index(config, coord_system, pwmatrix, vptree)
+        return Index(config, coord_system, pwmatrix, vptree), elapsed_time
 
     def refine(self):
         self._coord_system = CoordSystem.calculate(self.config,
@@ -55,14 +70,21 @@ class Index:
         self._vptree = VpTree.build(self.config, tree_distance)
 
     def add(self, sample_files: List[str]):
+        elapsed_time = []
+        start = time.time()
         sample_map = SampleMap(self.config,
                                kmerize_samples(sample_files,
                                                self.config.dist.kmer_size)
                                )
 
         self.sample_map.update(sample_map)
+        elapsed_time.append(time.time() - start)
+        start = time.time()
+
         tree_distance = TreeDistance(self.coord_system, self.pwmatrix)
         self.vptree.add_samples(sample_map.values(), tree_distance)
+        elapsed_time.append(time.time() - start)
+        return elapsed_time
 
     def find(self, sample_file: str, k: int):
         sample_map = SampleMap(self.config,
