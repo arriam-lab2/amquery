@@ -22,8 +22,8 @@ function runqiime {
 }
 
 function split {
-    mkdir -p "${3}"
-    output_dir=$(mktemp -dp $3)
+    output_dir="${3}/${2}"
+    mkdir -p "${output_dir}"
 
     len=$(ls ${1} | wc -l)
     abslen=`python -c "print(int(${2}*${len}))"`
@@ -52,10 +52,10 @@ if [[ $# -ne 2 ]]; then
     echo "Usage: bash bench.sh <input-dir> <output-dir>"
 else
 
-    ratio=(0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1)
-    array=( one two three )
+    ratio=(0.9 0.8 0.7 0.6 0.5 0.4 0.3 0.2 0.1)
     for i in "${ratio[@]}"
     do
+        echo $i
         split $1 $i $2 > /dev/null
     done
 
