@@ -22,6 +22,7 @@ function runqiime {
 }
 
 function split {
+    mkdir -p "${3}"
     output_dir=$(mktemp -dp $3)
 
     shuffled_samples=($(ls -df ${1}/* | sort -R))
@@ -31,6 +32,18 @@ function split {
     to_build=$(printf '%s\n' "${shuffled_samples[@]}" | head -n ${2})
     to_add=$(printf '%s\n' "${shuffled_samples[@]}" | tail -n $additional_size)
 
+    #echo "${to_build}"
+    main_output_subdir="${output_dir}/main"
+    additional_output_subdir="${output_dir}/additional"
+
+    echo $main_output_subdir
+
+    mkdir -p "${main_output_subdir}"
+    mkdir -p "${additional_output_subdir}"
+
+    echo "${to_build}" | xargs cp -t "${main_output_subdir}"
+    echo "${to_add}" | xargs cp -t "${additional_output_subdir}"
+    
     python ../amquery/utils/merge_fasta.py `echo ${to_build} | xargs` -o ${output_dir}/main.fna
     python ../amquery/utils/merge_fasta.py `echo ${to_add} | xargs` -o ${output_dir}/additional.fna
 }
@@ -39,6 +52,6 @@ function split {
 if [[ $# -ne 3 ]]; then
     echo "Usage: bash bench.sh <input-dir> <main-file-size> <output-dir>"
 else
-    split $1 $2 $3> /dev/null
-    runqiime $output_dir
+    split $1 $2 $3 > /dev/null
+    #runqiime $output_dir
 fi
