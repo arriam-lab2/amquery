@@ -25,18 +25,17 @@ function split {
     mkdir -p "${3}"
     output_dir=$(mktemp -dp $3)
 
+    len=$(ls ${1} | wc -l)
+    abslen=`python -c "print(int(${2}*${len}))"`
     shuffled_samples=($(ls -df ${1}/* | sort -R))
     len=$(ls ${1} | wc -l)
-    additional_size=$(expr ${len} - ${2})
+    additional_size=$(expr ${len} - ${abslen})
 
-    to_build=$(printf '%s\n' "${shuffled_samples[@]}" | head -n ${2})
+    to_build=$(printf '%s\n' "${shuffled_samples[@]}" | head -n ${abslen})
     to_add=$(printf '%s\n' "${shuffled_samples[@]}" | tail -n $additional_size)
 
-    #echo "${to_build}"
     main_output_subdir="${output_dir}/main"
     additional_output_subdir="${output_dir}/additional"
-
-    echo $main_output_subdir
 
     mkdir -p "${main_output_subdir}"
     mkdir -p "${additional_output_subdir}"
@@ -49,9 +48,16 @@ function split {
 }
 
 
-if [[ $# -ne 3 ]]; then
-    echo "Usage: bash bench.sh <input-dir> <main-file-size> <output-dir>"
+if [[ $# -ne 2 ]]; then
+    echo "Usage: bash bench.sh <input-dir> <output-dir>"
 else
-    split $1 $2 $3 > /dev/null
+
+    ratio=(0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1)
+    array=( one two three )
+    for i in "${ratio[@]}"
+    do
+        split $1 $i $2 > /dev/null
+    done
+
     #runqiime $output_dir
 fi
