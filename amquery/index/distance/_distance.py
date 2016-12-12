@@ -1,5 +1,6 @@
 from typing import Callable, List
 import itertools
+
 import numpy as np
 import pandas as pd
 import scipy.spatial.distance
@@ -7,11 +8,7 @@ import scipy.spatial.distance
 from ._metrics import distances
 from amquery.index.sample_map import SampleMap
 from amquery.index.sample import Sample
-
-from amquery.utils.ui import progress_bar
 from amquery.utils.config import Config
-from amquery.utils.benchmarking import measure_time
-from amquery.utils.multiprocess import Pool, PackedBinaryFunction
 
 
 class PwMatrix:
@@ -28,21 +25,14 @@ class PwMatrix:
         self.__distfunc = distance_func
 
     @staticmethod
-    @measure_time(enabled=True)
     def create(config: Config, sample_map: SampleMap):
         distributions = [x.kmer_index
                          for x in sample_map.samples]
         pairs = list(itertools.combinations(distributions, 2))
         distance_func = distances[config.dist.func]
-
-        packed_task = PackedBinaryFunction(
-            distance_func, Pool.instance().queue)
-        result = Pool.instance().map_async(packed_task, pairs)
-        progress_bar(result, Pool.instance().queue, len(pairs))
-
-        data = result.get()
-        Pool.instance().clear()
-        matrix = scipy.spatial.distance.squareform(data)
+        result = np.fromiter(itertools.starmap(distance_func, pairs),
+                             dtype=float)
+        matrix = scipy.spatial.distance.squareform(result)
         dataframe = pd.DataFrame(matrix,
                                  index=sample_map.labels,
                                  columns=sample_map.labels)
