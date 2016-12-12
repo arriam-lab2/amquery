@@ -3,24 +3,21 @@ from collections import Counter
 from typing import List
 from ctypes import cdll, POINTER, c_uint8, c_uint64, c_size_t, c_int
 import os
+import itertools
 
 from ._sparse import SparseArray
 from ..sample import Sample
 
 import amquery.utils.iof as iof
 from amquery.utils.benchmarking import measure_time
-from amquery.utils.ui import progress_bar
-from amquery.utils.multiprocess import Pool
-
 
 ranklib = None
 
 
 class KmerCountFunction:
 
-    def __init__(self, k, queue):
+    def __init__(self, k):
         self.k = k
-        self.queue = queue
 
     def _count_seq(self, seq: np.array):
         if seq.size > 0 and seq.size >= self.k:
@@ -45,18 +42,13 @@ class KmerCountFunction:
         data /= np.sum(data)
         sample.kmer_index = SparseArray(cols, data)
 
-        self.queue.put(1)
         return sample
 
 
 @measure_time(enabled=True)
 def kmerize_samples(sample_files: List[str], k: int):
-    packed_task = KmerCountFunction(k, Pool.instance().queue)
-    result = Pool.instance().map_async(packed_task, sample_files)
-    progress_bar(result, Pool.instance().queue, len(sample_files))
-
-    samples = result.get()
-    Pool.instance().clear()
+    packed_task = KmerCountFunction(k)
+    samples = map(packed_task, sample_files)
     return dict([(sample.name, sample) for sample in samples])
 
 
