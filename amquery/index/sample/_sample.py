@@ -41,7 +41,13 @@ def _transform(sequence: Sequence[Any]) -> List:
     return np.array([_alphabet[char] for char in sequence], dtype=np.uint8)
 
 
+@functools.total_ordering
 class Sample:
+    def __eq__(self, other):
+        return self.name == other.name
+
+    def __lt__(self, other):
+        return self.name < other.name
 
     def __init__(self, source_file: str):
         self._name = os.path.splitext(os.path.basename(source_file))[0]
