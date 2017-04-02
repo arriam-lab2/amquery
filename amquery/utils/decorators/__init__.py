@@ -1,4 +1,4 @@
-from ._cli import cli
+from ._decorators import singleton
 
 
 __license__ = "MIT"

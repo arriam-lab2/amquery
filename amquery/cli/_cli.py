@@ -7,8 +7,8 @@ from typing import List
 
 import amquery.utils.iof as iof
 from amquery.utils.config import Config
-from amquery.index.distance import distances
-from amquery.index import Index
+from amquery.core.distance import distances
+from amquery.core import Index
 
 
 pass_config = click.make_pass_decorator(Config, ensure=True)

@@ -2,7 +2,7 @@ import os
 from ctypes import cdll, POINTER, c_uint64, c_size_t, c_double
 
 import amquery.utils.iof as iof
-from amquery.index.kmers_distr import SparseArray
+from amquery.core.kmers_distr import SparseArray
 
 jsdlib = None
 

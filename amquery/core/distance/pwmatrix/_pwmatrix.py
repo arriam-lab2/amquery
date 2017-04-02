@@ -4,9 +4,9 @@ import numpy as np
 import pandas as pd
 import scipy.spatial.distance
 
-from ._metrics import distances
-from amquery.index.sample_map import SampleMap
-from amquery.index.sample import Sample
+from amquery.core.distance.metrics import distances
+from amquery.core.sample_map import SampleMap
+from amquery.core.sample import Sample
 
 from amquery.utils.ui import progress_bar
 from amquery.utils.config import Config

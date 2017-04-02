@@ -1,5 +1,5 @@
-from ._kmer_index import kmerize_samples
-from ._sparse import SparseArray
+from .pwmatrix import PwMatrix
+from .metrics import distances
 
 
 __license__ = "MIT"

@@ -1,4 +1,4 @@
-from ._cli import cli
+from ._time import measure_time
 
 
 __license__ = "MIT"

@@ -1,4 +1,5 @@
-from ._cli import cli
+from .vptree import *
+from .search import *
 
 
 __license__ = "MIT"

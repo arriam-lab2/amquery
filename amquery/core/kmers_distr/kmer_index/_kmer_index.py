@@ -1,19 +1,15 @@
 import numpy as np
 from collections import Counter
 from typing import List
-from ctypes import cdll, POINTER, c_uint8, c_uint64, c_size_t, c_int
-import os
+from ctypes import POINTER, c_uint8, c_uint64, c_size_t, c_int
 
-from ._sparse import SparseArray
-from ..sample import Sample
+from amquery.core.kmers_distr.sparse_array import SparseArray
+from amquery.core.kmers_distr.lexrank import ranklib
+from amquery.core.sample import Sample
 
-import amquery.utils.iof as iof
 from amquery.utils.benchmarking import measure_time
 from amquery.utils.ui import progress_bar
 from amquery.utils.multiprocess import Pool
-
-
-ranklib = None
 
 
 class KmerCountFunction:
@@ -58,12 +54,3 @@ def kmerize_samples(sample_files: List[str], k: int):
     samples = result.get()
     Pool.instance().clear()
     return dict([(sample.name, sample) for sample in samples])
-
-
-if __name__ == "__main__":
-    raise RuntimeError()
-else:
-    libdir = os.path.dirname(os.path.abspath(__file__))
-    ranklib = cdll.LoadLibrary(iof.find_lib(libdir, "rank"))
-    ranklib.count_kmer_ranks.argtypes = [POINTER(c_uint8), POINTER(c_uint64),
-                                         c_size_t, c_int]

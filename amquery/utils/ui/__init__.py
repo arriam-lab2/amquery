@@ -1,4 +1,4 @@
-from ._cli import cli
+from ._ui import progress_bar
 
 
 __license__ = "MIT"

@@ -1,17 +1,15 @@
 from typing import List
 
-from ..utils.config import Config
-from .distance import PwMatrix
-from .tree import VpTree, TreeDistance, neighbors
-
-from amquery.index.coord_system import CoordSystem
-from amquery.index.kmers_distr import kmerize_samples
-from amquery.index.sample_map import SampleMap
+from amquery.core.distance import PwMatrix
+from amquery.core.tree import VpTree, TreeDistance, neighbors
+from amquery.core.coord_system import CoordSystem
+from amquery.core.kmers_distr import kmerize_samples
+from amquery.core.sample_map import SampleMap
+from amquery.utils.config import Config
 from amquery.utils.benchmarking import measure_time
 
 
 class Index:
-
     def __init__(self,
                  config: Config,
                  coord_system: CoordSystem,

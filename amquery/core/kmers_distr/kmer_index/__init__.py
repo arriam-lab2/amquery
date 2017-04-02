@@ -1,5 +1,5 @@
-from ._vptree import VpTree, BaseVpTree, TreeDistance
-from ._search import neighbors
+from ._kmer_index import kmerize_samples
+
 
 __license__ = "MIT"
 __version__ = "0.2.1"

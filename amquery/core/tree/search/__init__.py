@@ -1,4 +1,4 @@
-from ._cli import cli
+from ._search import neighbors
 
 
 __license__ = "MIT"

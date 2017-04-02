@@ -1,4 +1,6 @@
-from ._cli import cli
+from ._multiprocess import Pool,\
+                           PackedUnaryFunction,\
+                           PackedBinaryFunction
 
 
 __license__ = "MIT"

@@ -3,7 +3,7 @@ from typing import Mapping
 import json
 import os
 
-import amquery.utils.iof as iof
+from ..iof import exists, make_sure_exists
 
 
 class ConfigBase(Bunch):
@@ -14,8 +14,8 @@ class ConfigBase(Bunch):
         self.temp.config_path = '.amq.config'
 
     def load(self, workon: str):
-        self.workon = iof.make_sure_exists(workon)
-        if iof.exists(self.temp.config_path):
+        self.workon = make_sure_exists(workon)
+        if exists(self.temp.config_path):
             with open(self.temp.config_path) as data_file:
                 loaded_dict = json.load(data_file)
                 self.update(loaded_dict)

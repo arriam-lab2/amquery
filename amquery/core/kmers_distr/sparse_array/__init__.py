@@ -1,5 +1,5 @@
-from ._distance import PwMatrix
-from ._metrics import distances
+from ._sparse_array import SparseArray
+
 
 __license__ = "MIT"
 __version__ = "0.2.1"

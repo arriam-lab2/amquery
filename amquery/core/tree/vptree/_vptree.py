@@ -6,9 +6,9 @@ import numpy as np
 import joblib
 from typing import Callable, Any, Sequence
 
-from amquery.index.distance import PwMatrix
-from amquery.index.coord_system import CoordSystem
-from amquery.index.sample import Sample
+from amquery.core.distance import PwMatrix
+from amquery.core.coord_system import CoordSystem
+from amquery.core.sample import Sample
 
 from amquery.utils.config import Config
 from amquery.utils.benchmarking import measure_time

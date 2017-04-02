@@ -1,4 +1,4 @@
-from ._cli import cli
+from ._vptree import VpTree, BaseVpTree, TreeDistance
 
 
 __license__ = "MIT"
