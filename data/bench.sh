@@ -52,12 +52,12 @@ if [[ $# -ne 2 ]]; then
     echo "Usage: bash bench.sh <input-dir> <output-dir>"
 else
 
-    ratio=(0.9 0.8 0.7 0.6 0.5 0.4 0.3 0.2 0.1)
-    for i in "${ratio[@]}"
-    do
-        echo $i
-        split $1 $i $2 > /dev/null
-    done
+    #ratio=(0.9 0.8 0.7 0.6 0.5 0.4 0.3 0.2 0.1)
+    #for i in "${ratio[@]}"
+    #do
+    #    echo $i
+    #    split $1 $i $2 > /dev/null
+    #done
 
     #runqiime $output_dir
 fi
