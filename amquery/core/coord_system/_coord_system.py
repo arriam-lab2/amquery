@@ -1,22 +1,24 @@
 #!/usr/bin/env python3
 
+import os
 import itertools
 import random
 import numpy as np
 import joblib
-from typing import List
+import json
 import scipy
 from scipy import stats
+from typing import List
 
 from genetic.individuals import SingleChromosomeIndividual
 from genetic.populations import PanmicticPopulation
 from genetic.selection import bimodal
-
 from amquery.core.distance import PwMatrix
 from amquery.core.sample_map import SampleMap
-
+from amquery.core.sample import Sample
 from amquery.utils.config import Config
 from amquery.utils.benchmarking import measure_time
+from amquery.utils.decorators import hide_field
 
 
 class Engine:
@@ -111,16 +113,22 @@ class CoordSystem(dict):
 
     @staticmethod
     def load(config: Config):
-        coord_system = joblib.load(config.coordsys_path)
-        coord_system.config = config
-        return coord_system
+        with open(config.coordsys_path) as json_data:
+            hash_list = json.load(json_data)
+            samples = { hash: Sample.load(config, os.path.join(config.sample_dir, hash)) \
+                        for hash in hash_list }
+            coord_system = CoordSystem(config, samples)
+            coord_system.config = config
+            return coord_system
+
+    @hide_field("config")
+    def _save(self, config):    
+        hash_list = [sample.name for sample in self.values()]
+        with open(config.coordsys_path, 'w') as outfile:
+            json.dump(hash_list, outfile)
 
     def save(self):
-        config = self.config
-        del self.config
-        joblib.dump(self, config.coordsys_path)
-        self.config = config
-
+        self._save(self.config)
 
 if __name__ == "__main__":
     raise RuntimeError()

@@ -1,6 +1,3 @@
-import pickle
-
-
 def singleton(cls):
     instances = {}
 
@@ -15,20 +12,20 @@ def singleton(cls):
     return cls
 
 
-def cached(path):
-    path = path
+def hide_field(*fields):
+    def decorator(fn):
+        def wrapped(*args, **kwargs):
+            owner = args[0]
+            values = [getattr(owner, f) for f in fields]
+            for f in fields:
+                delattr(owner, f)
 
-    def decorated(cls):
-        cls.save = save
-        cls.load = load
-        return cls
+            result = fn(*args, **kwargs)
 
-    def save(self):
-        pickle.dump(self, open(path, "wb"))
+            for field, value in zip(fields, values):
+                setattr(owner, field, value)
 
-    @staticmethod
-    def load():
-        with open(path, 'rb') as f:
-            return pickle.load(f)
-
-    return decorated
+            return result
+        return wrapped
+    return decorator
+ 

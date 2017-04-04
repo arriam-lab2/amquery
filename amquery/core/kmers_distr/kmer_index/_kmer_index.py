@@ -39,7 +39,7 @@ class KmerCountFunction:
         cols = np.array(sorted(list(counter.keys())), dtype=np.uint64)
         data = np.array([counter[key] for key in cols], dtype=np.float)
         data /= np.sum(data)
-        sample.kmer_index = SparseArray(cols, data)
+        sample.set_kmer_index(SparseArray(cols, data))
 
         self.queue.put(1)
         return sample

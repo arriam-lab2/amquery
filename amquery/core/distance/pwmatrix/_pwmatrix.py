@@ -30,7 +30,7 @@ class PwMatrix:
     @staticmethod
     @measure_time(enabled=True)
     def create(config: Config, sample_map: SampleMap):
-        distributions = [x.kmer_index
+        distributions = [x.kmer_index(config) \
                          for x in sample_map.samples]
         pairs = list(itertools.combinations(distributions, 2))
         distance_func = distances[config.dist.func]
@@ -65,16 +65,11 @@ class PwMatrix:
         return pwmatrix
 
     def save(self):
-        config = self.config
-        del self.config
-
-        self.__dataframe.to_csv(config.pwmatrix_path,
+        self.__dataframe.to_csv(self.config.pwmatrix_path,
                                 sep='\t',
                                 na_rep="N/A",
                                 index=False)
         self.__sample_map.save()
-
-        self.config = config
 
     def add_sample(self, sample: Sample) -> Sample:
         if sample.name not in self.labels:
@@ -93,8 +88,8 @@ class PwMatrix:
                 self.add_sample(x)
 
         if np.isnan(self.dataframe[a.name][b.name]):
-            value = self.__distfunc(a.kmer_index,
-                                    b.kmer_index)
+            value = self.__distfunc(a.kmer_index(self.config),
+                                    b.kmer_index(self.config))
 
             self.__dataframe[a.name][b.name] = value
 

@@ -63,6 +63,10 @@ class Config(ConfigBase):
         return os.path.join(self.index_path, "sample_map.p")
 
     @property
-    def kmers_dir(self):
+    def sample_dir(self):
+        return os.path.join(self.index_path, "samples")
+
+    @property
+    def kmer_index_dir(self):
         return os.path.join(self.index_path,
-                            "kmers." + str(self.dist.kmer_size))
+                            "kmer_indices." + str(self.dist.kmer_size))

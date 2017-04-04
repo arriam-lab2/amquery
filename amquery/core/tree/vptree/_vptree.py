@@ -9,9 +9,9 @@ from typing import Callable, Any, Sequence
 from amquery.core.distance import PwMatrix
 from amquery.core.coord_system import CoordSystem
 from amquery.core.sample import Sample
-
 from amquery.utils.config import Config
 from amquery.utils.benchmarking import measure_time
+from amquery.utils.decorators import hide_field
 
 
 # Vantage-point tree
@@ -102,13 +102,12 @@ class VpTree(BaseVpTree):
         super(VpTree, self).__init__(*args, **kwargs)
         self.config = config
 
-    def save(self):
-        config = self.config
-        del self.config
-
+    @hide_field("config")
+    def _save(self, config):
         joblib.dump(self, config.vptree_path)
 
-        self.config = config
+    def save(self):
+        self._save(self.config)
 
     @staticmethod
     def load(config: Config):
