@@ -47,8 +47,10 @@ class Index:
         return Index(config, coord_system, pwmatrix, vptree)
 
     def refine(self):
+        self._pwmatrix = PwMatrix.create(self.config, self.pwmatrix.sample_map)
         self._coord_system = CoordSystem.calculate(self.config,
                                                    self.pwmatrix)
+        
         tree_distance = TreeDistance(self.coord_system, self.pwmatrix)
         self._vptree = VpTree.build(self.config, tree_distance)
 

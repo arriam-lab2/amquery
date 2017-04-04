@@ -43,16 +43,12 @@ class Config(ConfigBase):
         return os.path.join(self.workon, self.current_index)
 
     @property
-    def primary_kmer_index_path(self):
-        return os.path.join(self.index_path, "primary_index.p")
-
-    @property
     def pwmatrix_path(self):
         return os.path.join(self.index_path, "pwmatrix.txt")
 
     @property
     def coordsys_path(self):
-        return os.path.join(self.index_path, "coord_system.p")
+        return os.path.join(self.index_path, "coord_system.json")
 
     @property
     def vptree_path(self):
@@ -60,7 +56,7 @@ class Config(ConfigBase):
 
     @property
     def sample_map_path(self):
-        return os.path.join(self.index_path, "sample_map.p")
+        return os.path.join(self.index_path, "sample_map.json")
 
     @property
     def sample_dir(self):
