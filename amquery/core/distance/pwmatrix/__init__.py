@@ -1,4 +1,4 @@
-from ._cli import cli
+from ._pwmatrix import PwMatrix
 
 
 __license__ = "MIT"

@@ -1,5 +1,5 @@
-from ._cli import cli
-
+from ._metrics import distances,\
+                      jsd
 
 __license__ = "MIT"
 __version__ = "0.2.1"

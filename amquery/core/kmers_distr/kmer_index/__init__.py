@@ -1,4 +1,4 @@
-from ._cli import cli
+from ._kmer_index import kmerize_samples
 
 
 __license__ = "MIT"

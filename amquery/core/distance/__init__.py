@@ -1,4 +1,5 @@
-from ._cli import cli
+from .pwmatrix import PwMatrix
+from .metrics import distances
 
 
 __license__ = "MIT"

@@ -1,4 +1,4 @@
-from ._cli import cli
+from ._index import Index
 
 
 __license__ = "MIT"

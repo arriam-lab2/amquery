@@ -1,4 +1,5 @@
-from ._cli import cli
+from ._decorators import singleton,\
+                         hide_field
 
 
 __license__ = "MIT"

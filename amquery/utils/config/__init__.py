@@ -1,4 +1,4 @@
-from ._cli import cli
+from ._config import Config
 
 
 __license__ = "MIT"

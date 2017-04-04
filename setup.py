@@ -27,15 +27,15 @@ setup(
     ],
     entry_points='''
         [console_scripts]
-        amq=amquery.cli.amq:cli
-        amquery=amquery.cli.amq:cli
+        amq=amquery.cli:cli
+        amquery=amquery.cli:cli
     ''',
-    ext_modules=[Extension('amquery.index.kmers_distr.rank',
-                           sources=['amquery/index/kmers_distr/rank.cpp'],
+    ext_modules=[Extension('amquery.core.kmers_distr.lexrank.lexrank',
+                           sources=['amquery/core/kmers_distr/lexrank/lexrank.cpp'],
                            extra_compile_args=['-std=c++11'],
                            ),
-                 Extension('amquery.index.distance.jsd',
-                           sources=['amquery/index/distance/jsd.cpp'],
+                 Extension('amquery.core.distance.metrics.jsd',
+                           sources=['amquery/core/distance/metrics/jsd.cpp'],
                            extra_compile_args=['-std=c++11'],
                            )
                  ],

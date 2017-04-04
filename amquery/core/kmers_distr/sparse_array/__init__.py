@@ -1,4 +1,4 @@
-from ._cli import cli
+from ._sparse_array import SparseArray
 
 
 __license__ = "MIT"

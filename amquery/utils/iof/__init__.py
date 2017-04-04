@@ -1,4 +1,4 @@
-from ._cli import cli
+from ._iof import *
 
 
 __license__ = "MIT"
