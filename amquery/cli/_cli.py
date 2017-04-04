@@ -53,22 +53,6 @@ def init(config: Config, name: str):
     config.save()
 
 
-import amquery.utils.f1 as fone
-
-@cli.command()
-@click.argument('input_files', type=click.Path(exists=True), nargs=-1,
-                required=True)
-@click.option('pwmatrix_file', '-f', type=click.Path(exists=True),
-                required=True)
-@click.option('output_file', '-o', required=True)
-@pass_config
-def f1(config: Config, input_files: List[str], pwmatrix_file: str,
-       output_file: str):
-    index = Index.load(config)
-    k_values = list(range(1, len(index.sample_map)))
-    fone.dist(config, pwmatrix_file, index, input_files,
-              k_values, output_file)
-
 @cli.command()
 @click.argument('input_files', type=click.Path(exists=True), nargs=-1,
                 required=True)
