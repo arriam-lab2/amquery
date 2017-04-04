@@ -10,6 +10,7 @@ from amquery.core.sample_map import SampleMap
 from amquery.core.sample import Sample
 from amquery.utils.ui import progress_bar
 from amquery.utils.config import Config
+from amquery.utils.benchmarking import measure_time
 
 
 class PwMatrix:
@@ -26,6 +27,7 @@ class PwMatrix:
         self.__distfunc = distance_func
 
     @staticmethod
+    @measure_time(enabled=True)
     def create(config: Config, sample_map: SampleMap):
         distributions = [x.kmer_index(config) \
                          for x in sample_map.samples]
