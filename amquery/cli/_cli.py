@@ -15,9 +15,9 @@ pass_config = click.make_pass_decorator(Config, ensure=True)
 
 
 def _index_check(config: Config):
-    if "current_index" not in config:
-        raise ValueError(
-            "There is no index created. Run 'amq init' or 'amq use' first")
+    message = "There is no index created. Run 'amq init' or 'amq use' first"
+    assert "current_index" in config, message
+    assert iof.exists(config.index_path), message
 
 
 def _build_check(config: Config):
@@ -57,13 +57,13 @@ def init(config: Config, name: str):
 @click.argument('input_files', type=click.Path(exists=True), nargs=-1,
                 required=True)
 @click.option('--kmer_size', '-k', type=int, help='K-mer size',
-              default=27)
+              default=15)
 @click.option('--distance', '-d', type=click.Choice(distances.keys()),
               default='jsd', help='A distance metric')
 @click.option('--coord_system_size', '-c', type=int, default=29,
               help='Coordinate system size')
 @click.option('--generations', '-n', type=int, help='Number of generations',
-              default=1000)
+              default=100)
 @click.option('--mutation_rate', '-m', type=float, help='Mutation rate',
               default=0.1)
 @click.option('--population_size', '-p', type=int, help='Population size',
@@ -107,13 +107,13 @@ def build(config: Config, kmer_size: int, distance: str,
 
 @cli.command()
 @click.option('--kmer_size', '-k', type=int, help='K-mer size',
-              default=27)
+              default=15)
 @click.option('--distance', '-d', type=click.Choice(distances.keys()),
               default='jsd', help='A distance metric')
 @click.option('--coord_system_size', '-c', type=int, default=29,
               help='Coordinate system size')
 @click.option('--generations', '-n', type=int, help='Number of generations',
-              default=1000)
+              default=100)
 @click.option('--mutation_rate', '-m', type=float, help='Mutation rate',
               default=0.1)
 @click.option('--population_size', '-p', type=int, help='Population size',
@@ -207,5 +207,5 @@ def find(config: Config, input_file: str, k: int):
 
     index = Index.load(config)
     _, points = index.find(input_file, k)
-    print(k, "nearest neighbors:",
-          ', '.join(sample.name for sample in points))
+    print(k, "nearest neighbors:")
+    print('\n'.join("%s (%s)" % (sample.name, sample.original_name) for sample in points))
