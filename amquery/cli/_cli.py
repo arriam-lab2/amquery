@@ -26,7 +26,8 @@ def _build_check(config: Config):
 
 
 @click.group()
-@click.option('--workon', default='./.amq/')
+@click.option('--workon', default='./.amq/', type=click.Path(),
+              help='Index working directory')
 @click.option('--force', '-f', is_flag=True,
               help='Force overwrite output directory')
 @click.option('--quiet', '-q', is_flag=True, help='Be quiet')
@@ -36,6 +37,7 @@ def _build_check(config: Config):
 def cli(config: Config, workon: str, force: bool,
         quiet: bool, njobs: int):
     config.load(workon)
+    config.workon = workon
     config.temp.force = force
     config.temp.quiet = quiet
     config.temp.njobs = njobs
