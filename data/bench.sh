@@ -21,14 +21,53 @@ function runqiime {
     beta_diversity.py -i ${1}/otu_table_w_tax_merged.biom -o ${1}/bdiv -m weighted_unifrac -t ${1}/rep_set_merged.tre
 }
 
-function amq {
+function run_amq {
+    split_dir=`realpath "${1}"`
+    output_dir=`realpath "${2}"`
+    build_size=$3
+    coord_system_size=$4
+    pattern=$5
+    index_dir="${output_dir}/${build_size}"
 
+    amq --workon "${index_dir}" init origin
+
+    # build the index
+    # NOTE: symbolic links only
+    /usr/bin/time -v amq build -c $coord_system_size \
+        $(find ${split_dir}/$build_size/main -type l -name "${pattern}" -exec readlink {} \;) \
+        > "${index_dir}/build_time.log" 2> "${index_dir}/build_memory.log"
+
+    echo $build_size-samples index built
+    
+    #for add_size in {100..1000..100}
+    for add_size in {10..20..5}
+    do
+        # make a copy of the current index 
+        cp -r "${index_dir}/origin" "${index_dir}/$add_size"
+        amq use $add_size
+        to_add=$(find ${split_dir}/$build_size/additional -type l -name "${pattern}" -exec readlink {} \; | shuf -n $add_size | xargs realpath)
+
+        # add new samples
+        /usr/bin/time -v amq add `echo ${to_add}` > "${index_dir}/add_${add_size}_time.log" \
+            2> "${index_dir}/add_${add_size}_memory.log"
+
+        # clean up
+        rm -r "${index_dir}/$add_size"
+        echo "${to_add}" > "${index_dir}"/add_${add_size}_list.txt
+        echo $build_size: $add_size added
+    done;
 }
 
-if [[ $# -ne 1 ]]; then
+
+if [[ $# -ne 2 ]]; then
     echo "Usage: bash bench.sh <input-dir> <output-dir>"
 else
-    #runqiime $output_dir
-    #amq init test139
-    #amq build -c 10 `find /home/ilia/storage/metagen/complete/se/ERR139 -type f -name "*.fastq.gz"`
+    pattern='*.fasta'
+    coord_system_size=3
+    
+    #for build_size in {100..1000..100}
+    for build_size in {10..20..5}
+    do
+        run_amq $1 $2 $build_size $coord_system_size "${pattern}"
+    done;
 fi

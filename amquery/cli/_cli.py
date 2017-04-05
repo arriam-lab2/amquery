@@ -24,9 +24,10 @@ def _build_check(config: Config):
     if config.built.lower() != "true":
         raise ValueError("First you have to build the index. Run 'amq build'")
 
+default_workon = './.amq/'
 
 @click.group()
-@click.option('--workon', default='./.amq/', type=click.Path(),
+@click.option('--workon', default=default_workon, type=click.Path(),
               help='Index working directory')
 @click.option('--force', '-f', is_flag=True,
               help='Force overwrite output directory')
@@ -37,7 +38,7 @@ def _build_check(config: Config):
 def cli(config: Config, workon: str, force: bool,
         quiet: bool, njobs: int):
     config.load(workon)
-    config.workon = workon
+    config.workon = workon if workon != default_workon else config.workon
     config.temp.force = force
     config.temp.quiet = quiet
     config.temp.njobs = njobs
