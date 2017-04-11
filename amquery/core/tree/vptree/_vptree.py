@@ -4,14 +4,15 @@ import itertools
 import random
 import numpy as np
 import joblib
-from typing import Callable, Any, Sequence
+import json
+from typing import Callable, Any, Sequence, Mapping
 
 from amquery.core.distance import PwMatrix
 from amquery.core.coord_system import CoordSystem
 from amquery.core.sample import Sample
+from amquery.core.sample_map import SampleMap
 from amquery.utils.config import Config
 from amquery.utils.benchmarking import measure_time
-from amquery.utils.decorators import hide_field
 
 
 # Vantage-point tree
@@ -71,6 +72,30 @@ class BaseVpTree:
 
         self.size += 1
 
+    def _export(self):
+        json_dict = {'vp': self.vp.name, 'size': self.size }
+        if self.median:
+            json_dict['median'] = self.median
+        if self.left: 
+            json_dict['left'] = self.left._export()
+        if self.right:
+            json_dict['right'] = self.right._export()
+
+        return json_dict
+
+    @staticmethod
+    def _import(json_dict: Mapping, sample_map: SampleMap):
+        vptree = BaseVpTree([], None)
+        vptree.vp = sample_map[json_dict['vp']]
+        vptree.size = json_dict['size']
+        if 'median' in json_dict:
+            vptree.median = json_dict['median']
+        if 'left' in json_dict:
+            vptree.left = BaseVpTree._import(json_dict['left'], sample_map)
+        if 'right' in json_dict:
+            vptree.right = BaseVpTree._import(json_dict['right'], sample_map)
+
+        return vptree
 
 def euclidean(a: np.array, b: np.array):
     return np.linalg.norm(a - b)
@@ -102,18 +127,17 @@ class VpTree(BaseVpTree):
         super(VpTree, self).__init__(*args, **kwargs)
         self.config = config
 
-    @hide_field("config")
-    def _save(self, config):
-        joblib.dump(self, config.vptree_path)
-
     def save(self):
-        self._save(self.config)
+        with open(self.config.vptree_path, 'w') as outfile:
+            json.dump(super(VpTree, self)._export(), outfile)
 
     @staticmethod
-    def load(config: Config):
-        vptree = joblib.load(config.vptree_path)
-        vptree.config = config
-        return vptree
+    def load(config: Config, sample_map: SampleMap):
+        with open(config.vptree_path, 'r') as infile:
+            json_dict = json.loads(infile.read())
+            vptree = BaseVpTree._import(json_dict, sample_map)
+            vptree.config = config
+            return vptree
 
     @staticmethod
     @measure_time(enabled=True)
