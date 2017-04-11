@@ -79,30 +79,8 @@ struct sparse_array_t
 
 typedef sparse_array_t<index_t, num_t> sparse_array;
 
-sparse_array positional_map(sparse_array&& x, sparse_array&& y,
+sparse_array skipping_merge(sparse_array&& x, sparse_array&& y,
                             transformer func, num_t default_value = 0)
-{
-    std::vector<num_t> values(x.size());
-    size_t j = 0;
-    for (size_t i = 0; i < x.size(); ++i)
-    {
-        while (x.idx[i] > y.idx[j] && j < y.size())
-            ++j;
-
-        if (x.idx[i] == y.idx[j])
-        {
-            values[i] = func(x.data[i], y.data[j]);
-            ++j;
-        }
-        else
-            values[i] = default_value;
-    }
-    return sparse_array(std::move(x.idx), std::move(values));
-}
-
-
-sparse_array positional_merge(sparse_array&& x, sparse_array&& y,
-                              transformer func, num_t default_value = 0)
 {
     sparse_array result;
     result.reserve(std::max(x.size(), y.size()));
@@ -120,51 +98,37 @@ sparse_array positional_merge(sparse_array&& x, sparse_array&& y,
             index = x.idx[i];
             i = i < xsize - 1 ? i + 1 : -1;
             j = j < ysize - 1 ? j + 1 : -1;
+
+            result.push_back(index, temp);
         }
         else if (j < 0 || (i >= 0 && x.idx[i] < y.idx[j]))
         {
-            temp = func(x.data[i], default_value);
-            index = x.idx[i];
-
             i = i < xsize - 1 ? i + 1 : -1;
         }
         else
         {
-            temp = func(default_value, y.data[j]);
-            index = y.idx[j];
             j = j < ysize - 1? j + 1 : -1;
         }
-        result.push_back(index, temp);
-
     }
     return result;
 
 }
 
-num_t sum(num_t a, num_t b)
+num_t h(num_t x)
 {
-    return a + b;
+    return -x * log2(x);
 }
 
-num_t mul2(num_t a)
+num_t kernel(num_t a, num_t b)
 {
-    return a * 2;
+    return h(a) + h(b) - h(a + b);
 }
 
-num_t divide(num_t a, num_t b)
-{
-    return b != 0 ? a / b : 0;
-}
 
-num_t mul(num_t a, num_t b)
-{
-    return a * b;
-}
-
-double _jsd(const index_t* x_pos, const num_t* x_val,
-            const size_t x_len,
-            const index_t* y_pos, const num_t* y_val,
-            const size_t y_len)
+double _fast_jsd(const index_t* x_pos, const num_t* x_val,
+                 const size_t x_len,
+                 const index_t* y_pos, const num_t* y_val,
+                 const size_t y_len)
 {
     sparse_array x(
         std::vector<index_t>(x_pos, x_pos + x_len),
@@ -176,23 +140,13 @@ double _jsd(const index_t* x_pos, const num_t* x_val,
         std::vector<num_t>(y_val, y_val + y_len)
     );
 
-    sparse_array z = positional_merge(std::move(x), std::move(y), sum);
-
-    sparse_array d1 = x.copy().apply(mul2);
-    d1 = positional_map(std::move(d1), std::move(z), divide).apply(log2);
-    d1 = positional_map(std::move(d1), std::move(x), mul);
-
-    sparse_array d2 = y.copy().apply(mul2);
-    d2 = positional_map(std::move(d2), std::move(z), divide).apply(log2);
-    d2 = positional_map(std::move(d2), std::move(y), mul);
-
-    d1 = positional_merge(std::move(d1), std::move(d2), sum);
-
-    num_t result = 0;
-    for (auto v : d1.data)
+    sparse_array f = skipping_merge(std::move(x), std::move(y), kernel);
+    double result = 0;
+    for (auto v : f.data)
+    {
         result += v;
-
-    return sqrt(result / 2);
+    }
+    return sqrt(1.0 - 0.5 * result);
 }
 
 extern "C" {
@@ -201,6 +155,6 @@ extern "C" {
                const index_t* y_pos, const num_t* y_val,
                const size_t y_len)
     {
-        return _jsd(x_pos, x_val, x_len, y_pos, y_val, y_len);
+        return _fast_jsd(x_pos, x_val, x_len, y_pos, y_val, y_len);
     }
 }
