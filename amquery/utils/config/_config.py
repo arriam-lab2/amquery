@@ -52,7 +52,7 @@ class Config(ConfigBase):
 
     @property
     def vptree_path(self):
-        return os.path.join(self.index_path, "vptree.p")
+        return os.path.join(self.index_path, "vptree.json")
 
     @property
     def sample_map_path(self):

@@ -32,7 +32,7 @@ class Index:
     def load(config: Config):
         coord_system = CoordSystem.load(config)
         pwmatrix = PwMatrix.load(config)
-        vptree = VpTree.load(config)
+        vptree = VpTree.load(config, pwmatrix.sample_map)
         return Index(config, coord_system, pwmatrix, vptree)
 
     @staticmethod
