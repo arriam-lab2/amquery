@@ -1,7 +1,7 @@
 from typing import List
 
 from amquery.core.distance import PwMatrix
-from amquery.core.tree import VpTree, TreeDistance, neighbors
+from amquery.core.tree import VpTree, TreeDistance
 from amquery.core.coord_system import CoordSystem
 from amquery.core.kmers_distr import kmerize_samples
 from amquery.core.sample_map import SampleMap
@@ -42,7 +42,7 @@ class Index:
         pwmatrix = PwMatrix.create(config, sample_map)
         coord_system = CoordSystem.calculate(config, pwmatrix)
         tree_distance = TreeDistance(coord_system, pwmatrix)
-        vptree = VpTree.build(config, tree_distance)
+        vptree = VpTree(config).build(tree_distance)
 
         return Index(config, coord_system, pwmatrix, vptree)
 
@@ -52,7 +52,7 @@ class Index:
                                                    self.pwmatrix)
         
         tree_distance = TreeDistance(self.coord_system, self.pwmatrix)
-        self._vptree = VpTree.build(self.config, tree_distance)
+        self._vptree = VpTree(self.config).build(tree_distance)
 
     def add(self, sample_files: List[str]):
         sample_map = SampleMap(self.config,
@@ -72,7 +72,7 @@ class Index:
         sample = list(sample_map.values())[0]
 
         tree_distance = TreeDistance(self.coord_system, self.pwmatrix)
-        values, points = neighbors(self.vptree, sample, k, tree_distance)
+        values, points = self.vptree.search(sample, k, tree_distance)
         return values, points
 
     @property

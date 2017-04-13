@@ -7,7 +7,6 @@ import random
 from sklearn.neighbors import NearestNeighbors
 
 from amquery.core.tree.vptree import VpTree
-from amquery.core.tree.search import neighbors
 
 
 class ConfigMock:
@@ -57,7 +56,8 @@ class TestVptree(unittest.TestCase):
         self.sample_map = SampleMapMock({x.name: x for x in self.samples})
         self.config = ConfigMock()
         self.distance = SampleDistanceMock(euclidean, self.sample_map)
-        self.tree = VpTree.build(self.config, self.distance)
+        self.tree = VpTree(self.config)
+        self.tree.build(self.distance)
 
         vptree_file = tempfile.NamedTemporaryFile(delete=False)
         self.config.vptree_path = vptree_file.name
@@ -71,7 +71,7 @@ class TestVptree(unittest.TestCase):
                                 algorithm='ball_tree').fit(self.points)
 
         for name, sample in self.sample_map.items():
-            y1, _ = neighbors(vptree_obj, sample, self.k, self.distance)
+            y1, _ = vptree_obj.search(sample, self.k, self.distance)
             y2, _ = nbrs.kneighbors(sample.values)
             y2 = y2[0]
             self.assertTrue(np.array_equal(y1, y2))
@@ -81,9 +81,14 @@ class TestVptree(unittest.TestCase):
         tree = VpTree.load(self.config, self.sample_map)
 
         self._test_search(tree)
-        self.assertTrue(self.tree._export() == tree._export())
+        self.assertTrue(self.tree.tree.to_dict() == tree.tree.to_dict())
 
     def test_insert(self):
+        # backup the tree
+        self.tree.save()
+        tree = VpTree.load(self.config, self.sample_map)
+
+        # add new samples to the tree
         new_samples = [SampleMock(random_name(), np.random.uniform(0, 1, self.m)) for _ in range(self.n)]
         self.samples += new_samples
         self.sample_map.update(SampleMapMock({x.name: x for x in new_samples}))
@@ -91,6 +96,10 @@ class TestVptree(unittest.TestCase):
 
         self.points = np.array(list(x.values for x in self.samples))
         self._test_search(self.tree)
+
+        # add to the exported tree
+        tree.add_samples(new_samples, self.distance)
+        self._test_search(tree)
 
     def tearDown(self):
         os.unlink(self.config.vptree_path)

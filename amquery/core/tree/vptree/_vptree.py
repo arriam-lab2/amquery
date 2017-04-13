@@ -3,27 +3,28 @@
 import itertools
 import random
 import numpy as np
-import joblib
 import json
-from typing import Callable, Any, Sequence, Mapping
+from typing import Callable, Any, Sequence, Mapping, Tuple
 
 from amquery.core.distance import PwMatrix
 from amquery.core.coord_system import CoordSystem
 from amquery.core.sample import Sample
 from amquery.core.sample_map import SampleMap
+from amquery.core.tree.search import neighbors
 from amquery.utils.config import Config
 from amquery.utils.benchmarking import measure_time
 
 
 # Vantage-point tree
 class BaseVpTree:
-
-    def __init__(self, points: np.array, func: Callable):
-        self.size = 0
-        self.left = None
-        self.right = None
-        self.median = None
-
+    def __init__(self, vp, size, median, left, right):
+        self.vp = vp
+        self.size = size
+        self.median = median
+        self.left = left
+        self.right = right
+    
+    def build(self, points: np.array, func: Callable):
         if len(points) == 1:
             self.vp = points[0]
             self.size = 1
@@ -45,11 +46,13 @@ class BaseVpTree:
                          if distarr[i] > self.median]
 
             if len(leftside) > 0:
-                self.left = BaseVpTree(leftside, func)
+                self.left = BaseVpTree.from_points(leftside, func)
                 self.size += self.left.size
             if len(rightside) > 0:
-                self.right = BaseVpTree(rightside, func)
+                self.right = BaseVpTree.from_points(rightside, func)
                 self.size += self.right.size
+
+        return self
 
     def insert(self, point: Any, func: Callable):
         if self.size == 0:
@@ -61,41 +64,48 @@ class BaseVpTree:
 
             if distance_value <= self.median:
                 if not self.left:
-                    self.left = BaseVpTree([point], func)
+                    self.left = BaseVpTree.from_points([point], func)
                 else:
                     self.left.insert(point, func)
             else:
                 if not self.right:
-                    self.right = BaseVpTree([point], func)
+                    self.right = BaseVpTree.from_points([point], func)
                 else:
                     self.right.insert(point, func)
 
         self.size += 1
 
-    def _export(self):
+    def to_dict(self):
         json_dict = {'vp': self.vp.name, 'size': self.size }
         if self.median:
             json_dict['median'] = self.median
         if self.left: 
-            json_dict['left'] = self.left._export()
+            json_dict['left'] = self.left.to_dict()
         if self.right:
-            json_dict['right'] = self.right._export()
+            json_dict['right'] = self.right.to_dict()
 
         return json_dict
 
-    @staticmethod
-    def _import(json_dict: Mapping, sample_map: SampleMap):
-        vptree = BaseVpTree([], None)
-        vptree.vp = sample_map[json_dict['vp']]
-        vptree.size = json_dict['size']
-        if 'median' in json_dict:
-            vptree.median = json_dict['median']
-        if 'left' in json_dict:
-            vptree.left = BaseVpTree._import(json_dict['left'], sample_map)
-        if 'right' in json_dict:
-            vptree.right = BaseVpTree._import(json_dict['right'], sample_map)
+    @classmethod
+    def from_dict(cls, json_dict: Mapping, sample_map: SampleMap):
+        vp = sample_map[json_dict['vp']]
+        size = json_dict['size']
+        median = json_dict['median'] if 'median' in json_dict else None
+        left = cls.from_dict(json_dict['left'], sample_map) if 'left' in json_dict else None
+        right = cls.from_dict(json_dict['right'], sample_map) if 'right' in json_dict else None
+        return cls(vp, size, median, left, right)
 
-        return vptree
+    @classmethod
+    def from_points(cls, points: np.array, func: Callable):
+        return cls.empty().build(points, func)
+
+    @classmethod
+    def from_tree(cls, tree):
+        return cls(tree.vp, tree.size, tree.median, tree.left, tree.right)
+
+    @classmethod
+    def empty(cls):
+        return cls(None, 0, None, None, None)
 
 def euclidean(a: np.array, b: np.array):
     return np.linalg.norm(a - b)
@@ -103,7 +113,6 @@ def euclidean(a: np.array, b: np.array):
 
 # Euclidean distance in a proper coordinate system
 class TreeDistance:
-
     def __init__(self,
                  coord_system: CoordSystem,
                  pwmatrix: PwMatrix):
@@ -124,30 +133,25 @@ class TreeDistance:
         self.pwmatrix.add_sample(sample)
 
 
-class VpTree(BaseVpTree):
-
-    def __init__(self, config: Config, *args, **kwargs):
-        super(VpTree, self).__init__(*args, **kwargs)
+class VpTree:
+    def __init__(self, config: Config, vptree: BaseVpTree = None):
+        self.tree = vptree if vptree else BaseVpTree.empty()
         self.config = config
 
     def save(self):
         with open(self.config.vptree_path, 'w') as outfile:
-            json.dump(super(VpTree, self)._export(), outfile)
+            json.dump(self.tree.to_dict(), outfile)
 
-    @staticmethod
-    def load(config: Config, sample_map: SampleMap):
+    @classmethod
+    def load(cls, config: Config, sample_map: SampleMap):
         with open(config.vptree_path, 'r') as infile:
             json_dict = json.loads(infile.read())
-            vptree = BaseVpTree._import(json_dict, sample_map)
-            vptree.config = config
-            return vptree
+            return cls(config, BaseVpTree.from_dict(json_dict, sample_map))
 
-    @staticmethod
     @measure_time(enabled=True)
-    def build(config: Config, tree_distance: Callable):
-        return VpTree(config,
-                      list(tree_distance.samples),
-                      tree_distance)
+    def build(self, tree_distance: Callable):
+        self.tree.build(list(tree_distance.samples), tree_distance)
+        return self
 
     @measure_time(enabled=True)
     def add_samples(self,
@@ -160,4 +164,8 @@ class VpTree(BaseVpTree):
                    sample: Sample,
                    tree_distance: Callable):
         tree_distance.add_sample(sample)
-        self.insert(sample, tree_distance)
+        self.tree.insert(sample, tree_distance)
+
+    def search(self, query_point: Any, k: int,
+               tree_distance: Callable) -> Tuple[np.array, np.array]:
+        return neighbors(self.tree, query_point, k, tree_distance)
