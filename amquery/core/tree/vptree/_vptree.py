@@ -120,6 +120,9 @@ class TreeDistance:
     def samples(self) -> Sequence[Any]:
         return self.pwmatrix.sample_map.samples
 
+    def add_sample(self, sample: Sample) -> None:
+        self.pwmatrix.add_sample(sample)
+
 
 class VpTree(BaseVpTree):
 
@@ -156,5 +159,5 @@ class VpTree(BaseVpTree):
     def add_sample(self,
                    sample: Sample,
                    tree_distance: Callable):
-        tree_distance.pwmatrix.add_sample(sample)
+        tree_distance.add_sample(sample)
         self.insert(sample, tree_distance)
