@@ -1,5 +1,4 @@
-from .core import *
-from .utils import *
+from ._sparse_array import SparseArray
 
 
 __license__ = "MIT"

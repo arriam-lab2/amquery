@@ -1,5 +1,5 @@
-from .core import *
-from .utils import *
+from .pwmatrix import PwMatrix
+from .metrics import distances
 
 
 __license__ = "MIT"

@@ -1,5 +1,4 @@
-from .core import *
-from .utils import *
+from ._vptree import VpTree, BaseVpTree, TreeDistance
 
 
 __license__ = "MIT"

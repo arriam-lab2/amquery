@@ -1,5 +1,4 @@
-from .core import *
-from .utils import *
+from ._iof import *
 
 
 __license__ = "MIT"

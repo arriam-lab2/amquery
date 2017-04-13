@@ -1,5 +1,6 @@
-from .core import *
-from .utils import *
+from .index import Index
+from .sample_map import SampleMap
+from .sample import Sample
 
 
 __license__ = "MIT"

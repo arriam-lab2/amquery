@@ -1,5 +1,4 @@
-from .core import *
-from .utils import *
+from ._index import Index
 
 
 __license__ = "MIT"

@@ -1,5 +1,6 @@
-from .core import *
-from .utils import *
+from ._multiprocess import Pool,\
+                           PackedUnaryFunction,\
+                           PackedBinaryFunction
 
 
 __license__ = "MIT"

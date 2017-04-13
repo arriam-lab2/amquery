@@ -1,5 +1,4 @@
-from .core import *
-from .utils import *
+from ._pwmatrix import PwMatrix
 
 
 __license__ = "MIT"

@@ -1,5 +1,4 @@
-from .core import *
-from .utils import *
+from ._sample import Sample
 
 
 __license__ = "MIT"

@@ -1,5 +1,6 @@
-from .core import *
-from .utils import *
+from .kmer_index import *
+from .sparse_array import *
+from .lexrank import *
 
 
 __license__ = "MIT"
@@ -8,3 +9,4 @@ __author__ = "Nikolay Romashchenko"
 __maintainer__ = "Nikolay Romashchenko"
 __email__ = "nikolay.romashchenko@gmail.com"
 __status__ = "Development"
+

@@ -1,5 +1,4 @@
-from .core import *
-from .utils import *
+from ._config import Config
 
 
 __license__ = "MIT"

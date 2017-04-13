@@ -1,5 +1,4 @@
-from .core import *
-from .utils import *
+from ._time import measure_time
 
 
 __license__ = "MIT"

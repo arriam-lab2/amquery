@@ -1,5 +1,4 @@
-from .core import *
-from .utils import *
+from ._search import neighbors
 
 
 __license__ = "MIT"

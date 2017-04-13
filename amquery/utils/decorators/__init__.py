@@ -1,5 +1,5 @@
-from .core import *
-from .utils import *
+from ._decorators import singleton,\
+                         hide_field
 
 
 __license__ = "MIT"

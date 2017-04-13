@@ -1,5 +1,4 @@
-from .core import *
-from .utils import *
+from ._ui import progress_bar
 
 
 __license__ = "MIT"

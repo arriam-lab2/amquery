@@ -1,5 +1,5 @@
-from .core import *
-from .utils import *
+from .vptree import *
+from .search import *
 
 
 __license__ = "MIT"

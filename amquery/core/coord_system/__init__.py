@@ -1,5 +1,4 @@
-from .core import *
-from .utils import *
+from ._coord_system import CoordSystem
 
 
 __license__ = "MIT"
