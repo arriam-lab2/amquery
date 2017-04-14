@@ -19,7 +19,6 @@ setup(
         'multiprocess>=0.70.4',
         'Comparable>=1.0',
         'bunch>=1.0.1',
-        'tqdm>=4.7.0',
         'pandas>=0.18.0',
         'scikit-learn>=0.17.1',
         'codeclimate-test-reporter>=0.1.2'

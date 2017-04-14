@@ -1,11 +1,12 @@
-from tqdm import tqdm
+import click
 import multiprocessing as mp
 import time
 
 
-def progress_bar(result, queue: mp.Queue, size: int):
+def progress_bar(result, queue: mp.Queue, total_size: int, label: str):
     # progress bar loop
-    with tqdm(total=size) as pbar:
+    with click.progressbar(length=total_size,
+                           label=label) as pbar:
         prev = 0
 
         while not result.ready():

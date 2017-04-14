@@ -48,7 +48,7 @@ class KmerCountFunction:
 def kmerize_samples(sample_files: List[str], k: int):
     packed_task = KmerCountFunction(k, Pool.instance().queue)
     result = Pool.instance().map_async(packed_task, sample_files)
-    progress_bar(result, Pool.instance().queue, len(sample_files))
+    progress_bar(result, Pool.instance().queue, len(sample_files), 'Counting k-mers:')
 
     samples = result.get()
     Pool.instance().clear()
