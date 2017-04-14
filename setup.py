@@ -21,7 +21,8 @@ setup(
         'bunch>=1.0.1',
         'pandas>=0.18.0',
         'scikit-learn>=0.17.1',
-        'codeclimate-test-reporter>=0.1.2'
+        'codeclimate-test-reporter>=0.1.2',
+        'colorama==0.3.7'
     ],
     entry_points='''
         [console_scripts]

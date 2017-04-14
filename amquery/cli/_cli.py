@@ -134,8 +134,10 @@ def stats(config: Config):
     index = Index.load(config)
     indexed = len(index.sample_map)
 
-    print("Current index:", config.current_index)
-    print("Indexed:", indexed, "samples")
+    click.secho("Current index: ", bold=True, nl=False)
+    click.secho(str(config.current_index))
+    click.secho("Indexed: ", bold=True, nl=False)
+    click.secho("%s samples" % indexed)
 
 
 @cli.command()
@@ -150,7 +152,10 @@ def find(config: Config, input_file: str, k: int):
 
     index = Index.load(config)
     values, points = index.find(input_file, k)
-    print(k, "nearest neighbors:")
-    print('\t'.join(x for x in ['Hash', 'Sample', 'Similarity']))
-    print('\n'.join('\t'.join(str(x) for x in [sample.name[:6], sample.original_name, value]) \
-                    for value, sample in zip(values, points)))
+    click.secho("%s nearest neighbors:" % k, bold=True)
+    click.secho('\t'.join(x for x in ['Hash', 'Sample', 'Similarity']), bold=True)
+
+    for value, sample in zip(values, points):
+        click.secho("%s\t" % sample.name[:7], fg='blue', nl=False)
+        click.echo(sample.original_name if len(sample.original_name) <= 8 else sample.original_name[:5] + "..", nl=False)
+        click.echo("\t%f\t" % value)

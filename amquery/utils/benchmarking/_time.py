@@ -1,4 +1,5 @@
 import time
+import click
 from functools import wraps
 
 
@@ -9,7 +10,7 @@ def measure_time(enabled):
             start = time.time()
             result = func(*args)
             end = time.time()
-            print(func.__name__, "elapsed time:", end - start)
+            click.secho("%s elapsed time: %f" % (func.__name__, end - start), fg='yellow')
             return result
 
         return wrapper if enabled else func
