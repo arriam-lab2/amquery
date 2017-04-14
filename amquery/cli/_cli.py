@@ -31,16 +31,16 @@ def _build_check(config: Config):
 @click.option('--force', '-f', is_flag=True,
               help='Force overwrite output directory')
 @click.option('--quiet', '-q', is_flag=True, help='Be quiet')
-@click.option('--njobs', '-n', type=int, default=1,
+@click.option('--jobs', '-j', type=int, default=1,
               help='Number of jobs to start in parallel')
 @pass_config
 def cli(config: Config, workon: str, force: bool,
-        quiet: bool, njobs: int):
+        quiet: bool, jobs: int):
     config.load(workon)
     config.workon = workon
     config.temp.force = force
     config.temp.quiet = quiet
-    config.temp.njobs = njobs
+    config.temp.jobs = jobs
 
 
 @cli.command()
@@ -62,43 +62,13 @@ def init(config: Config, name: str):
               default=15)
 @click.option('--distance', '-d', type=click.Choice(distances.keys()),
               default='jsd', help='A distance metric')
-@click.option('--coord_system_size', '-c', type=int, default=29,
-              help='Coordinate system size')
-@click.option('--generations', '-n', type=int, help='Number of generations',
-              default=100)
-@click.option('--mutation_rate', '-m', type=float, help='Mutation rate',
-              default=0.1)
-@click.option('--population_size', '-p', type=int, help='Population size',
-              default=150)
-@click.option('--select_rate', '-s', type=float,
-              help='Fraction of best individuals to select on each generation',
-              default=0.25)
-@click.option('--random_select_rate', '-r', type=float,
-              help='Fraction of random individuals to select \
-              on each generation', default=0.1)
-@click.option('--legend_size', '-l', type=int,
-              help='Count of best individuals to keep tracking', default=100)
 @pass_config
-def build(config: Config, kmer_size: int, distance: str,
-          input_files: List[str], coord_system_size: int,
-          generations: int, mutation_rate: float, population_size: int,
-          select_rate: float, random_select_rate: float,
-          legend_size: int):
-
+def build(config: Config, kmer_size: int, distance: str, input_files: List[str]):
     _index_check(config)
 
     config.dist = Bunch()
     config.dist.func = distance
     config.dist.kmer_size = kmer_size
-
-    config.genetic = Bunch()
-    config.genetic.coord_system_size = coord_system_size
-    config.genetic.generations = generations
-    config.genetic.mutation_rate = mutation_rate
-    config.genetic.population_size = population_size
-    config.genetic.select_rate = select_rate
-    config.genetic.random_select_rate = random_select_rate
-    config.genetic.legend_size = legend_size
 
     index = Index.build(config, input_files)
     index.save()
@@ -112,43 +82,13 @@ def build(config: Config, kmer_size: int, distance: str,
               default=15)
 @click.option('--distance', '-d', type=click.Choice(distances.keys()),
               default='jsd', help='A distance metric')
-@click.option('--coord_system_size', '-c', type=int, default=29,
-              help='Coordinate system size')
-@click.option('--generations', '-n', type=int, help='Number of generations',
-              default=100)
-@click.option('--mutation_rate', '-m', type=float, help='Mutation rate',
-              default=0.1)
-@click.option('--population_size', '-p', type=int, help='Population size',
-              default=150)
-@click.option('--select_rate', '-s', type=float,
-              help='Fraction of best individuals to select on each generation',
-              default=0.25)
-@click.option('--random_select_rate', '-r', type=float,
-              help='Fraction of random individuals to select \
-              on each generation', default=0.1)
-@click.option('--legend_size', '-l', type=int,
-              help='Count of best individuals to keep tracking', default=100)
 @pass_config
-def refine(config: Config, kmer_size: int, distance: str,
-           coord_system_size: int, generations: int,
-           mutation_rate: float, population_size: int,
-           select_rate: float, random_select_rate: float,
-           legend_size: int):
-
+def refine(config: Config, kmer_size: int, distance: str):
     _index_check(config)
 
     config.dist = Bunch()
     config.dist.func = distance
     config.dist.kmer_size = kmer_size
-
-    config.genetic = Bunch()
-    config.genetic.coord_system_size = coord_system_size
-    config.genetic.generations = generations
-    config.genetic.mutation_rate = mutation_rate
-    config.genetic.population_size = population_size
-    config.genetic.select_rate = select_rate
-    config.genetic.random_select_rate = random_select_rate
-    config.genetic.legend_size = legend_size
 
     index = Index.load(config)
     index.refine()
@@ -190,11 +130,9 @@ def stats(config: Config):
 
     index = Index.load(config)
     indexed = len(index.sample_map)
-    coord_system_size = len(index.coord_system.keys())
 
     print("Current index:", config.current_index)
     print("Indexed:", indexed, "samples")
-    print("Coordinate system size:", coord_system_size)
 
 
 @cli.command()
@@ -208,6 +146,8 @@ def find(config: Config, input_file: str, k: int):
     _build_check(config)
 
     index = Index.load(config)
-    _, points = index.find(input_file, k)
+    values, points = index.find(input_file, k)
     print(k, "nearest neighbors:")
-    print('\n'.join("%s (%s)" % (sample.name, sample.original_name) for sample in points))
+    print('\t'.join(x for x in ['Hash', 'Sample', 'Similarity']))
+    print('\n'.join('\t'.join(str(x) for x in [sample.name[:6], sample.original_name, value]) \
+                    for value, sample in zip(values, points)))
