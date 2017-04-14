@@ -7,6 +7,7 @@ from typing import List
 
 import amquery.utils.iof as iof
 from amquery.utils.config import Config
+from amquery.utils.multiprocess import Pool
 from amquery.core.distance import distances
 from amquery.core import Index
 
@@ -41,6 +42,8 @@ def cli(config: Config, workon: str, force: bool,
     config.temp.force = force
     config.temp.quiet = quiet
     config.temp.jobs = jobs
+
+    Pool.instance(jobs=jobs)
 
 
 @cli.command()
