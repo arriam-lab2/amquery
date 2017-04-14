@@ -139,6 +139,10 @@ class VpTree:
 
     @measure_time(enabled=True)
     def build(self, tree_distance: Callable):
+        # filling diagonal of the pairwise matrix
+        for sample in tree_distance.samples:
+            tree_distance(sample, sample)
+
         self.tree.build(list(tree_distance.samples), tree_distance)
         return self
 
@@ -152,6 +156,8 @@ class VpTree:
     def add_sample(self,
                    sample: Sample,
                    tree_distance: Callable):
+        # filling diagonal of the pairwise matrix
+        tree_distance(sample, sample)
         tree_distance.add_sample(sample)
         self.tree.insert(sample, tree_distance)
 

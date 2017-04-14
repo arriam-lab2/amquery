@@ -69,7 +69,7 @@ class PwMatrix:
             value = self.__distfunc(a.kmer_index(self.config),
                                     b.kmer_index(self.config))
 
-            self.__dataframe[a.name][b.name] = value
+            self.__dataframe[a.name][b.name] = value if not np.isnan(value) else 0.0
 
         return self.dataframe[a.name][b.name]
 
