@@ -1,17 +1,11 @@
 from typing import Callable, List
-import itertools
 import numpy as np
 import pandas as pd
-import scipy.spatial.distance
 
 from amquery.core.distance.metrics import distances
 from amquery.core.sample_map import SampleMap
 from amquery.core.sample import Sample
-
-from amquery.utils.ui import progress_bar
 from amquery.utils.config import Config
-from amquery.utils.benchmarking import measure_time
-from amquery.utils.multiprocess import Pool, PackedBinaryFunction
 
 
 class PwMatrix:
