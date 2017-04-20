@@ -7,11 +7,14 @@ from amquery.core.kmers_distr.sparse_array import SparseArray
 from amquery.core.kmers_distr.lexrank import ranklib
 from amquery.core.sample import Sample
 from amquery.utils.benchmarking import measure_time
+from amquery.utils.multiprocess import Pool
+from amquery.utils.ui import progress_bar
 
 
 class KmerCountFunction:
-    def __init__(self, k):
+    def __init__(self, k, queue):
         self.k = k
+        self.queue = queue
 
     def _count_seq(self, seq: np.array):
         if seq.size > 0 and seq.size >= self.k:
@@ -36,6 +39,7 @@ class KmerCountFunction:
         data /= np.sum(data)
         sample.set_kmer_index(SparseArray(cols, data))
 
+        self.queue.put(1)
         return sample
 
 

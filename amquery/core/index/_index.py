@@ -34,18 +34,11 @@ class Index:
 
     @staticmethod
     def build(config: Config, sample_files: List[str]):
-        elapsed_time = []
-        start = time.time()
         sample_map = SampleMap(config, kmerize_samples(sample_files,
                                                        config.dist.kmer_size))
-
-        elapsed_time.append(time.time() - start)
-        start = time.time()
-
         pwmatrix = PwMatrix.create(config, sample_map)
         tree_distance = TreeDistance(pwmatrix)
         vptree = VpTree(config).build(tree_distance)
-
         return Index(config, pwmatrix, vptree)
 
     def refine(self):

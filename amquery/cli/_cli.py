@@ -76,15 +76,13 @@ def build(config: Config, kmer_size: int, distance: str, input_files: List[str])
 
     index = Index.build(config, input_files)
     index.save()
-    print("Elapsed time:", elapsed_time, sum(elapsed_time))
 
     config.built = "true"
     config.save()
 
 
 @cli.command()
-@click.option('--kmer_size', '-k', type=int, help='K-mer size',
-              default=15)
+@click.option('--kmer_size', '-k', type=int, help='K-mer size', default=15)
 @click.option('--distance', '-d', type=click.Choice(distances.keys()),
               default='jsd', help='A distance metric')
 @pass_config
