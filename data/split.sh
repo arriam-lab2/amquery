@@ -35,8 +35,8 @@ if [[ $# -ne 2 ]]; then
 else
     pattern='*.fasta'
 
-    #for build_size in {100..1000..100}
-    for build_size in {10..20..5}
+    for build_size in {100..1000..100}
+    #for build_size in {10..20..5}
     do
         split "${1}" "${2}" "${pattern}" "${build_size}"
     done
