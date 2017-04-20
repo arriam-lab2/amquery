@@ -3,26 +3,27 @@
 import itertools
 import random
 import numpy as np
-import joblib
-from typing import Callable, Any, Sequence
+import json
+from typing import Callable, Any, Sequence, Mapping, Tuple
 
 from amquery.core.distance import PwMatrix
-from amquery.core.coord_system import CoordSystem
 from amquery.core.sample import Sample
+from amquery.core.sample_map import SampleMap
+from amquery.core.tree.search import neighbors
 from amquery.utils.config import Config
 from amquery.utils.benchmarking import measure_time
-from amquery.utils.decorators import hide_field
 
 
 # Vantage-point tree
 class BaseVpTree:
-
-    def __init__(self, points: np.array, func: Callable):
-        self.size = 0
-        self.left = None
-        self.right = None
-        self.median = None
-
+    def __init__(self, vp, size, median, left, right):
+        self.vp = vp
+        self.size = size
+        self.median = median
+        self.left = left
+        self.right = right
+    
+    def build(self, points: np.array, func: Callable):
         if len(points) == 1:
             self.vp = points[0]
             self.size = 1
@@ -44,11 +45,13 @@ class BaseVpTree:
                          if distarr[i] > self.median]
 
             if len(leftside) > 0:
-                self.left = BaseVpTree(leftside, func)
+                self.left = BaseVpTree.from_points(leftside, func)
                 self.size += self.left.size
             if len(rightside) > 0:
-                self.right = BaseVpTree(rightside, func)
+                self.right = BaseVpTree.from_points(rightside, func)
                 self.size += self.right.size
+
+        return self
 
     def insert(self, point: Any, func: Callable):
         if self.size == 0:
@@ -60,67 +63,88 @@ class BaseVpTree:
 
             if distance_value <= self.median:
                 if not self.left:
-                    self.left = BaseVpTree([point], func)
+                    self.left = BaseVpTree.from_points([point], func)
                 else:
                     self.left.insert(point, func)
             else:
                 if not self.right:
-                    self.right = BaseVpTree([point], func)
+                    self.right = BaseVpTree.from_points([point], func)
                 else:
                     self.right.insert(point, func)
 
         self.size += 1
 
+    def to_dict(self):
+        json_dict = {'vp': self.vp.name, 'size': self.size }
+        if self.median:
+            json_dict['median'] = self.median
+        if self.left: 
+            json_dict['left'] = self.left.to_dict()
+        if self.right:
+            json_dict['right'] = self.right.to_dict()
 
-def euclidean(a: np.array, b: np.array):
-    return np.linalg.norm(a - b)
+        return json_dict
+
+    @classmethod
+    def from_dict(cls, json_dict: Mapping, sample_map: SampleMap):
+        vp = sample_map[json_dict['vp']]
+        size = json_dict['size']
+        median = json_dict['median'] if 'median' in json_dict else None
+        left = cls.from_dict(json_dict['left'], sample_map) if 'left' in json_dict else None
+        right = cls.from_dict(json_dict['right'], sample_map) if 'right' in json_dict else None
+        return cls(vp, size, median, left, right)
+
+    @classmethod
+    def from_points(cls, points: np.array, func: Callable):
+        return cls.empty().build(points, func)
+
+    @classmethod
+    def from_tree(cls, tree):
+        return cls(tree.vp, tree.size, tree.median, tree.left, tree.right)
+
+    @classmethod
+    def empty(cls):
+        return cls(None, 0, None, None, None)
 
 
-# Euclidean distance in a proper coordinate system
 class TreeDistance:
-
-    def __init__(self,
-                 coord_system: CoordSystem,
-                 pwmatrix: PwMatrix):
-
-        self.coord_system = coord_system
+    def __init__(self, pwmatrix: PwMatrix):
         self.pwmatrix = pwmatrix
 
     def __call__(self, a: Sample, b: Sample):
-        x = np.array([self.pwmatrix[a, c] for c in self.coord_system.values()])
-        y = np.array([self.pwmatrix[b, c] for c in self.coord_system.values()])
-        return euclidean(x, y)
+        return self.pwmatrix[a, b]
 
     @property
     def samples(self) -> Sequence[Any]:
         return self.pwmatrix.sample_map.samples
 
+    def add_sample(self, sample: Sample) -> None:
+        self.pwmatrix.add_sample(sample)
 
-class VpTree(BaseVpTree):
 
-    def __init__(self, config: Config, *args, **kwargs):
-        super(VpTree, self).__init__(*args, **kwargs)
+class VpTree:
+    def __init__(self, config: Config, vptree: BaseVpTree = None):
+        self.tree = vptree if vptree else BaseVpTree.empty()
         self.config = config
 
-    @hide_field("config")
-    def _save(self, config):
-        joblib.dump(self, config.vptree_path)
-
     def save(self):
-        self._save(self.config)
+        with open(self.config.vptree_path, 'w') as outfile:
+            json.dump(self.tree.to_dict(), outfile)
 
-    @staticmethod
-    def load(config: Config):
-        vptree = joblib.load(config.vptree_path)
-        vptree.config = config
-        return vptree
+    @classmethod
+    def load(cls, config: Config, sample_map: SampleMap):
+        with open(config.vptree_path, 'r') as infile:
+            json_dict = json.loads(infile.read())
+            return cls(config, BaseVpTree.from_dict(json_dict, sample_map))
 
-    @staticmethod
     @measure_time(enabled=True)
-    def build(config: Config, tree_distance: Callable):
-        return VpTree(config,
-                      list(tree_distance.samples),
-                      tree_distance)
+    def build(self, tree_distance: Callable):
+        # filling diagonal of the pairwise matrix
+        for sample in tree_distance.samples:
+            tree_distance(sample, sample)
+
+        self.tree.build(list(tree_distance.samples), tree_distance)
+        return self
 
     @measure_time(enabled=True)
     def add_samples(self,
@@ -132,5 +156,11 @@ class VpTree(BaseVpTree):
     def add_sample(self,
                    sample: Sample,
                    tree_distance: Callable):
-        tree_distance.pwmatrix.add_sample(sample)
-        self.insert(sample, tree_distance)
+        # filling diagonal of the pairwise matrix
+        tree_distance(sample, sample)
+        tree_distance.add_sample(sample)
+        self.tree.insert(sample, tree_distance)
+
+    def search(self, query_point: Any, k: int,
+               tree_distance: Callable) -> Tuple[np.array, np.array]:
+        return neighbors(self.tree, query_point, k, tree_distance)

@@ -1,8 +1,7 @@
 from typing import List
 
 from amquery.core.distance import PwMatrix
-from amquery.core.tree import VpTree, TreeDistance, neighbors
-from amquery.core.coord_system import CoordSystem
+from amquery.core.tree import VpTree, TreeDistance
 from amquery.core.kmers_distr import kmerize_samples
 from amquery.core.sample_map import SampleMap
 from amquery.utils.config import Config
@@ -14,28 +13,24 @@ import time
 class Index:
     def __init__(self,
                  config: Config,
-                 coord_system: CoordSystem,
                  pwmatrix: PwMatrix,
                  vptree: VpTree):
 
         self._config = config
-        self._coord_system = coord_system
         self._pwmatrix = pwmatrix
         self._vptree = vptree
 
     @measure_time(enabled=True)
     def save(self):
-        self.coord_system.save()
         self.pwmatrix.save()
         self.vptree.save()
 
     @staticmethod
     @measure_time(enabled=True)
     def load(config: Config):
-        coord_system = CoordSystem.load(config)
         pwmatrix = PwMatrix.load(config)
-        vptree = VpTree.load(config)
-        return Index(config, coord_system, pwmatrix, vptree)
+        vptree = VpTree.load(config, pwmatrix.sample_map)
+        return Index(config, pwmatrix, vptree)
 
     @staticmethod
     def build(config: Config, sample_files: List[str]):
@@ -48,26 +43,16 @@ class Index:
         start = time.time()
 
         pwmatrix = PwMatrix.create(config, sample_map)
-        elapsed_time.append(time.time() - start)
-        start = time.time()
+        tree_distance = TreeDistance(pwmatrix)
+        vptree = VpTree(config).build(tree_distance)
 
-        coord_system = CoordSystem.calculate(config, pwmatrix)
-        elapsed_time.append(time.time() - start)
-        start = time.time()
-
-        tree_distance = TreeDistance(coord_system, pwmatrix)
-        vptree = VpTree.build(config, tree_distance)
-        elapsed_time.append(time.time() - start)
-
-        return Index(config, coord_system, pwmatrix, vptree), elapsed_time
+        return Index(config, pwmatrix, vptree)
 
     def refine(self):
         self._pwmatrix = PwMatrix.create(self.config, self.pwmatrix.sample_map)
-        self._coord_system = CoordSystem.calculate(self.config,
-                                                   self.pwmatrix)
         
-        tree_distance = TreeDistance(self.coord_system, self.pwmatrix)
-        self._vptree = VpTree.build(self.config, tree_distance)
+        tree_distance = TreeDistance(self.pwmatrix)
+        self._vptree = VpTree(self.config).build(tree_distance)
 
     def add(self, sample_files: List[str]):
         elapsed_time = []
@@ -78,10 +63,8 @@ class Index:
                                )
 
         self.sample_map.update(sample_map)
-        elapsed_time.append(time.time() - start)
-        start = time.time()
 
-        tree_distance = TreeDistance(self.coord_system, self.pwmatrix)
+        tree_distance = TreeDistance(self.pwmatrix)
         self.vptree.add_samples(sample_map.values(), tree_distance)
         elapsed_time.append(time.time() - start)
         return elapsed_time
@@ -93,17 +76,13 @@ class Index:
                                )
         sample = list(sample_map.values())[0]
 
-        tree_distance = TreeDistance(self.coord_system, self.pwmatrix)
-        values, points = neighbors(self.vptree, sample, k, tree_distance)
+        tree_distance = TreeDistance(self.pwmatrix)
+        values, points = self.vptree.search(sample, k, tree_distance)
         return values, points
 
     @property
     def config(self) -> Config:
         return self._config
-
-    @property
-    def coord_system(self) -> CoordSystem:
-        return self._coord_system
 
     @property
     def pwmatrix(self) -> PwMatrix:

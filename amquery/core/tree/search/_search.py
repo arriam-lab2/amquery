@@ -2,10 +2,8 @@ from typing import Any, Tuple, Callable
 import numpy as np
 import queue
 
-from amquery.core.tree import BaseVpTree
 
-
-def _neighbors(tree: BaseVpTree,
+def _neighbors(tree,
                query_point: Any,
                k: int,
                tree_distance: Callable):
@@ -46,7 +44,7 @@ def _neighbors(tree: BaseVpTree,
     return neighbors.queue
 
 
-def neighbors(vptree: BaseVpTree,
+def neighbors(vptree,
               query_point: Any,
               k: int,
               tree_distance: Callable) -> Tuple[np.array, np.array]:

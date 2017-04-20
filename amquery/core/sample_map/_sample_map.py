@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import os
-import joblib
 import json
 
 from amquery.utils.iof import make_sure_exists
@@ -11,7 +10,6 @@ from amquery.core.sample import Sample
 
 
 class SampleMap(dict):
-
     def __init__(self, config: Config, *args, **kwargs):
         self.config = config
         super(SampleMap, self).__init__(*args, **kwargs)
