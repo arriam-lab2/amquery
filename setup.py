@@ -26,8 +26,9 @@ setup(
     ],
     entry_points='''
         [console_scripts]
-        amq=amquery.cli:cli
-        amquery=amquery.cli:cli
+        amq=amquery.cli:amq_cli
+        amquery=amquery.cli:amq_cli
+        amq-test=amquery.cli:amq_test_cli
     ''',
     ext_modules=[Extension('amquery.core.kmers_distr.lexrank.lexrank',
                            sources=['amquery/core/kmers_distr/lexrank/lexrank.cpp'],
