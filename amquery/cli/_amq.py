@@ -154,9 +154,8 @@ def find(config: Config, input_file: str, k: int):
     index = Index.load(config)
     values, points = index.find(input_file, k)
     click.secho("%s nearest neighbors:" % k, bold=True)
-    click.secho('\t'.join(x for x in ['Hash', 'Sample', 'Similarity']), bold=True)
+    click.secho('\t'.join(x for x in ['Sample', 'Similarity']), bold=True)
 
     for value, sample in zip(values, points):
-        click.secho("%s\t" % sample.name[:7], fg='blue', nl=False)
-        click.echo(sample.original_name if len(sample.original_name) <= 8 else sample.original_name[:5] + "..", nl=False)
+        click.secho(sample.name if len(sample.name) <= 8 else sample.name[:5] + "..",  fg='red', nl=False)
         click.echo("\t%f\t" % value)

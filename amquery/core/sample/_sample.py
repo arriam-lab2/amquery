@@ -4,7 +4,6 @@ import functools
 import itertools
 import operator as op
 import joblib
-import hashlib
 from typing import Sequence, Any, List
 from Bio import SeqIO
 from functools import total_ordering
@@ -44,18 +43,11 @@ def _transform(sequence: Sequence[Any]) -> List:
     return np.array([_alphabet[char] for char in sequence], dtype=np.uint8)
 
 
-def _md5_hash(string: str) -> str:
-    m = hashlib.md5()
-    m.update(string.encode("utf8"))
-    return m.hexdigest()
-
-
 @total_ordering
 class Sample:
     def __init__(self, source_file: str):
-        self._name = _md5_hash(source_file)
-        self._original_name = os.path.splitext(os.path.basename(source_file))[0]
         self._source_file = SampleFile(source_file)
+        self._name = self._parse_name()
         self._kmer_index = None
 
     def __eq__(self, other):
@@ -64,21 +56,20 @@ class Sample:
     def __lt__(self, other):
         return self.name.lower() < other.name.lower()
 
+    def _parse_name(self):
+        for record in SeqIO.parse(open(self.source_file.path),
+                                  self.source_file.file_format):
+            return str(record.id).split("_")[0]
+
     @property
     def name(self) -> str:
         return self._name
 
-    @property
-    def original_name(self) -> str:
-        return self._original_name
+    def make_sample_obj_filename(self, config: Config, source_filename: str) -> str:
+        return os.path.join(config.sample_dir, self.name)
 
-    @staticmethod
-    def make_sample_obj_filename(config: Config, source_filename: str) -> str:
-        return os.path.join(config.sample_dir, _md5_hash(source_filename))
-
-    @staticmethod
-    def make_kmer_index_obj_filename(config: Config, source_filename: str) -> str:
-        return os.path.join(config.kmer_index_dir, _md5_hash(source_filename))
+    def make_kmer_index_obj_filename(self, config: Config, source_filename: str) -> str:
+        return os.path.join(config.kmer_index_dir, self.name)
         
     @staticmethod
     def load(config: Config, object_file):
@@ -86,18 +77,18 @@ class Sample:
         return sample
 
     def load_kmer_index(self, config: Config) -> None:
-        self._kmer_index = joblib.load(Sample.make_kmer_index_obj_filename(config, self.source_file.path))
+        self._kmer_index = joblib.load(self.make_kmer_index_obj_filename(config, self.source_file.path))
 
     @hide_field("_kmer_index")
     def _save(self, config: Config):
         self._kmer_index = None
-        joblib.dump(self, Sample.make_sample_obj_filename(config, self.source_file.path))
+        joblib.dump(self, self.make_sample_obj_filename(config, self.source_file.path))
     
     def save(self, config: Config) -> None:
         self._save(config)
         
         if self._kmer_index:
-            joblib.dump(self._kmer_index, Sample.make_kmer_index_obj_filename(config, self.source_file.path))
+            joblib.dump(self._kmer_index, self.make_kmer_index_obj_filename(config, self.source_file.path))
 
     @property
     def source_file(self) -> str:
