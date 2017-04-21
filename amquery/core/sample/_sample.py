@@ -7,7 +7,7 @@ import joblib
 import hashlib
 from typing import Sequence, Any, List
 from Bio import SeqIO
-
+from functools import total_ordering
 from amquery.utils.config import Config
 from amquery.utils.decorators import hide_field
 
@@ -50,12 +50,19 @@ def _md5_hash(string: str) -> str:
     return m.hexdigest()
 
 
+@total_ordering
 class Sample:
     def __init__(self, source_file: str):
         self._name = _md5_hash(source_file)
         self._original_name = os.path.splitext(os.path.basename(source_file))[0]
         self._source_file = SampleFile(source_file)
         self._kmer_index = None
+
+    def __eq__(self, other):
+        return self.name.lower() == other.name.lower()
+
+    def __lt__(self, other):
+        return self.name.lower() < other.name.lower()
 
     @property
     def name(self) -> str:
