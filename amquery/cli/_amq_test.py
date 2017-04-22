@@ -54,6 +54,12 @@ def average_precision_at_k(result, relevant, k):
                   for m in range(1, k + 1)]) / k
 
 
+# normalized discounted cumulative gain at k
+def ndcg_at_k(result, relevance_dict, k):
+    dcg = np.sum([(2 ** (relevance_dict[result[m-1]] if result[m-1] in relevance_dict else 0.0) - 1) / np.log2(m + 1)
+                  for m in range(1, k + 1)])
+    return dcg / np.sum(1.0 / np.log2(m+1) for m in range(1, k + 1))
+
 @cli.command()
 @click.argument('input_files', type=click.Path(exists=True), nargs=-1, required=True)
 @click.option('--reference', '-r', type=click.Path(exists=True), required=True)
@@ -65,6 +71,8 @@ def precision(config, input_files, reference, k):
 
     p_at_k = []
     ap_at_k = []
+    gain_at_k = []
+
     for input_file in input_files:
         values, points = index.find(input_file, k)
         best_by_amq = [s.name for s in points]
@@ -78,10 +86,8 @@ def precision(config, input_files, reference, k):
         best_by_reference = list(best_by_reference.index)[:k]
         p_at_k.append(precision_at_k(best_by_amq, best_by_reference, k))
         ap_at_k.append(average_precision_at_k(best_by_amq, best_by_reference, k))
-
+        gain_at_k.append(ndcg_at_k(best_by_amq, relevance_dict, k))
 
     m = len(input_files)
-    print(np.sum(p_at_k) / m, np.sum(ap_at_k) / m)
-
-
+    print(np.sum(p_at_k) / m, np.sum(ap_at_k) / m, np.sum(gain_at_k) / m)
 
