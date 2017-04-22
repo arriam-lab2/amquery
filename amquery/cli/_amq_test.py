@@ -1,29 +1,34 @@
+import os
 import click
 import pandas as pd
 import numpy as np
 from amquery.core.index import Index
 from amquery.core.sample import Sample
-from amquery.utils.config import Config
+from amquery.utils.config import Config, DEFAULT_WORKON, AMQ_VERBOSE_MODE
 
 
 pass_config = click.make_pass_decorator(Config, ensure=True)
-default_workon = './.amq/'
+
 
 @click.group()
-@click.option('--workon', default=default_workon, type=click.Path(),
+@click.option('--workon', default=DEFAULT_WORKON, type=click.Path(),
               help='Index working directory')
 @click.option('--force', '-f', is_flag=True,
               help='Force overwrite output directory')
 @click.option('--quiet', '-q', is_flag=True, help='Be quiet')
+@click.option('--verbose', '-v', is_flag=True, help='Verbose output')
 @click.option('--jobs', '-j', type=int, default=1,
               help='Number of jobs to start in parallel')
 @pass_config
-def cli(config, workon, force, quiet, jobs):
+def cli(config: Config, workon: str, force: bool,
+        quiet: bool, verbose: bool, jobs: int):
     config.load(workon)
-    config.workon = workon if workon != default_workon else config.workon
+    config.workon = workon if workon != DEFAULT_WORKON else config.workon
     config.temp.force = force
-    config.temp.quiet = quiet
     config.temp.jobs = jobs
+    config.temp.quiet = quiet
+    os.environ[AMQ_VERBOSE_MODE] = "True" if verbose else ""
+
 
 # load pairwise distance matrix from file
 def load(input_filename: str):
@@ -60,7 +65,6 @@ def precision(config, input_files, reference, k):
 
     p_at_k = []
     ap_at_k = []
-
     for input_file in input_files:
         values, points = index.find(input_file, k)
         best_by_amq = [s.name for s in points]
@@ -76,6 +80,8 @@ def precision(config, input_files, reference, k):
 
 
     m = len(input_files)
+    print(p_at_k)
+    print(ap_at_k)
     print(np.sum(p_at_k) / m, np.sum(ap_at_k) / m)
 
 

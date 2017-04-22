@@ -1,4 +1,6 @@
-from ._config import Config
+from ._config import Config, \
+                     AMQ_VERBOSE_MODE,\
+                     DEFAULT_WORKON
 
 
 __license__ = "MIT"

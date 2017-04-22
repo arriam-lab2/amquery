@@ -4,9 +4,8 @@ import click
 import os
 from bunch import Bunch
 from typing import List
-
 import amquery.utils.iof as iof
-from amquery.utils.config import Config
+from amquery.utils.config import Config, AMQ_VERBOSE_MODE, DEFAULT_WORKON
 from amquery.utils.multiprocess import Pool
 from amquery.core.distance import distances
 from amquery.core import Index
@@ -25,24 +24,25 @@ def _build_check(config: Config):
     if config.built.lower() != "true":
         raise ValueError("First you have to build the index. Run 'amq build'")
 
-default_workon = './.amq/'
 
 @click.group()
-@click.option('--workon', default=default_workon, type=click.Path(),
+@click.option('--workon', default=DEFAULT_WORKON, type=click.Path(),
               help='Index working directory')
 @click.option('--force', '-f', is_flag=True,
               help='Force overwrite output directory')
 @click.option('--quiet', '-q', is_flag=True, help='Be quiet')
+@click.option('--verbose', '-v', is_flag=True, help='Verbose output')
 @click.option('--jobs', '-j', type=int, default=1,
               help='Number of jobs to start in parallel')
 @pass_config
 def cli(config: Config, workon: str, force: bool,
-        quiet: bool, jobs: int):
+        quiet: bool, verbose: bool, jobs: int):
     config.load(workon)
-    config.workon = workon if workon != default_workon else config.workon
+    config.workon = workon if workon != DEFAULT_WORKON else config.workon
     config.temp.force = force
-    config.temp.quiet = quiet
     config.temp.jobs = jobs
+    config.temp.quiet = quiet
+    os.environ[AMQ_VERBOSE_MODE] = "True" if verbose else ""
 
     Pool.instance(jobs=jobs)
 

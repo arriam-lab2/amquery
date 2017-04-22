@@ -5,6 +5,9 @@ import os
 
 from ..iof import exists, make_sure_exists
 
+AMQ_VERBOSE_MODE = "AMQ_VERBOSE_MODE"
+DEFAULT_WORKON = './.amq/'
+
 
 class ConfigBase(Bunch):
 
