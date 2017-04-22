@@ -15,7 +15,7 @@ def progress_bar(result, queue: mp.Queue, total_size: int, label: str):
             if k > 0:
                 pbar.update(k)
                 prev = size
-            time.sleep(1)
+            time.sleep(0.001)
 
         k = queue.qsize() - prev
         if k > 0:

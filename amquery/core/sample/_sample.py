@@ -65,10 +65,10 @@ class Sample:
     def name(self) -> str:
         return self._name
 
-    def make_sample_obj_filename(self, config: Config, source_filename: str) -> str:
+    def make_sample_obj_filename(self, config: Config) -> str:
         return os.path.join(config.sample_dir, self.name)
 
-    def make_kmer_index_obj_filename(self, config: Config, source_filename: str) -> str:
+    def make_kmer_index_obj_filename(self, config: Config) -> str:
         return os.path.join(config.kmer_index_dir, self.name)
         
     @staticmethod
@@ -77,18 +77,18 @@ class Sample:
         return sample
 
     def load_kmer_index(self, config: Config) -> None:
-        self._kmer_index = joblib.load(self.make_kmer_index_obj_filename(config, self.source_file.path))
+        self._kmer_index = joblib.load(self.make_kmer_index_obj_filename(config))
 
     @hide_field("_kmer_index")
     def _save(self, config: Config):
         self._kmer_index = None
-        joblib.dump(self, self.make_sample_obj_filename(config, self.source_file.path))
+        joblib.dump(self, self.make_sample_obj_filename(config))
     
     def save(self, config: Config) -> None:
         self._save(config)
         
         if self._kmer_index:
-            joblib.dump(self._kmer_index, self.make_kmer_index_obj_filename(config, self.source_file.path))
+            joblib.dump(self._kmer_index, self.make_kmer_index_obj_filename(config))
 
     @property
     def source_file(self) -> str:

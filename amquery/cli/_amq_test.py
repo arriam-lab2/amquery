@@ -25,7 +25,6 @@ def cli(config, workon, force, quiet, jobs):
     config.temp.quiet = quiet
     config.temp.jobs = jobs
 
-
 # load pairwise distance matrix from file
 def load(input_filename: str):
     matrix = []

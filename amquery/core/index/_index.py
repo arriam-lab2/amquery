@@ -34,7 +34,8 @@ class Index:
 
     @staticmethod
     def build(config: Config, sample_files: List[str]):
-        sample_map = SampleMap(config, kmerize_samples(sample_files,
+        sample_map = SampleMap(config, kmerize_samples(config,
+                                                       sample_files,
                                                        config.dist.kmer_size))
         pwmatrix = PwMatrix.create(config, sample_map)
         tree_distance = TreeDistance(pwmatrix)
@@ -48,10 +49,9 @@ class Index:
         self._vptree = VpTree(self.config).build(tree_distance)
 
     def add(self, sample_files: List[str]):
-        elapsed_time = []
-        start = time.time()
         sample_map = SampleMap(self.config,
-                               kmerize_samples(sample_files,
+                               kmerize_samples(self.config,
+                                               sample_files,
                                                self.config.dist.kmer_size)
                                )
 
@@ -59,19 +59,17 @@ class Index:
 
         tree_distance = TreeDistance(self.pwmatrix)
         self.vptree.add_samples(sample_map.values(), tree_distance)
-        elapsed_time.append(time.time() - start)
-        return elapsed_time
 
     def find(self, sample_file: str, k: int):
         sample_map = SampleMap(self.config,
-                               kmerize_samples([sample_file],
+                               kmerize_samples(self.config,
+                                               [sample_file],
                                                self.config.dist.kmer_size)
                                )
         sample = list(sample_map.values())[0]
 
         tree_distance = TreeDistance(self.pwmatrix)
-        values, points = self.vptree.search(sample, k, tree_distance)
-        return values, points
+        return self.vptree.search(sample, k, tree_distance)
 
     @property
     def config(self) -> Config:
