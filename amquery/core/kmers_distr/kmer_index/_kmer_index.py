@@ -27,13 +27,15 @@ class KmerCountFunction:
         else:
             return seq
 
+    def rev_c(self, seq: np.array):
+        z = np.array([3 - x for x in reversed(seq)])
+        return z
+
     def __call__(self, sample_file: str):
         sample = Sample(sample_file)
-        kmer_refs = np.concatenate(
-            list(self._count_seq(seq) for seq in sample.iter_seqs())
-        )
-
-        counter = Counter(kmer_refs)
+        kmer_ref_list = [np.concatenate([self._count_seq(seq), self._count_seq(self.rev_c(seq))])
+                         for seq in sample.iter_seqs()]
+        counter = Counter(np.concatenate(kmer_ref_list))
         cols = np.array(sorted(list(counter.keys())), dtype=np.uint64)
         data = np.array([counter[key] for key in cols], dtype=np.float)
         data /= np.sum(data)
