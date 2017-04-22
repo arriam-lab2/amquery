@@ -1,0 +1,392 @@
+% Template for PLoS
+% Version 3.3 June 2016
+%
+% % % % % % % % % % % % % % % % % % % % % %
+%
+% -- IMPORTANT NOTE
+%
+% This template contains comments intended 
+% to minimize problems and delays during our production 
+% process. Please follow the template instructions
+% whenever possible.
+%
+% % % % % % % % % % % % % % % % % % % % % % % 
+%
+% Once your paper is accepted for publication, 
+% PLEASE REMOVE ALL TRACKED CHANGES in this file 
+% and leave only the final text of your manuscript. 
+% PLOS recommends the use of latexdiff to track changes during review, as this will help to maintain a clean tex file.
+% Visit https://www.ctan.org/pkg/latexdiff?lang=en for info or contact us at latex@plos.org.
+%
+%
+% There are no restrictions on package use within the LaTeX files except that 
+% no packages listed in the template may be deleted.
+%
+% Please do not include colors or graphics in the text.
+%
+% The manuscript LaTeX source should be contained within a single file (do not use \input, \externaldocument, or similar commands).
+%
+% % % % % % % % % % % % % % % % % % % % % % %
+%
+% -- FIGURES AND TABLES
+%
+% Please include tables/figure captions directly after the paragraph where they are first cited in the text.
+%
+% DO NOT INCLUDE GRAPHICS IN YOUR MANUSCRIPT
+% - Figures should be uploaded separately from your manuscript file. 
+% - Figures generated using LaTeX should be extracted and removed from the PDF before submission. 
+% - Figures containing multiple panels/subfigures must be combined into one image file before submission.
+% For figure citations, please use "Fig" instead of "Figure".
+% See http://journals.plos.org/plosone/s/figures for PLOS figure guidelines.
+%
+% Tables should be cell-based and may not contain:
+% - spacing/line breaks within cells to alter layout or alignment
+% - do not nest tabular environments (no tabular environments within tabular environments)
+% - no graphics or colored text (cell background color/shading OK)
+% See http://journals.plos.org/plosone/s/tables for table guidelines.
+%
+% For tables that exceed the width of the text column, use the adjustwidth environment as illustrated in the example table in text below.
+%
+% % % % % % % % % % % % % % % % % % % % % % % %
+%
+% -- EQUATIONS, MATH SYMBOLS, SUBSCRIPTS, AND SUPERSCRIPTS
+%
+% IMPORTANT
+% Below are a few tips to help format your equations and other special characters according to our specifications. For more tips to help reduce the possibility of formatting errors during conversion, please see our LaTeX guidelines at http://journals.plos.org/plosone/s/latex
+%
+% For inline equations, please be sure to include all portions of an equation in the math environment.  For example, x$^2$ is incorrect; this should be formatted as $x^2$ (or $\mathrm{x}^2$ if the romanized font is desired).
+%
+% Do not include text that is not math in the math environment. For example, CO2 should be written as CO\textsubscript{2} instead of CO$_2$.
+%
+% Please add line breaks to long display equations when possible in order to fit size of the column. 
+%
+% For inline equations, please do not include punctuation (commas, etc) within the math environment unless this is part of the equation.
+%
+% When adding superscript or subscripts outside of brackets/braces, please group using {}.  For example, change "[U(D,E,\gamma)]^2" to "{[U(D,E,\gamma)]}^2". 
+%
+% Do not use \cal for caligraphic font.  Instead, use \mathcal{}
+%
+% % % % % % % % % % % % % % % % % % % % % % % % 
+%
+% Please contact latex@plos.org with any questions.
+%
+% % % % % % % % % % % % % % % % % % % % % % % %
+
+\documentclass[10pt,letterpaper]{article}
+\usepackage[top=0.85in,left=2.75in,footskip=0.75in]{geometry}
+
+% amsmath and amssymb packages, useful for mathematical formulas and symbols
+\usepackage{amsmath,amssymb,amsthm}
+
+% Use adjustwidth environment to exceed column width (see example table in text)
+\usepackage{changepage}
+
+% Use Unicode characters when possible
+\usepackage[utf8x]{inputenc}
+
+% textcomp package and marvosym package for additional characters
+\usepackage{textcomp,marvosym}
+
+% cite package, to clean up citations in the main text. Do not remove.
+\usepackage{cite}
+
+% Use nameref to cite supporting information files (see Supporting Information section for more info)
+\usepackage{nameref,hyperref}
+
+% line numbers
+\usepackage[right]{lineno}
+
+% ligatures disabled
+\usepackage{microtype}
+\DisableLigatures[f]{encoding = *, family = * }
+
+% color can be used to apply background shading to table cells only
+\usepackage[table]{xcolor}
+
+% array package and thick rules for tables
+\usepackage{array}
+
+% create "+" rule type for thick vertical lines
+\newcolumntype{+}{!{\vrule width 2pt}}
+
+% create \thickcline for thick horizontal lines of variable length
+\newlength\savedwidth
+\newcommand\thickcline[1]{%
+  \noalign{\global\savedwidth\arrayrulewidth\global\arrayrulewidth 2pt}%
+  \cline{#1}%
+  \noalign{\vskip\arrayrulewidth}%
+  \noalign{\global\arrayrulewidth\savedwidth}%
+}
+
+% \thickhline command for thick horizontal lines that span the table
+\newcommand\thickhline{\noalign{\global\savedwidth\arrayrulewidth\global\arrayrulewidth 2pt}%
+\hline
+\noalign{\global\arrayrulewidth\savedwidth}}
+
+
+% Remove comment for double spacing
+%\usepackage{setspace} 
+%\doublespacing
+
+% Text layout
+\raggedright
+\setlength{\parindent}{0.5cm}
+\textwidth 5.25in 
+\textheight 8.75in
+
+% Bold the 'Figure #' in the caption and separate it from the title/caption with a period
+% Captions will be left justified
+\usepackage[aboveskip=1pt,labelfont=bf,labelsep=period,justification=raggedright,singlelinecheck=off]{caption}
+\renewcommand{\figurename}{Fig}
+
+% Use the PLoS provided BiBTeX style
+\bibliographystyle{plos2015}
+
+% Remove brackets from numbering in List of References
+\makeatletter
+\renewcommand{\@biblabel}[1]{\quad#1.}
+\makeatother
+
+% Leave date blank
+\date{}
+
+% Header and Footer with logo
+\usepackage{lastpage,fancyhdr,graphicx}
+\usepackage{epstopdf}
+\pagestyle{myheadings}
+\pagestyle{fancy}
+\fancyhf{}
+\setlength{\headheight}{27.023pt}
+\lhead{\includegraphics[width=2.0in]{PLOS-submission.eps}}
+\rfoot{\thepage/\pageref{LastPage}}
+\renewcommand{\footrule}{\hrule height 2pt \vspace{2mm}}
+\fancyheadoffset[L]{2.25in}
+\fancyfootoffset[L]{2.25in}
+\lfoot{\sf PLOS}
+
+%% Include all macros below
+
+%\newcommand{\lorem}{{\bf LOREM}}
+%\newcommand{\ipsum}{{\bf IPSUM}}
+
+%% END MACROS SECTION
+
+
+\begin{document}
+\vspace*{0.2in}
+
+% Title must be 250 characters or less.
+\begin{flushleft}
+{\Large
+\textbf\newline{Generalising Better: Applying Deep Learning to Integrate Deleteriousness Prediction Scores for Whole-Exome SNV Studies } % Please use "title case" (capitalize all terms in the title except conjunctions, prepositions, and articles).
+}
+\newline
+% Insert author names, affiliations and corresponding author email (do not include titles, positions, or degrees).
+\\
+
+Ilia Korvigo \textsuperscript{1, 2 $\ast$},
+Andrey Afanasyev \textsuperscript{1, 3},
+Mihail Skoblov\textsuperscript{1},
+
+\bigskip
+\textbf{1} Laboratory of Functional Genomics, Moscow Institute of Physics and Technology, Moscow, Russia
+\\
+\textbf{2}  Laboratory of Microbiological Monitoring and Bioremediation of Soils, All-Russia Research Institute for Agricultural Microbiology, St. Petersburg, Russia
+\\
+\textbf{3}  iBinom Inc., Los Angeles, CA, USA
+\\
+\bigskip
+
+% Use the asterisk to denote corresponding authorship and provide email address in note below.
+* ilia.korvigo@gmail.com
+
+\end{flushleft}
+\section*{Abstract}
+
+\linenumbers
+
+% Use "Eq" instead of "Equation" for equation citations.
+\section*{Introduction}
+	
+%\begin{eqnarray}
+%\label{eq:schemeP}
+%	\mathrm{P_Y} = \underbrace{H(Y_n) - H(Y_n|\mathbf{V}^{Y}_{n})}_{S_Y} + \underbrace{H(Y_n|\mathbf{V}^{Y}_{n})- H(Y_n|\mathbf{V}^{X,Y}_{n})}_{T_{X\rightarrow Y}},
+%\end{eqnarray}
+
+\section*{Methods}
+	Given a collection of 16S amplicon libraries as input, AmQuersy 
+	begins by representing samples as sparse arrays of k-mer counts using
+	lexicographic ranks of k-mers. We use a square root of Jensen-Shannon 
+	divergence as distance metric over these distributions to perform a
+	base-sample search algorithm, that finds a near-orthogonal basis for
+	a Euclidean-like space. Combined with a fast vantage-point tree it allows 
+	for fast insertion and neighbor search.
+
+
+	\subsection*{K-mer counting}
+		AmQuery performs fast and memory efficient k-mer counting using 
+		a special hashing scheme, inspired by counting Bloom filters. However, 
+		unlike any Bloom filters based approach, our method is designed 
+		to find exact solutions, which implies a perfect hashing scheme. 
+
+		To achieve this goal we use a lexicographic rank of 
+		k-mer as a single hash function, which can be defined as follows.
+
+		\newtheorem{lxr-def}{Definition}
+		\newtheorem{lxr-formula}{Lemma}
+		\newtheorem{lxr-rolling}[lxr-formula]{Lemma}
+
+		\begin{lxr-def}
+			A lexicographic rank of k-mer (string of size $n$) $s$ is the total value of all 
+			possible k-mers (strings of size $n$) lexicographically less than $s$.
+		\end{lxr-def}
+		
+		\begin{lxr-formula}
+			Given a string $s$ of size $n$ over the alphabet ${\mathcal{L}}$, there is the analytic expression 
+			of lexicographic rank of $s$:
+
+			$$\mathrm{Lxr}(s) = \sum_{i=0}^{k−1} \mathrm{ord}(s_i) \cdot |{\mathcal{L}}|^{k−i−1}$$
+		\end{lxr-formula}
+
+		Here $\mathrm{ord}(s_i)$ is a value of ordering function at $s_i$. 
+		We use the following straightforward ordering function over the alphabet ${\mathcal{L}} = \{A, C, G, T \}$:
+
+		\[
+		 	\mathrm{ord}(s_i) =
+			\begin{cases}
+				0 & \quad \text{if } s_i = A\\
+				1 & \quad \text{if } s_i = C\\
+				2 & \quad \text{if } s_i = G\\
+				3 & \quad \text{if } s_i = T\\
+			\end{cases}
+		\]
+
+		This definition of $\mathrm{Lxr}$ function reveals that lexicographic rank is a special case 
+		of Rabin fingerprint \cite{rabin1981fingerprinting}.
+		Thereby, it is not somewhat surprising that $\mathrm{Lxr}$ is a rolling hash function, which allows us to 
+		compute hash values of all the $k$-mers of input string $S$ in time $\mathcal{O}(|S|)$.
+		
+		\begin{lxr-rolling}
+			Let $S$ be a string of size $n$ over ${\mathcal{L}}$. A recurrence relation between all the lexicographic ranks of k-mers of $S$
+			can be defined as follows:
+			$$\mathrm{Lxr}(s_{i:i+k-1}) = |{\mathcal{L}}| \cdot (\mathrm{Lxr}(s_{i−1:i+k-2}) − ord(s_{i−1}) \cdot 
+										 |{\mathcal{L}}|^{k−1}) + ord(s_{i+k−1})$$
+		\end{lxr-rolling}
+
+		It is obvious that k-mer values and $\mathrm{Lxr}$ values are in one-to-one
+		correspondence. Thus, we only need to hash $\mathrm{Lxr}$ values to count corresponding k-mers,
+		which allows us to reduce memory consumption.
+		The disadvatage of this approach is the upper limit on the 
+		length of k-mer, due to the combinatorial explosion of the number of all possible k-mers.
+		Thus, we assume $k \leq 32$ for x64 machine, which allows for storing a k-mer value in a single machine word.
+
+	\subsection*{A distance metric}
+	Using counted k-mers from the previous step, AmQuery represents them 
+	as sparse arrays, each of which is sorted in natural order of integer 
+	numbers. In our implementation, a sparse array is a key-value storage 
+	in which the keys are the lexicographic ranks of corresponding k-mers, 
+	and the values are the frequencies.
+	
+	Thus, each input sample corresponds to a frequency distribution of 
+	k-mers. AmQuery uses the square root of Jensen-Shannon divergence (RJSD) as 
+	a distance metric over these distributions.
+
+	\subsection*{Multidimensional scaling}
+	After the k-mer counting step, AmQuery runs a genetic algorithm to find 
+	near-orthogonal basis of fixed size.
+	In particular, it takes an input matrix giving RJSD values between 
+	pairs of k-mer frequency distributions and outputs a basis subset of 
+	input samples, whose configuration minimizes a special function, defined 
+	as follows:
+
+	\newtheorem{ms-def}[lxr-def]{Definition}
+	\begin{ms-def}
+		Let $A$ be a covariance matrix of the RJSD values between all
+		the samples of a basis subset. The target function $f$ is the geometric 
+		mean of trace of singular value decomposition matrix of $A$.
+	\end{ms-def}
+
+	The intuition behind this definition is that a subset of input samples on 
+	which this function reaches a minimum apparently consists of samples 
+	that are located at roughly the same distance from each other, and having low 
+	inner correlations of RJSD between each other.
+	We assume this subset of samples to be a basis of Euclidean-like
+	space, in which every sample presented as a vector of distances between a sample
+	and basis samples. This representation allows us to perform an index 
+	construction by using regular Euclidean distance over corresponding
+	vectors.
+
+	\subsection*{Index construction and search}
+	On the last step of index construction, AmQuery constructs a vantage-point
+	tree using Euclidean distances between coordinates of the input samples 
+	obtained in the previous step. As is known, vantage-point tree is 
+	designed to be independent of the space dimension. This allows us to
+	change the size of the basis subset from the scaling step for virtually 
+	no loss of performance on this step. We make use of this advantage by tuning
+	the basis size to optimize search output.
+
+	Resulting vantage-point tree is the main data structure, which provides
+	fast construction, insertion and neighbor search. Let $M, N$ to be the basis size
+	and the current size of database respectively. Vantage-point tree can 
+	be built in time $\mathcal{O}(MN\log(N))$ if coordinate vectors of all 
+	the non-basis samples are pre-calculated.
+	
+	Given a new sample $X$, we can add it 
+	to the index by finding RJSD values between $X$ and the basis samples, and
+	inserting it to the vantage-point tree by using Euclidean distance, which
+	can be obtained in time $\mathcal{O}(M + \log(N))$. Similarly, we can perform neighbor
+	search query for $X$ by finding its basis coordinates in time 
+	$\mathcal{O}(M)$ and traversing it through the tree in time $\mathcal{O}(\log(N))$.
+
+
+	\section*{Results}
+	We evaluated the performance of AmQuery on a collection of 250 amplicon 
+	libraries of various geographically distant soil communities 
+	with 10k+ reads per sample, together with QIIME pipeline.
+
+	In the first benchmark, we split the collection libraries randomly into the main 
+	set of size 200 and the test set of size 50. Then we ran AmQuery for building 
+	the index from the main set, and for inserting all the additional samples to the 
+	index one by one. 
+	We carried out weighted UniFrac calculation for all the pairs in the main set by 
+	open-reference OTU picking in QIIME as well, and emulated insertions by repicking
+	OTU and representative sequencies for the test set. Finally we recalculated 
+	weighted UniFrac values. The results are presented in Table \ref{tab:benchmark}.
+
+	\begin{table}[!ht]
+		% \begin{adjustwidth}{-2.25in}{0in} % Comment out/remove adjustwidth environment if table fits in text column.
+		\centering		
+		\caption{
+		{\bf Speed and memory benchmarks in comparison with QIIME pipeline}}
+		\begin{tabular}{c | c c} \hline
+			{Pipeline} & Time & Memory \\ \thickhline
+			{\bf AmQuery} & 11m & 1.1Gb \\ \hline
+			{\bf QIIME} & 187m & 2.8Gb \\ \hline
+		\end{tabular}
+		\label{tab:benchmark}
+		%\end{adjustwidth}
+	\end{table}
+
+	In the second benchmark, we split the collection the same way as in the previous one, 
+	and built the index using the main set. Then we performed neighbor search queries for 
+	all the samples in the test set using AmQuery index and a ball-tree built on precalculated
+	weighted UniFrac distances obtained by QIIME respectively.
+	Neighbor search accuracy is measured as the average Spearman correlation
+	between neighbor-ranks assessed for samples from main set obtained by QIIME and AmQuery.
+	Among the 50 independent benchmark runs, the accuracy reached about 91\% on average.
+
+	\subsection*{Hyperparameter optimization}
+			
+\section*{Discussion}
+	
+	\subsection*{Subsection}
+		
+\section*{Conclusion}
+	
+\section*{Supporting Information}
+
+\nolinenumbers
+
+\bibliography{references}
+
+\end{document}
