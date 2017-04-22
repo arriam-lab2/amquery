@@ -1,8 +1,6 @@
 import click
 import pandas as pd
 import numpy as np
-from scipy.stats import spearmanr
-from sklearn.metrics import jaccard_similarity_score as jaccard
 from amquery.core.index import Index
 from amquery.core.sample import Sample
 from amquery.utils.config import Config
@@ -43,36 +41,43 @@ def load(input_filename: str):
     return pd.DataFrame(data=np.matrix(matrix), index=labels, columns=labels)
 
 
+def precision_at_k(result, relevance_dict, k):
+    return np.sum([relevance_dict[x] for x in result]) / k
+
+
+def average_precision_at_k(result, relevance_dict, k):
+    return np.sum([relevance_dict[result[m - 1]] * precision_at_k(result[:m], relevance_dict, m)
+                   for m in range(1, k + 1)]) / k
+
+
 @cli.command()
 @click.argument('input_files', type=click.Path(exists=True), nargs=-1, required=True)
 @click.option('--reference', '-r', type=click.Path(exists=True), required=True)
 @click.option('-k', type=int, required=True, help='Count of nearest neighbors')
 @pass_config
-def corr(config, input_files, reference, k):
+def precision(config, input_files, reference, k):
     reference_df = load(reference)
     index = Index.load(config)
+
+    p_at_k = []
+    ap_at_k = []
 
     for input_file in input_files:
         values, points = index.find(input_file, k)
         best_by_amq = [s.name for s in points]
 
         sample = Sample(input_file)
-        best_by_reference = list(reference_df[sample.name].sort_values()[:k].index)
+        best_by_reference = reference_df[sample.name].sort_values()
+        reference_worst_result = best_by_reference[-1]
+        relevance = [1 - x / reference_worst_result for x in best_by_reference]
+        relevance_dict = dict(list(zip(best_by_reference.index, relevance)))
 
-        x = index.pwmatrix.sample_map[sample.name]
-        zz = [index.pwmatrix[x, s] for s in index.pwmatrix.sample_map.samples]
-        #print(sorted(zz))
-        #input()
+        p_at_k.append(precision_at_k(best_by_amq, relevance_dict, k))
+        ap_at_k.append(average_precision_at_k(best_by_amq, relevance_dict, k))
 
 
-        print(sample.name)
-        print(best_by_amq)
-        print(best_by_reference)
-        print(spearmanr(best_by_amq, best_by_reference))
-        print(jaccard(best_by_amq, best_by_reference))
-        print(jaccard(sorted(best_by_amq), sorted(best_by_reference)))
-
-        print()
+    m = len(input_files)
+    print(np.sum(p_at_k) / m, np.sum(ap_at_k) / m)
 
 
 
