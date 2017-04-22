@@ -1,5 +1,5 @@
 % Template for PLoS
-% Version 3.3 June 2016
+% Version 3.4 January 2017
 %
 % % % % % % % % % % % % % % % % % % % % % %
 %
@@ -76,7 +76,7 @@
 \usepackage[top=0.85in,left=2.75in,footskip=0.75in]{geometry}
 
 % amsmath and amssymb packages, useful for mathematical formulas and symbols
-\usepackage{amsmath,amssymb,amsthm}
+\usepackage{amsmath,amssymb}
 
 % Use adjustwidth environment to exceed column width (see example table in text)
 \usepackage{changepage}
@@ -166,8 +166,8 @@
 
 %% Include all macros below
 
-%\newcommand{\lorem}{{\bf LOREM}}
-%\newcommand{\ipsum}{{\bf IPSUM}}
+\newcommand{\lorem}{{\bf LOREM}}
+\newcommand{\ipsum}{{\bf IPSUM}}
 
 %% END MACROS SECTION
 
@@ -178,215 +178,270 @@
 % Title must be 250 characters or less.
 \begin{flushleft}
 {\Large
-\textbf\newline{Generalising Better: Applying Deep Learning to Integrate Deleteriousness Prediction Scores for Whole-Exome SNV Studies } % Please use "title case" (capitalize all terms in the title except conjunctions, prepositions, and articles).
+\textbf\newline{A unified searchable database of 16S rRNA gene amplicon libraries} % Please use "sentence case" for title and headings (capitalize only the first word in a title (or heading), the first word in a subtitle (or subheading), and any proper nouns).
 }
 \newline
 % Insert author names, affiliations and corresponding author email (do not include titles, positions, or degrees).
 \\
 
-Ilia Korvigo \textsuperscript{1, 2 $\ast$},
-Andrey Afanasyev \textsuperscript{1, 3},
-Mihail Skoblov\textsuperscript{1},
+
+Nikolay Romashchenko \textsuperscript{1 $\ast$},
+Ilia Korvigo \textsuperscript{1, 2},
+Evgeny Andronov \textsuperscript{1},
 
 \bigskip
-\textbf{1} Laboratory of Functional Genomics, Moscow Institute of Physics and Technology, Moscow, Russia
+\textbf{1} Laboratory of Microbiological Monitoring and Bioremediation of Soils, All-Russia Research Institute for Agricultural Microbiology, St. Petersburg, Russia
 \\
-\textbf{2}  Laboratory of Microbiological Monitoring and Bioremediation of Soils, All-Russia Research Institute for Agricultural Microbiology, St. Petersburg, Russia
-\\
-\textbf{3}  iBinom Inc., Los Angeles, CA, USA
+\textbf{2} Laboratory of Functional Genomics, Moscow Institute of Physics and Technology, Moscow, Russia
 \\
 \bigskip
+
+% Insert additional author notes using the symbols described below. Insert symbol callouts after author names as necessary.
+% 
+% Remove or comment out the author notes below if they aren't used.
+%
+% Primary Equal Contribution Note
+%\Yinyang These authors contributed equally to this work.
+
+% Additional Equal Contribution Note
+% Also use this double-dagger symbol for special authorship notes, such as senior authorship.
+%\ddag These authors also contributed equally to this work.
+
+% Current address notes
+%\textcurrency Current Address: Dept/Program/Center, Institution Name, City, State, Country % change symbol to "\textcurrency a" if more than one current address note
+% \textcurrency b Insert second current address 
+% \textcurrency c Insert third current address
+
+% Deceased author note
+%\dag Deceased
+
+% Group/Consortium Author Note
+%\textpilcrow Membership list can be found in the Acknowledgments section.
 
 % Use the asterisk to denote corresponding authorship and provide email address in note below.
-* ilia.korvigo@gmail.com
+* nikolay.romashchenko@gmail.com
 
 \end{flushleft}
+% Please keep the abstract below 300 words
 \section*{Abstract}
+TBA
 
 \linenumbers
 
 % Use "Eq" instead of "Equation" for equation citations.
 \section*{Introduction}
-	
-%\begin{eqnarray}
-%\label{eq:schemeP}
-%	\mathrm{P_Y} = \underbrace{H(Y_n) - H(Y_n|\mathbf{V}^{Y}_{n})}_{S_Y} + \underbrace{H(Y_n|\mathbf{V}^{Y}_{n})- H(Y_n|\mathbf{V}^{X,Y}_{n})}_{T_{X\rightarrow Y}},
-%\end{eqnarray}
-
-\section*{Methods}
-	Given a collection of 16S amplicon libraries as input, AmQuersy 
-	begins by representing samples as sparse arrays of k-mer counts using
-	lexicographic ranks of k-mers. We use a square root of Jensen-Shannon 
-	divergence as distance metric over these distributions to perform a
-	base-sample search algorithm, that finds a near-orthogonal basis for
-	a Euclidean-like space. Combined with a fast vantage-point tree it allows 
-	for fast insertion and neighbor search.
+High-throughput sequencing of 16S amplicon libraries has become a very popular and powerful way of assessing the structure of various microbial communities. As the number of published 16S amplicon libraries keeps growing so does the demand for a way to quickly process samples to find related communities similarly to the way BLAST for sequences. Nowadays a single amplicon library can easily contain many thousands of reads, making clustering-based pipelines, implemented in tools such as QIIME, inapplicable to large databases. To address these problems, we developed Amquery.
 
 
-	\subsection*{K-mer counting}
-		AmQuery performs fast and memory efficient k-mer counting using 
-		a special hashing scheme, inspired by counting Bloom filters. However, 
-		unlike any Bloom filters based approach, our method is designed 
-		to find exact solutions, which implies a perfect hashing scheme. 
+\section*{Materials and methods}
+There are two main ideas behind the implementation of Amquery. The first is the use of empirical distribution of k-mers as representation of each library sample. The second is the use of information-theoretic divergence measure as distance function between these representations. 
 
-		To achieve this goal we use a lexicographic rank of 
-		k-mer as a single hash function, which can be defined as follows.
+\subsection*{k-mer counting}
+Given a set of 16S amplicon libraries (samples), Amquery begins by representing each of them as a k-mer histogram of corresponding k-mer counts. To reduce memory consumption, each k-mer value is stored as a proper quarternary number.
+More formally, every k-mer of input sequence $s = s_0,\dots,s_{n-1}$ is represented as its \textit{lexicographic rank} $\mathrm{lxr}_k(s)$, which equals to the position of the k-mer in the list of all possible k-mers, sorted lexicographically:
 
-		\newtheorem{lxr-def}{Definition}
-		\newtheorem{lxr-formula}{Lemma}
-		\newtheorem{lxr-rolling}[lxr-formula]{Lemma}
+\begin{eqnarray}
+\label{eq:schemeP}
+    \mathrm{lxr}_k(s) = \sum_{i=0}^{k−1} \mathrm{ord}(s_i) \cdot |{\mathcal{L}}|^{k−i−1}
+\end{eqnarray}
 
-		\begin{lxr-def}
-			A lexicographic rank of k-mer (string of size $n$) $s$ is the total value of all 
-			possible k-mers (strings of size $n$) lexicographically less than $s$.
-		\end{lxr-def}
-		
-		\begin{lxr-formula}
-			Given a string $s$ of size $n$ over the alphabet ${\mathcal{L}}$, there is the analytic expression 
-			of lexicographic rank of $s$:
+Here $\mathrm{ord}(s_i)$ is a value of ordering function at $s_i$ over the alphabet ${\mathcal{L}} = \{A, C, G, T \}$. 
 
-			$$\mathrm{Lxr}(s) = \sum_{i=0}^{k−1} \mathrm{ord}(s_i) \cdot |{\mathcal{L}}|^{k−i−1}$$
-		\end{lxr-formula}
+The disadvatage of this approach is the upper limit on the length of k-mer, due to the combinatorial explosion of the number of all possible k-mers. Thus, we assume $k \leq 32$ for x64 machine, which allows for storing a k-mer value in a single machine word.
+The advantage of this representation is that $\mathrm{lxr}_k$ is a special case of Karp-Rabin hash fingerprint \cite{karp1987efficient}, so it is possible to evaluate a quarternary representation $\mathrm{lxr}_k(s_{i:i+k-1})$ of k-mer $s_{i:i+k-1}$, using the value $\mathrm{lxr}_k(s_{i−1:i+k-2})$ of the previous k-mer $s_{i−1:i+k-2}$, in constant time:
 
-		Here $\mathrm{ord}(s_i)$ is a value of ordering function at $s_i$. 
-		We use the following straightforward ordering function over the alphabet ${\mathcal{L}} = \{A, C, G, T \}$:
+\begin{eqnarray}
+\label{eq:schemeP}
+    \mathrm{lxr}_k(s_{i:i+k-1}) = |{\mathcal{L}}| \cdot (\mathrm{lxr}_k(s_{i−1:i+k-2}) − ord(s_{i−1}) \cdot 
+									 |{\mathcal{L}}|^{k−1}) + ord(s_{i+k−1})
+\end{eqnarray}
 
-		\[
-		 	\mathrm{ord}(s_i) =
-			\begin{cases}
-				0 & \quad \text{if } s_i = A\\
-				1 & \quad \text{if } s_i = C\\
-				2 & \quad \text{if } s_i = G\\
-				3 & \quad \text{if } s_i = T\\
-			\end{cases}
-		\]
+A set of all lexicographic ranks of k-mers of input sequences is inserted into a counting hash table. Theoretically, a fully k-mer-abundant sample could make this table to grow rapidly, so it is reasonable to vary the size of k-mer to avoid insane expansion of a hash table. Below we demonstrate an example of memory consumption on this stage for real metagenomic data.
 
-		This definition of $\mathrm{Lxr}$ function reveals that lexicographic rank is a special case 
-		of Rabin fingerprint \cite{rabin1981fingerprinting}.
-		Thereby, it is not somewhat surprising that $\mathrm{Lxr}$ is a rolling hash function, which allows us to 
-		compute hash values of all the $k$-mers of input string $S$ in time $\mathcal{O}(|S|)$.
-		
-		\begin{lxr-rolling}
-			Let $S$ be a string of size $n$ over ${\mathcal{L}}$. A recurrence relation between all the lexicographic ranks of k-mers of $S$
-			can be defined as follows:
-			$$\mathrm{Lxr}(s_{i:i+k-1}) = |{\mathcal{L}}| \cdot (\mathrm{Lxr}(s_{i−1:i+k-2}) − ord(s_{i−1}) \cdot 
-										 |{\mathcal{L}}|^{k−1}) + ord(s_{i+k−1})$$
-		\end{lxr-rolling}
+\subsection*{Distance metric}
+On second stage, the counted k-mers from the previous step are normalized. Since k-mer distribution vectors are high-dimensional and sparse, Amquery represents them as sparse arrays, each of which is sorted in natural order of integer numbers. 
+In our implementation, a sparse array is a key-value storage in which the keys are the lexicographic ranks of corresponding k-mers, and the values are the empirical frequencies.
 
-		It is obvious that k-mer values and $\mathrm{Lxr}$ values are in one-to-one
-		correspondence. Thus, we only need to hash $\mathrm{Lxr}$ values to count corresponding k-mers,
-		which allows us to reduce memory consumption.
-		The disadvatage of this approach is the upper limit on the 
-		length of k-mer, due to the combinatorial explosion of the number of all possible k-mers.
-		Thus, we assume $k \leq 32$ for x64 machine, which allows for storing a k-mer value in a single machine word.
-
-	\subsection*{A distance metric}
-	Using counted k-mers from the previous step, AmQuery represents them 
-	as sparse arrays, each of which is sorted in natural order of integer 
-	numbers. In our implementation, a sparse array is a key-value storage 
-	in which the keys are the lexicographic ranks of corresponding k-mers, 
-	and the values are the frequencies.
-	
-	Thus, each input sample corresponds to a frequency distribution of 
-	k-mers. AmQuery uses the square root of Jensen-Shannon divergence (RJSD) as 
-	a distance metric over these distributions.
-
-	\subsection*{Multidimensional scaling}
-	After the k-mer counting step, AmQuery runs a genetic algorithm to find 
-	near-orthogonal basis of fixed size.
-	In particular, it takes an input matrix giving RJSD values between 
-	pairs of k-mer frequency distributions and outputs a basis subset of 
-	input samples, whose configuration minimizes a special function, defined 
-	as follows:
-
-	\newtheorem{ms-def}[lxr-def]{Definition}
-	\begin{ms-def}
-		Let $A$ be a covariance matrix of the RJSD values between all
-		the samples of a basis subset. The target function $f$ is the geometric 
-		mean of trace of singular value decomposition matrix of $A$.
-	\end{ms-def}
-
-	The intuition behind this definition is that a subset of input samples on 
-	which this function reaches a minimum apparently consists of samples 
-	that are located at roughly the same distance from each other, and having low 
-	inner correlations of RJSD between each other.
-	We assume this subset of samples to be a basis of Euclidean-like
-	space, in which every sample presented as a vector of distances between a sample
-	and basis samples. This representation allows us to perform an index 
-	construction by using regular Euclidean distance over corresponding
-	vectors.
-
-	\subsection*{Index construction and search}
-	On the last step of index construction, AmQuery constructs a vantage-point
-	tree using Euclidean distances between coordinates of the input samples 
-	obtained in the previous step. As is known, vantage-point tree is 
-	designed to be independent of the space dimension. This allows us to
-	change the size of the basis subset from the scaling step for virtually 
-	no loss of performance on this step. We make use of this advantage by tuning
-	the basis size to optimize search output.
-
-	Resulting vantage-point tree is the main data structure, which provides
-	fast construction, insertion and neighbor search. Let $M, N$ to be the basis size
-	and the current size of database respectively. Vantage-point tree can 
-	be built in time $\mathcal{O}(MN\log(N))$ if coordinate vectors of all 
-	the non-basis samples are pre-calculated.
-	
-	Given a new sample $X$, we can add it 
-	to the index by finding RJSD values between $X$ and the basis samples, and
-	inserting it to the vantage-point tree by using Euclidean distance, which
-	can be obtained in time $\mathcal{O}(M + \log(N))$. Similarly, we can perform neighbor
-	search query for $X$ by finding its basis coordinates in time 
-	$\mathcal{O}(M)$ and traversing it through the tree in time $\mathcal{O}(\log(N))$.
+Thus, each input sample corresponds to a frequency distribution of k-mers, stored implicitly as numbers in quaternary numeral system. These distributions are compared to each other by square root of \textit{Jensen-Shannon divergence} (RJSD) \cite{lin1991divergence}, which satisfies many statistical properties and fits many cases of high-dimensional spaces in $\mathbb{R^\star}$ as distance metric \cite{fuglede2004jensen, endres2003new}. We make use of advantage of specific form of RJSD, presented in \cite{connor2013evaluation}, to speed up distance evaluation over sparse distributions of k-mer frequencies.
 
 
-	\section*{Results}
-	We evaluated the performance of AmQuery on a collection of 250 amplicon 
-	libraries of various geographically distant soil communities 
-	with 10k+ reads per sample, together with QIIME pipeline.
+\subsection*{Metric indexing}
+Amquery uses vantage-point tree (vp-tree) \cite{yianilos1993data, chavez2001searching} as main data structure to provide efficient metric-based indexing and search, using pairwise distances between input 
+samples obtained in the previous step.
+Since vantage-point tree is designed to be independent of the space dimension \cite{yianilos1993data}, this allows us to store high-dimensional sparse vectors for virtually no loss of indexing and 
+search performance: it takes $\mathcal{O}(n)$ space and $\mathcal{O}(n \log n)$ time in worst case to be built (for input set of $n$ samples), and search query is argued to be $\mathcal{O}(\log n)$ in time, with some reservations. 
+For more detailed analysis of vp-tree performance, see \cite{yianilos1993data}.
 
-	In the first benchmark, we split the collection libraries randomly into the main 
-	set of size 200 and the test set of size 50. Then we ran AmQuery for building 
-	the index from the main set, and for inserting all the additional samples to the 
-	index one by one. 
-	We carried out weighted UniFrac calculation for all the pairs in the main set by 
-	open-reference OTU picking in QIIME as well, and emulated insertions by repicking
-	OTU and representative sequencies for the test set. Finally we recalculated 
-	weighted UniFrac values. The results are presented in Table \ref{tab:benchmark}.
 
-	\begin{table}[!ht]
-		% \begin{adjustwidth}{-2.25in}{0in} % Comment out/remove adjustwidth environment if table fits in text column.
-		\centering		
-		\caption{
-		{\bf Speed and memory benchmarks in comparison with QIIME pipeline}}
-		\begin{tabular}{c | c c} \hline
-			{Pipeline} & Time & Memory \\ \thickhline
-			{\bf AmQuery} & 11m & 1.1Gb \\ \hline
-			{\bf QIIME} & 187m & 2.8Gb \\ \hline
-		\end{tabular}
-		\label{tab:benchmark}
-		%\end{adjustwidth}
-	\end{table}
+\subsection*{16S rRNA gene metagenomic data}
+We analyzed a human gut 16S metagenomic dataset, which consist of 1998 samples, obtained from the Sequence Read Archive \cite{leinonen2010sequence}. 
+For each sample, the reads was filtered by length with 250+bp threshold, and rarefied, choicing 1000 sequences per sample randomly.
 
-	In the second benchmark, we split the collection the same way as in the previous one, 
-	and built the index using the main set. Then we performed neighbor search queries for 
-	all the samples in the test set using AmQuery index and a ball-tree built on precalculated
-	weighted UniFrac distances obtained by QIIME respectively.
-	Neighbor search accuracy is measured as the average Spearman correlation
-	between neighbor-ranks assessed for samples from main set obtained by QIIME and AmQuery.
-	Among the 50 independent benchmark runs, the accuracy reached about 91\% on average.
 
-	\subsection*{Hyperparameter optimization}
-			
+\subsection*{Beta-diversity analysis using QIIME}
+Beta-diversity analysis using reference-based methods
+
+
+% Results and Discussion can be combined.
+\section*{Results}
+Nulla mi mi, venenatis sed ipsum varius, Table~\ref{table1} volutpat euismod diam. Proin rutrum vel massa non gravida. Quisque tempor sem et dignissim rutrum. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi at justo vitae nulla elementum commodo eu id massa. In vitae diam ac augue semper tincidunt eu ut eros. Fusce fringilla erat porttitor lectus cursus, vel sagittis arcu lobortis. Aliquam in enim semper, aliquam massa id, cursus neque. Praesent faucibus semper libero.
+
+% Place tables after the first paragraph in which they are cited.
+\begin{table}[!ht]
+\begin{adjustwidth}{-2.25in}{0in} % Comment out/remove adjustwidth environment if table fits in text column.
+\centering
+\caption{
+{\bf Table caption Nulla mi mi, venenatis sed ipsum varius, volutpat euismod diam.}}
+\begin{tabular}{|l+l|l|l|l|l|l|l|}
+\hline
+\multicolumn{4}{|l|}{\bf Heading1} & \multicolumn{4}{|l|}{\bf Heading2}\\ \thickhline
+$cell1 row1$ & cell2 row 1 & cell3 row 1 & cell4 row 1 & cell5 row 1 & cell6 row 1 & cell7 row 1 & cell8 row 1\\ \hline
+$cell1 row2$ & cell2 row 2 & cell3 row 2 & cell4 row 2 & cell5 row 2 & cell6 row 2 & cell7 row 2 & cell8 row 2\\ \hline
+$cell1 row3$ & cell2 row 3 & cell3 row 3 & cell4 row 3 & cell5 row 3 & cell6 row 3 & cell7 row 3 & cell8 row 3\\ \hline
+\end{tabular}
+\begin{flushleft} Table notes Phasellus venenatis, tortor nec vestibulum mattis, massa tortor interdum felis, nec pellentesque metus tortor nec nisl. Ut ornare mauris tellus, vel dapibus arcu suscipit sed.
+\end{flushleft}
+\label{table1}
+\end{adjustwidth}
+\end{table}
+
+
+
+
+\subsection*{Experiment results}
+
+% For figure citations, please use "Fig" instead of "Figure".
+Nulla mi mi, Fig~\ref{fig1} venenatis sed ipsum varius, volutpat euismod diam. Proin rutrum vel massa non gravida. Quisque tempor sem et dignissim rutrum. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi at justo vitae nulla elementum commodo eu id massa. In vitae diam ac augue semper tincidunt eu ut eros. Fusce fringilla erat porttitor lectus cursus, \nameref{S1_Video} vel sagittis arcu lobortis. Aliquam in enim semper, aliquam massa id, cursus neque. Praesent faucibus semper libero.
+
+% Place figure captions after the first paragraph in which they are cited.
+\begin{figure}[!h]
+\caption{{\bf Bold the figure title.}
+Figure caption text here, please use this space for the figure panel descriptions instead of using subfigure commands. A: Lorem ipsum dolor sit amet. B: Consectetur adipiscing elit.}
+\label{fig1}
+\end{figure}
+
+
+%PLOS does not support heading levels beyond the 3rd (no 4th level headings).
+\subsection*{\lorem\ and \ipsum\ nunc blandit a tortor}
+\subsubsection*{3rd level heading} 
+Maecenas convallis mauris sit amet sem ultrices gravida. Etiam eget sapien nibh. Sed ac ipsum eget enim egestas ullamcorper nec euismod ligula. Curabitur fringilla pulvinar lectus consectetur pellentesque. Quisque augue sem, tincidunt sit amet feugiat eget, ullamcorper sed velit. Sed non aliquet felis. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris commodo justo ac dui pretium imperdiet. Sed suscipit iaculis mi at feugiat. 
+
+\begin{enumerate}
+	\item{react}
+	\item{diffuse free particles}
+	\item{increment time by dt and go to 1}
+\end{enumerate}
+
+
+\subsection*{Sed ac quam id nisi malesuada congue}
+
+Nulla mi mi, venenatis sed ipsum varius, volutpat euismod diam. Proin rutrum vel massa non gravida. Quisque tempor sem et dignissim rutrum. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi at justo vitae nulla elementum commodo eu id massa. In vitae diam ac augue semper tincidunt eu ut eros. Fusce fringilla erat porttitor lectus cursus, vel sagittis arcu lobortis. Aliquam in enim semper, aliquam massa id, cursus neque. Praesent faucibus semper libero.
+
+\begin{itemize}
+	\item First bulleted item.
+	\item Second bulleted item.
+	\item Third bulleted item.
+\end{itemize}
+
 \section*{Discussion}
-	
-	\subsection*{Subsection}
-		
+Nulla mi mi, venenatis sed ipsum varius, Table~\ref{table1} volutpat euismod diam. Proin rutrum vel massa non gravida. Quisque tempor sem et dignissim rutrum. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi at justo vitae nulla elementum commodo eu id massa. In vitae diam ac augue semper tincidunt eu ut eros. Fusce fringilla erat porttitor lectus cursus, vel sagittis arcu lobortis. Aliquam in enim semper, aliquam massa id, cursus neque. Praesent faucibus semper libero~\cite{bib3}.
+
 \section*{Conclusion}
-	
-\section*{Supporting Information}
+
+CO\textsubscript{2} Maecenas convallis mauris sit amet sem ultrices gravida. Etiam eget sapien nibh. Sed ac ipsum eget enim egestas ullamcorper nec euismod ligula. Curabitur fringilla pulvinar lectus consectetur pellentesque. Quisque augue sem, tincidunt sit amet feugiat eget, ullamcorper sed velit. 
+
+Sed non aliquet felis. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris commodo justo ac dui pretium imperdiet. Sed suscipit iaculis mi at feugiat. Ut neque ipsum, luctus id lacus ut, laoreet scelerisque urna. Phasellus venenatis, tortor nec vestibulum mattis, massa tortor interdum felis, nec pellentesque metus tortor nec nisl. Ut ornare mauris tellus, vel dapibus arcu suscipit sed. Nam condimentum sem eget mollis euismod. Nullam dui urna, gravida venenatis dui et, tincidunt sodales ex. Nunc est dui, sodales sed mauris nec, auctor sagittis leo. Aliquam tincidunt, ex in facilisis elementum, libero lectus luctus est, non vulputate nisl augue at dolor. For more information, see \nameref{S1_Appendix}.
+
+\section*{Supporting information}
+
+% Include only the SI item label in the paragraph heading. Use the \nameref{label} command to cite SI items in the text.
+\paragraph*{S1 Fig.}
+\label{S1_Fig}
+{\bf Bold the title sentence.} Add descriptive text after the title of the item (optional).
+
+\paragraph*{S2 Fig.}
+\label{S2_Fig}
+{\bf Lorem ipsum.} Maecenas convallis mauris sit amet sem ultrices gravida. Etiam eget sapien nibh. Sed ac ipsum eget enim egestas ullamcorper nec euismod ligula. Curabitur fringilla pulvinar lectus consectetur pellentesque.
+
+\paragraph*{S1 File.}
+\label{S1_File}
+{\bf Lorem ipsum.}  Maecenas convallis mauris sit amet sem ultrices gravida. Etiam eget sapien nibh. Sed ac ipsum eget enim egestas ullamcorper nec euismod ligula. Curabitur fringilla pulvinar lectus consectetur pellentesque.
+
+\paragraph*{S1 Video.}
+\label{S1_Video}
+{\bf Lorem ipsum.}  Maecenas convallis mauris sit amet sem ultrices gravida. Etiam eget sapien nibh. Sed ac ipsum eget enim egestas ullamcorper nec euismod ligula. Curabitur fringilla pulvinar lectus consectetur pellentesque.
+
+\paragraph*{S1 Appendix.}
+\label{S1_Appendix}
+{\bf Lorem ipsum.} Maecenas convallis mauris sit amet sem ultrices gravida. Etiam eget sapien nibh. Sed ac ipsum eget enim egestas ullamcorper nec euismod ligula. Curabitur fringilla pulvinar lectus consectetur pellentesque.
+
+\paragraph*{S1 Table.}
+\label{S1_Table}
+{\bf Lorem ipsum.} Maecenas convallis mauris sit amet sem ultrices gravida. Etiam eget sapien nibh. Sed ac ipsum eget enim egestas ullamcorper nec euismod ligula. Curabitur fringilla pulvinar lectus consectetur pellentesque.
+
+\section*{Acknowledgments}
+Cras egestas velit mauris, eu mollis turpis pellentesque sit amet. Interdum et malesuada fames ac ante ipsum primis in faucibus. Nam id pretium nisi. Sed ac quam id nisi malesuada congue. Sed interdum aliquet augue, at pellentesque quam rhoncus vitae.
 
 \nolinenumbers
 
-\bibliography{references}
+% Either type in your references using
+% \begin{thebibliography}{}
+% \bibitem{}
+% Text
+% \end{thebibliography}
+%
+% or
+%
+% Compile your BiBTeX database using our plos2015.bst
+% style file and paste the contents of your .bbl file
+% here. See http://journals.plos.org/plosone/s/latex for 
+% step-by-step instructions.
+% 
+
+\begin{thebibliography}{1}
+
+\bibitem{chavez2001searching}
+Edgar Ch{\'a}vez, Gonzalo Navarro, Ricardo Baeza-Yates, and Jos{\'e}~Luis
+  Marroqu{\'\i}n.
+\newblock Searching in metric spaces.
+\newblock {\em ACM computing surveys (CSUR)}, 33(3):273--321, 2001.
+
+\bibitem{connor2013evaluation}
+Richard Connor, Franco~Alberto Cardillo, Robert Moss, and Fausto Rabitti.
+\newblock Evaluation of jensen-shannon distance over sparse data.
+\newblock In {\em International Conference on Similarity Search and
+  Applications}, pages 163--168. Springer, 2013.
+
+\bibitem{endres2003new}
+Dominik~Maria Endres and Johannes~E Schindelin.
+\newblock A new metric for probability distributions.
+\newblock {\em IEEE Transactions on Information theory}, 49(7):1858--1860,
+  2003.
+
+\bibitem{fuglede2004jensen}
+Bent Fuglede and Flemming Topsoe.
+\newblock Jensen-shannon divergence and hilbert space embedding.
+\newblock In {\em Information Theory, 2004. ISIT 2004. Proceedings.
+  International Symposium on}, page~31. IEEE, 2004.
+
+\bibitem{karp1987efficient}
+Richard~M Karp and Michael~O Rabin.
+\newblock Efficient randomized pattern-matching algorithms.
+\newblock {\em IBM Journal of Research and Development}, 31(2):249--260, 1987.
+
+\bibitem{lin1991divergence}
+Jianhua Lin.
+\newblock Divergence measures based on the shannon entropy.
+\newblock {\em IEEE Transactions on Information theory}, 37(1):145--151, 1991.
+
+\bibitem{yianilos1993data}
+Peter~N Yianilos.
+\newblock Data structures and algorithms for nearest neighbor search in general
+  metric spaces.
+\newblock In {\em SODA}, volume~93, pages 311--21, 1993.
+
+\end{thebibliography}
+
 
 \end{document}
+
