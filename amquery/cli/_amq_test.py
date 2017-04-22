@@ -45,13 +45,13 @@ def load(input_filename: str):
     return pd.DataFrame(data=np.matrix(matrix), index=labels, columns=labels)
 
 
-def precision_at_k(result, relevance_dict, k):
-    return np.sum([relevance_dict[x] for x in result]) / k
+def precision_at_k(result, relevant, k):
+    return np.sum([1.0 if x in relevant else 0.0 for x in result]) / k
 
 
-def average_precision_at_k(result, relevance_dict, k):
-    return np.sum([relevance_dict[result[m - 1]] * precision_at_k(result[:m], relevance_dict, m)
-                   for m in range(1, k + 1)]) / k
+def average_precision_at_k(result, relevant, k):
+    return np.sum([(1.0 if result[m - 1] in relevant else 0.0) * precision_at_k(result[:m], relevant[:m], m)
+                  for m in range(1, k + 1)]) / k
 
 
 @cli.command()
@@ -75,13 +75,12 @@ def precision(config, input_files, reference, k):
         relevance = [1 - x / reference_worst_result for x in best_by_reference]
         relevance_dict = dict(list(zip(best_by_reference.index, relevance)))
 
-        p_at_k.append(precision_at_k(best_by_amq, relevance_dict, k))
-        ap_at_k.append(average_precision_at_k(best_by_amq, relevance_dict, k))
+        best_by_reference = list(best_by_reference.index)[:k]
+        p_at_k.append(precision_at_k(best_by_amq, best_by_reference, k))
+        ap_at_k.append(average_precision_at_k(best_by_amq, best_by_reference, k))
 
 
     m = len(input_files)
-    print(p_at_k)
-    print(ap_at_k)
     print(np.sum(p_at_k) / m, np.sum(ap_at_k) / m)
 
 
