@@ -1,5 +1,8 @@
 import click
 import pandas as pd
+import numpy as np
+from scipy.stats import spearmanr
+from sklearn.metrics import jaccard_similarity_score as jaccard
 from amquery.core.index import Index
 from amquery.core.sample import Sample
 from amquery.utils.config import Config
@@ -24,8 +27,6 @@ def cli(config, workon, force, quiet, jobs):
     config.temp.quiet = quiet
     config.temp.jobs = jobs
 
-
-import numpy as np
 
 # load pairwise distance matrix from file
 def load(input_filename: str):
@@ -53,14 +54,24 @@ def corr(config, input_files, reference, k):
 
     for input_file in input_files:
         values, points = index.find(input_file, k)
-        best_by_amq = [s.original_name.lower() for s in points]
+        best_by_amq = [s.name for s in points]
 
         sample = Sample(input_file)
-        best_by_reference = list(reference_df[sample.original_name].sort_values()[:k].index)
+        best_by_reference = list(reference_df[sample.name].sort_values()[:k].index)
 
-        print(sample.original_name)
+        x = index.pwmatrix.sample_map[sample.name]
+        zz = [index.pwmatrix[x, s] for s in index.pwmatrix.sample_map.samples]
+        #print(sorted(zz))
+        #input()
+
+
+        print(sample.name)
         print(best_by_amq)
         print(best_by_reference)
+        print(spearmanr(best_by_amq, best_by_reference))
+        print(jaccard(best_by_amq, best_by_reference))
+        print(jaccard(sorted(best_by_amq), sorted(best_by_reference)))
+
         print()
 
 

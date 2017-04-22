@@ -157,5 +157,6 @@ def find(config: Config, input_file: str, k: int):
     click.secho('\t'.join(x for x in ['Sample', 'Similarity']), bold=True)
 
     for value, sample in zip(values, points):
-        click.secho(sample.name if len(sample.name) <= 8 else sample.name[:5] + "..",  fg='red', nl=False)
+        #click.secho(sample.name if len(sample.name) <= 8 else sample.name[:5] + "..",  fg='red', nl=False)
+        click.secho(sample.name, fg='red', nl=False)
         click.echo("\t%f\t" % value)
