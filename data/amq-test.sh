@@ -15,7 +15,7 @@ function amq_test {
     echo $build_size...
     for k in 5 7 10 15 20
     do
-        amq-test -q precision `echo ${to_test}` > "${index_dir}/test_${add_size}.log" -r "$wu_table" -k "$k"
+        amq-test -q precision `echo ${to_test}` -r "$wu_table" -k "$k" > "${index_dir}/test_${k}.log" 
         echo $k
     done;
     echo " OK"
