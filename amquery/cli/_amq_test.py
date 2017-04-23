@@ -2,6 +2,7 @@ import os
 import click
 import pandas as pd
 import numpy as np
+import random
 from amquery.core.index import Index
 from amquery.core.sample import Sample
 from amquery.utils.config import Config, DEFAULT_WORKON, AMQ_VERBOSE_MODE
@@ -73,12 +74,18 @@ def precision(config, input_files, reference, k):
     ap_at_k = []
     gain_at_k = []
 
+    # baseline
+    bp_at_k = []
+    bap_at_k = []
+    bgain_at_k = []
+
     for input_file in input_files:
         values, points = index.find(input_file, k)
         best_by_amq = [s.name for s in points]
 
         sample = Sample(input_file)
         best_by_reference = reference_df[sample.name].sort_values()
+        baseline = random.sample(list(best_by_reference.index), k)
         reference_worst_result = best_by_reference[-1]
         relevance = [1 - x / reference_worst_result for x in best_by_reference]
         relevance_dict = dict(list(zip(best_by_reference.index, relevance)))
@@ -88,6 +95,11 @@ def precision(config, input_files, reference, k):
         ap_at_k.append(average_precision_at_k(best_by_amq, best_by_reference, k))
         gain_at_k.append(ndcg_at_k(best_by_amq, relevance_dict, k))
 
+        bp_at_k.append(precision_at_k(baseline, best_by_reference, k))
+        bap_at_k.append(average_precision_at_k(baseline, best_by_reference, k))
+        bgain_at_k.append(ndcg_at_k(baseline, relevance_dict, k))
+
     m = len(input_files)
-    print(np.sum(p_at_k) / m, np.sum(ap_at_k) / m, np.sum(gain_at_k) / m)
+    print(np.sum(p_at_k) / m, np.sum(ap_at_k) / m, np.sum(gain_at_k) / m,
+          np.sum(bp_at_k) / m, np.sum(bap_at_k) / m, np.sum(bgain_at_k) / m)
 
