@@ -7,10 +7,18 @@ function amq_test {
 
     test_size=100
     wu_table="/home/ilia/storage/metagen/bench/ref/$build_size/wu/weighted_unifrac_otu_table.txt"
-    to_test=$(find ${split_dir}/$build_size/additional -type l -name "${pattern}" -exec readlink {} \; | shuf -n $test_size | xargs realpath)
+    to_test=$(find ${split_dir}/$build_size/main -type l -name "${pattern}" -exec readlink {} \; | shuf -n $test_size | xargs realpath)
 
     amq --workon "${index_dir}" use origin
-    amq-test -q precision `echo ${to_test}` > "${index_dir}/test_${add_size}.log" -r "$wu_table"
+    k=5
+
+    echo $build_size...
+    for k in 5 7 10 15 20
+    do
+        amq-test -q precision `echo ${to_test}` > "${index_dir}/test_${add_size}.log" -r "$wu_table" -k "$k"
+        echo $k
+    done;
+    echo " OK"
 }
 
 
