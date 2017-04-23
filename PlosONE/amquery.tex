@@ -178,7 +178,7 @@
 % Title must be 250 characters or less.
 \begin{flushleft}
 {\Large
-\textbf\newline{A unified searchable database of 16S rRNA gene amplicon libraries} % Please use "sentence case" for title and headings (capitalize only the first word in a title (or heading), the first word in a subtitle (or subheading), and any proper nouns).
+\textbf\newline{Amquery: a unified searchable database of 16S rRNA amplicon libraries} % Please use "sentence case" for title and headings (capitalize only the first word in a title (or heading), the first word in a subtitle (or subheading), and any proper nouns).
 }
 \newline
 % Insert author names, affiliations and corresponding author email (do not include titles, positions, or degrees).
@@ -224,13 +224,17 @@ Evgeny Andronov \textsuperscript{1},
 \end{flushleft}
 % Please keep the abstract below 300 words
 \section*{Abstract}
-TBA
+Rapidly increasing amounts of 16S amplicon libraries require the development of efficient methods for similarity search. 
+Here we present Amquery, a new tool for fast indexing and similarity search of 16S rRNA amplicon libraries, based on a technique of k-mer abundance comparison.
+Experimental results on huge 16S dataset show that Amquery can significantly outperform clustering-based pipelines, implemented in tools such as QIIME, in the index construction and search tasks. 
+Amquery is freely available at https://github.com/nromashchenko/amquery.
 
 \linenumbers
 
 % Use "Eq" instead of "Equation" for equation citations.
 \section*{Introduction}
-High-throughput sequencing of 16S amplicon libraries has become a very popular and powerful way of assessing the structure of various microbial communities. As the number of published 16S amplicon libraries keeps growing so does the demand for a way to quickly process samples to find related communities similarly to the way BLAST for sequences. Nowadays a single amplicon library can easily contain many thousands of reads, making clustering-based pipelines, implemented in tools such as QIIME, inapplicable to large databases. To address these problems, we developed Amquery.
+High-throughput sequencing of 16S amplicon libraries has become a very popular and powerful way of assessing the structure of various microbial communities \cite{qin2010human, seedorf2014bacteria, ligi2014characterization}.
+As the number of published 16S amplicon libraries keeps growing so does the demand for a way to quickly process samples to find related communities similarly to the way BLAST for sequences. Nowadays a single amplicon library can easily contain many thousands of reads, making clustering-based pipelines, implemented in tools such as QIIME \cite{caporaso2010qiime}, inapplicable to large databases. To address these problems, we developed Amquery.
 
 
 \section*{Methods}
@@ -274,8 +278,8 @@ For more detailed analysis of vp-tree performance, see \cite{yianilos1993data}.
 
 
 \section*{Results}
-The implementation of Amquery was compared against our own custom solution of similarity search, based on the classic microbiome analysis QIIME pipeline \cite{caporaso2010qiime}, in the following fashion.
-We computed pairwise weighted Unifrac distances \cite{lozupone2011unifrac} and Bray-Curtis similarities for huge 16S metagenomic dataset, and compared the results of similarity search, obtained by Amquery for the same dataset, with weighted Unifrac/Bray-Curtis based similarity search, in terms of speed and time efficiency, and overall search relevance. All of the experiments were run on a machine equipped with an Intel Xeon CPU E5-2650 v3 (2.30 GHz) and a 
+The implementation of Amquery was compared against our own custom solution of similarity search, based on the classic microbiome analysis QIIME pipeline, in the following fashion.
+We computed pairwise weighted Unifrac distances \cite{lozupone2011unifrac} and Bray-Curtis similarities for huge 16S metagenomic dataset, and compared the results of similarity search, obtained by Amquery for the same dataset, with weighted Unifrac and Bray-Curtis based similarity search, in terms of speed and time efficiency, and overall search relevance. All of the experiments were run on a machine equipped with an Intel Xeon CPU E5-2650 v3 (2.30 GHz) and a 
 Seagate Constellation ES.3 ST3000NM0033 hard drive.
 
 \subsection*{16S rRNA gene metagenomic data}
@@ -292,7 +296,6 @@ Then a random subset of additional of size 100, 200, $\dots$, 1000 are added to 
 \subsection*{Beta-diversity analysis using QIIME}
 \subsubsection*{Reference-based OTU picking}
 \subsubsection*{\textit{De novo} OTU picking}
-
 
 
 \subsection*{Speed and memory efficiency}
@@ -364,11 +367,44 @@ Interpretation of headings is similar to the Table~\ref{table1}. \textit{Peak} c
 
 
 \subsection*{Similarity search effectiveness}
-...Mean P@k
+To estimate relevance of similarity search, provided by Amquery, mean precision at k (MP@K), mean average precision at k (MAP@K), and normalized cumulative discounted gain at k (NCDG@k) \cite{book, jarvelin2000ir, jarvelin2002cumulated}
+are evaluated, with the relevance function, declared as follows. For every search query $q$, all the pairwise distances $dist_{QIIME}(q, x)$, provided by QIIME, from $q$ to every sample $x$ in the index, are normalized. 
+Thus, resulting relevance value $R(q, r)$ for search output result $r$ is value $dist_{QIIME}(q, r)$, normalized over all the $dist_{QIIME}(q, x)$. Here we use the notation of $dist_{QIIME}(q, r)$ for weighted Unifrac and Bray-Curtis similarity distances.
 
-...MAP@k
+All effectiveness metrics are evaluated among all the dataset splits, mentioned above, for search query size $k = {1, 3, 5, 7, 10, 15, 20}$ and 100 random samples from the index. Since precision metrics as MP@k and MAP@k require binary relevance function,
+$R(q, r)$ values for these metrics are binarized as follows:
 
-...Mean gain
+\[ R_b(q, r)  =
+  \begin{cases}
+    1  & r \text{ in top-} k \text{ nearest samples of } q, \text{ according to } dist_{QIIME}\\
+    0  &  otherwise \\
+  \end{cases}
+\] 
+
+MP@k, MAP@k, NDCG@k evaluation results presented in Fig~\ref{fig1}, Fig~\ref{fig2} and Fig~\ref{fig3} respectively.
+
+\begin{figure}[!h]
+\caption{{\bf Mean precision at k for Amquery search queries and random sampling from the index as baseline.}
+A: According to weighted Unifrac based relevance function. B: According to Bray-Curtis similarity based relevance function.}
+\label{fig1}
+\end{figure}
+
+\begin{figure}[!h]
+\caption{{\bf Mean average precision at k for Amquery search queries and random sampling from the index as baseline.}
+A: According to weighted Unifrac based relevance function. B: According to Bray-Curtis similarity based relevance function.}
+\label{fig2}
+\end{figure}
+
+\begin{figure}[!h]
+\caption{{\bf Normalized cumulative discounted gain at k for Amquery search queries and random sampling from the index as baseline.}
+A: According to weighted Unifrac based relevance function. B: According to Bray-Curtis similarity based relevance function.}
+\label{fig3}
+\end{figure}
+
+
+\subsection*{Conclusions}
+We presented a k-mer based approach for fast indexing and searching of 16S amplicon libraries, which designed to outperform clustering-based solutions for similarity search, in terms of speed and memory consumption.
+This approach allows for indexing thousands of samples in minutes, and lightning fast similarity search. We demonstrated that similarity search results, based on RJSD distance over estimated k-mer distributions, correspond to a certain extent to the weighted Unifrac based and Bray-Curtis similarity based search results.
 
 
 \begin{thebibliography}{10}
@@ -385,6 +421,11 @@ Edgar Ch{\'a}vez, Gonzalo Navarro, Ricardo Baeza-Yates, and Jos{\'e}~Luis
   Marroqu{\'\i}n.
 \newblock Searching in metric spaces.
 \newblock {\em ACM computing surveys (CSUR)}, 33(3):273--321, 2001.
+
+\bibitem{book}
+Prabhakar~Raghavan Christopher D~Manning and Hinrich Schütze.
+\newblock {\em Introduction to Information Retrieval}.
+\newblock Cambridge University Press, 2008.
 
 \bibitem{connor2013evaluation}
 Richard Connor, Franco~Alberto Cardillo, Robert Moss, and Fausto Rabitti.
@@ -404,6 +445,19 @@ Bent Fuglede and Flemming Topsoe.
 \newblock In {\em Information Theory, 2004. ISIT 2004. Proceedings.
   International Symposium on}, page~31. IEEE, 2004.
 
+\bibitem{jarvelin2000ir}
+Kalervo J{\"a}rvelin and Jaana Kek{\"a}l{\"a}inen.
+\newblock Ir evaluation methods for retrieving highly relevant documents.
+\newblock In {\em Proceedings of the 23rd annual international ACM SIGIR
+  conference on Research and development in information retrieval}, pages
+  41--48. ACM, 2000.
+
+\bibitem{jarvelin2002cumulated}
+Kalervo J{\"a}rvelin and Jaana Kek{\"a}l{\"a}inen.
+\newblock Cumulated gain-based evaluation of ir techniques.
+\newblock {\em ACM Transactions on Information Systems (TOIS)}, 20(4):422--446,
+  2002.
+
 \bibitem{karp1987efficient}
 Richard~M Karp and Michael~O Rabin.
 \newblock Efficient randomized pattern-matching algorithms.
@@ -413,6 +467,14 @@ Richard~M Karp and Michael~O Rabin.
 Rasko Leinonen, Hideaki Sugawara, and Martin Shumway.
 \newblock The sequence read archive.
 \newblock {\em Nucleic acids research}, page gkq1019, 2010.
+
+\bibitem{ligi2014characterization}
+Teele Ligi, Kristjan Oopkaup, Marika Truu, Jens-Konrad Preem, Hiie N{\~o}lvak,
+  William~J Mitsch, {\"U}lo Mander, and Jaak Truu.
+\newblock Characterization of bacterial communities in soil and sediment of a
+  created riverine wetland complex using high-throughput 16s rrna amplicon
+  sequencing.
+\newblock {\em Ecological Engineering}, 72:56--66, 2014.
 
 \bibitem{lin1991divergence}
 Jianhua Lin.
@@ -425,6 +487,21 @@ Catherine Lozupone, Manuel~E Lladser, Dan Knights, Jesse Stombaugh, and Rob
 \newblock Unifrac: an effective distance metric for microbial community
   comparison.
 \newblock {\em The ISME journal}, 5(2):169, 2011.
+
+\bibitem{qin2010human}
+Junjie Qin, Ruiqiang Li, Jeroen Raes, Manimozhiyan Arumugam,
+  Kristoffer~Solvsten Burgdorf, Chaysavanh Manichanh, Trine Nielsen, Nicolas
+  Pons, Florence Levenez, Takuji Yamada, et~al.
+\newblock A human gut microbial gene catalogue established by metagenomic
+  sequencing.
+\newblock {\em nature}, 464(7285):59--65, 2010.
+
+\bibitem{seedorf2014bacteria}
+Henning Seedorf, Nicholas~W Griffin, Vanessa~K Ridaura, Alejandro Reyes, Jiye
+  Cheng, Federico~E Rey, Michelle~I Smith, Gabriel~M Simon, Rudolf~H
+  Scheffrahn, Dagmar Woebken, et~al.
+\newblock Bacteria from diverse habitats colonize and compete in the mouse gut.
+\newblock {\em Cell}, 159(2):253--266, 2014.
 
 \bibitem{yianilos1993data}
 Peter~N Yianilos.
