@@ -233,7 +233,7 @@ TBA
 High-throughput sequencing of 16S amplicon libraries has become a very popular and powerful way of assessing the structure of various microbial communities. As the number of published 16S amplicon libraries keeps growing so does the demand for a way to quickly process samples to find related communities similarly to the way BLAST for sequences. Nowadays a single amplicon library can easily contain many thousands of reads, making clustering-based pipelines, implemented in tools such as QIIME, inapplicable to large databases. To address these problems, we developed Amquery.
 
 
-\section*{Materials and methods}
+\section*{Methods}
 There are two main ideas behind the implementation of Amquery. The first is the use of empirical distribution of k-mers as representation of each library sample. The second is the use of information-theoretic divergence measure as distance function between these representations. 
 
 \subsection*{k-mer counting}
@@ -256,10 +256,10 @@ The advantage of this representation is that $\mathrm{lxr}_k$ is a special case 
 									 |{\mathcal{L}}|^{k−1}) + ord(s_{i+k−1})
 \end{eqnarray}
 
-A set of all lexicographic ranks of k-mers of input sequences is inserted into a counting hash table. Theoretically, a fully k-mer-abundant sample could make this table to grow rapidly, so it is reasonable to vary the size of k-mer to avoid insane expansion of a hash table. Below we demonstrate an example of memory consumption on this stage for real metagenomic data.
+A set of all lexicographic ranks of k-mers of input sequences is inserted into a counting hash table. Theoretically, a fully k-mer-abundant sample could make this table to grow rapidly, so it is reasonable to limit the size of k-mer to avoid insane expansion of this hash table. Below we demonstrate an example of memory consumption for real metagenomic data on this stage.
 
 \subsection*{Distance metric}
-On second stage, the counted k-mers from the previous step are normalized. Since k-mer distribution vectors are high-dimensional and sparse, Amquery represents them as sparse arrays, each of which is sorted in natural order of integer numbers. 
+At the next stage, the counted k-mers from the previous step are normalized. Since k-mer distribution vectors are high-dimensional and sparse, Amquery represents them as sparse arrays, each of which is sorted in natural order of integer numbers. 
 In our implementation, a sparse array is a key-value storage in which the keys are the lexicographic ranks of corresponding k-mers, and the values are the empirical frequencies.
 
 Thus, each input sample corresponds to a frequency distribution of k-mers, stored implicitly as numbers in quaternary numeral system. These distributions are compared to each other by square root of \textit{Jensen-Shannon divergence} (RJSD) \cite{lin1991divergence}, which satisfies many statistical properties and fits many cases of high-dimensional spaces in $\mathbb{R^\star}$ as distance metric \cite{fuglede2004jensen, endres2003new}. We make use of advantage of specific form of RJSD, presented in \cite{connor2013evaluation}, to speed up distance evaluation over sparse distributions of k-mer frequencies.
@@ -267,39 +267,67 @@ Thus, each input sample corresponds to a frequency distribution of k-mers, store
 
 \subsection*{Metric indexing}
 Amquery uses vantage-point tree (vp-tree) \cite{yianilos1993data, chavez2001searching} as main data structure to provide efficient metric-based indexing and search, using pairwise distances between input 
-samples obtained in the previous step.
+samples, described above.
 Since vantage-point tree is designed to be independent of the space dimension \cite{yianilos1993data}, this allows us to store high-dimensional sparse vectors for virtually no loss of indexing and 
 search performance: it takes $\mathcal{O}(n)$ space and $\mathcal{O}(n \log n)$ time in worst case to be built (for input set of $n$ samples), and search query is argued to be $\mathcal{O}(\log n)$ in time, with some reservations. 
 For more detailed analysis of vp-tree performance, see \cite{yianilos1993data}.
 
 
+\section*{Results}
+The implementation of Amquery was compared against our own custom solution of similarity search, based on the classic microbiome analysis QIIME pipeline \cite{caporaso2010qiime}, in the following fashion.
+We computed pairwise weighted Unifrac distances \cite{lozupone2011unifrac} and Bray-Curtis similarities for huge 16S metagenomic dataset, and compared the results of similarity search, obtained by Amquery for the same dataset, with weighted Unifrac/Bray-Curtis based similarity search, in terms of speed and time efficiency, and overall search relevance. All of the experiments were run on a machine equipped with an Intel Xeon CPU E5-2650 v3 (2.30 GHz) and a 
+Seagate Constellation ES.3 ST3000NM0033 hard drive.
+
 \subsection*{16S rRNA gene metagenomic data}
-We analyzed a human gut 16S metagenomic dataset, which consist of 1998 samples, obtained from the Sequence Read Archive \cite{leinonen2010sequence}. 
-For each sample, the reads was filtered by length with 250+bp threshold, and rarefied, choicing 1000 sequences per sample randomly.
+We analyzed a human gut 16S metagenomic dataset, which consist of 1978 samples, obtained from the Sequence Read Archive \cite{leinonen2010sequence}. 
+For each sample, the reads was filtered by length with 250+bp threshold, and rarefied by choosing 1000 sequences per sample randomly.
+Resulting samples are split into two parts: referred below to as \textit{main}, the size of which varies in range (100, 200, $\dots$, 1000), and referred below to as \textit{additional}, consist of all the rest samples, accordingly. 
+
+
+\subsection*{Dataset processing using Amquery}
+For every split of the dataset, Amquery index is built for the main part, using $k=15$ as k-mer size. 100 random samples from the main part are searched in resulting index. 
+Then a random subset of additional of size 100, 200, $\dots$, 1000 are added to the index separetely. At every stage of processing, peak RAM usage and computational time are measured.
 
 
 \subsection*{Beta-diversity analysis using QIIME}
-Beta-diversity analysis using reference-based methods
+\subsubsection*{Reference-based OTU picking}
+\subsubsection*{\textit{De novo} OTU picking}
 
 
-% Results and Discussion can be combined.
-\section*{Results}
-Nulla mi mi, venenatis sed ipsum varius, Table~\ref{table1} volutpat euismod diam. Proin rutrum vel massa non gravida. Quisque tempor sem et dignissim rutrum. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi at justo vitae nulla elementum commodo eu id massa. In vitae diam ac augue semper tincidunt eu ut eros. Fusce fringilla erat porttitor lectus cursus, vel sagittis arcu lobortis. Aliquam in enim semper, aliquam massa id, cursus neque. Praesent faucibus semper libero.
 
-% Place tables after the first paragraph in which they are cited.
+\subsection*{Speed and memory efficiency}
+Elapsed time measurements at each stage of processing for reference-based QIIME pipeline (for weighted Unifrac and Bray-Curtis similarities) and Amquery are presented in Table~\ref{table1}. 
+The rows present measurements, made for each of the dataset splits, the columns present elapsed time at each stage of pipelines. 
+Peak RAM usage for both of pipelines presented in Table~\ref{table2}.
+
 \begin{table}[!ht]
 \begin{adjustwidth}{-2.25in}{0in} % Comment out/remove adjustwidth environment if table fits in text column.
 \centering
-\caption{
-{\bf Table caption Nulla mi mi, venenatis sed ipsum varius, volutpat euismod diam.}}
-\begin{tabular}{|l+l|l|l|l|l|l|l|}
+\caption{{\bf Measurements of processing time (m:ss.ms) of Amquery and QIIME-base pipelines }}
+\begin{tabular}{|l+l|l|l|l|l|l|l|l|l|}
 \hline
-\multicolumn{4}{|l|}{\bf Heading1} & \multicolumn{4}{|l|}{\bf Heading2}\\ \thickhline
-$cell1 row1$ & cell2 row 1 & cell3 row 1 & cell4 row 1 & cell5 row 1 & cell6 row 1 & cell7 row 1 & cell8 row 1\\ \hline
-$cell1 row2$ & cell2 row 2 & cell3 row 2 & cell4 row 2 & cell5 row 2 & cell6 row 2 & cell7 row 2 & cell8 row 2\\ \hline
-$cell1 row3$ & cell2 row 3 & cell3 row 3 & cell4 row 3 & cell5 row 3 & cell6 row 3 & cell7 row 3 & cell8 row 3\\ \hline
+\textit{size} & \multicolumn{3}{|l|}{\bf Amquery} & \multicolumn{6}{|l|}{\bf Reference-based QIIME}\\ \hline
+& k-mers & indexing & {\bf Total} & pick\_otus & make\_otu & bdiv (wu) & beta\_div (bc) & {\bf Total (wu)} & {\bf Total (bc)}  \\ \thickhline
+100 & 0:43.08 & 0:00.74 & {\bf 0:43.82 } & 0:56.55 & 0:01.33 & 0:01.46 & 0:01.52 & {\bf 0:59.34 } & {\bf 0:59.40 } \\ \hline
+200 & 1:25.16 & 0:01.51 & {\bf 1:26.67 } & 1:59.69 & 0:01.41 & 0:02.79 & 0:03.31 & {\bf 2:03.89 } & {\bf 2:04.41 } \\ \hline
+300 & 2:10.24 & 0:02.40 & {\bf 2:12.64 } & 2:53.94 & 0:01.59 & 0:05.09 & 0:07.61 & {\bf 3:00.62 } & {\bf 3:03.14 } \\ \hline
+400 & 2:44.32 & 0:03.13 & {\bf 2:47.45 } & 3:41.92 & 0:01.40 & 0:08.56 & 0:14.67 & {\bf 3:51.88 } & {\bf 3:57.99 } \\ \hline
+500 & 3:37.39 & 0:04.31 & {\bf 3:41.70 } & 5:33.65 & 0:01.77 & 0:14.82 & 0:28.01 & {\bf 5:50.24 } & {\bf 6:03.43 } \\ \hline
+600 & 4:17.47 & 0:05.45 & {\bf 4:22.92 } & 6:42.26 & 0:01.98 & 0:21.03 & 0:46.02 & {\bf 7:05.27 } & {\bf 7:30.26 } \\ \hline
+700 & 5:08.55 & 0:06.00 & {\bf 5:14.55 } & 7:52.58 & 0:02.15 & 0:28.10 & 1:08.47 & {\bf 8:22.83 } & {\bf 9:03.20 } \\ \hline
+800 & 5:38.59 & 0:07.07 & {\bf 5:45.66 } & 9:30.34 & 0:02.25 & 0:39.75 & 1:40.54 & {\bf 10:12.34 } & {\bf 11:13.13 } \\ \hline
+900 & 6:33.67 & 0:07.83 & {\bf 6:41.50 } & 10:55.35 & 0:02.47 & 0:50.01 & 2:22.95 & {\bf 11:47.83 } & {\bf 13:20.77 } \\ \hline
+1000 & 7:15.78 & 0:09.25 & {\bf 7:25.03 } & 11:54.37 & 0:02.54 & 1:04.56 & 2:58.86 & {\bf 13:01.47 } & {\bf 14:55.77 } \\ \hline
 \end{tabular}
-\begin{flushleft} Table notes Phasellus venenatis, tortor nec vestibulum mattis, massa tortor interdum felis, nec pellentesque metus tortor nec nisl. Ut ornare mauris tellus, vel dapibus arcu suscipit sed.
+\begin{flushleft}
+Interpretation of headings: \textit{size} is the number of samples, used for index construction. 
+\textit{k-mers} is the time spent on k-mer counting. 
+\textit{indexing} is the time spent on vp-tree construction, including calculation of necessary RJSD distance values.
+\textit{Total} is the total time of processing by Amquery.
+\textit{pick\_otus} is the total time spent by pick\_otus.py script.
+\textit{make\_otu} is the total time spent by make\_otu\_table.py script.
+\textit{bdiv (wu)} and \textit{bdiv (bc)} are the total time spent by beta\_diversity.py script for weighted Unifrac and Bray-Curtis similarities accordingly.
+\textit{Total (wu)} and \textit{Total (bc)} are the total time spent by QIIME pipeline for weighted Unifrac and Bray-Curtis similarities accordingly.
 \end{flushleft}
 \label{table1}
 \end{adjustwidth}
@@ -308,97 +336,45 @@ $cell1 row3$ & cell2 row 3 & cell3 row 3 & cell4 row 3 & cell5 row 3 & cell6 row
 
 
 
-\subsection*{Experiment results}
 
-% For figure citations, please use "Fig" instead of "Figure".
-Nulla mi mi, Fig~\ref{fig1} venenatis sed ipsum varius, volutpat euismod diam. Proin rutrum vel massa non gravida. Quisque tempor sem et dignissim rutrum. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi at justo vitae nulla elementum commodo eu id massa. In vitae diam ac augue semper tincidunt eu ut eros. Fusce fringilla erat porttitor lectus cursus, \nameref{S1_Video} vel sagittis arcu lobortis. Aliquam in enim semper, aliquam massa id, cursus neque. Praesent faucibus semper libero.
+\begin{table}[!ht]
+\begin{adjustwidth}{-2.25in}{0in} % Comment out/remove adjustwidth environment if table fits in text column.
+\centering
+\caption{{\bf Peak RAM usage of Amquery and QIIME-base pipelines }}
+\begin{tabular}{|l+l|l|l|l|l|l|l|}
+\hline
+\textit{size} & {\bf Amquery} & \multicolumn{6}{|l|}{\bf Reference-based QIIME}\\ \hline
+& {\bf Peak} & pick\_otus & make\_otu & bdiv (wu) & beta\_div (bc) & {\bf Peak (wu)} & {\bf Peak (bc)}  \\ \thickhline
+100 & 100Mb & 242Mb & 120Mb & 145Mb & 135Mb & 242Mb & 242Mb \\ \hline
+200 & 149Mb & 344Mb & 130Mb & 209Mb & 197Mb & 344Mb & 344Mb \\ \hline
+300 & 222Mb & 437Mb & 135Mb & 295Mb & 275Mb & 437Mb & 437Mb \\ \hline
+400 & 229Mb & 499Mb & 139Mb & 387Mb & 366Mb & 499Mb & 499Mb \\ \hline
+500 & 290Mb & 649Mb & 146Mb & 541Mb & 516Mb & 649Mb & 649Mb \\ \hline
+600 & 334Mb & 759Mb & 153Mb & 716Mb & 686Mb & 759Mb & 759Mb \\ \hline
+700 & 379Mb & 833Mb & 163Mb & 881Mb & 850Mb & 881Mb & 850Mb \\ \hline
+800 & 428Mb & 911Mb & 168Mb & 1.0Gb & 1.0Gb & 1.0Gb & 1.0Gb \\ \hline
+900 & 474Mb & 995Mb & 175Mb & 1.3Gb & 1.2Gb & 1.3Gb & 1.2Gb \\ \hline
+1000 & 515Mb & 1.0Gb & 183Mb & 1.4Gb & 1.4Gb & 1.4Gb & 1.4Gb \\ \hline
+\end{tabular}
+\begin{flushleft}
+Interpretation of headings is similar to the Table~\ref{table1}. \textit{Peak} columns present the peak RAM usage of corresponding pipelines.   
+\end{flushleft}
+\label{table2}
+\end{adjustwidth}
+\end{table}
 
-% Place figure captions after the first paragraph in which they are cited.
-\begin{figure}[!h]
-\caption{{\bf Bold the figure title.}
-Figure caption text here, please use this space for the figure panel descriptions instead of using subfigure commands. A: Lorem ipsum dolor sit amet. B: Consectetur adipiscing elit.}
-\label{fig1}
-\end{figure}
 
 
-%PLOS does not support heading levels beyond the 3rd (no 4th level headings).
-\subsection*{\lorem\ and \ipsum\ nunc blandit a tortor}
-\subsubsection*{3rd level heading} 
-Maecenas convallis mauris sit amet sem ultrices gravida. Etiam eget sapien nibh. Sed ac ipsum eget enim egestas ullamcorper nec euismod ligula. Curabitur fringilla pulvinar lectus consectetur pellentesque. Quisque augue sem, tincidunt sit amet feugiat eget, ullamcorper sed velit. Sed non aliquet felis. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris commodo justo ac dui pretium imperdiet. Sed suscipit iaculis mi at feugiat. 
-
-\begin{enumerate}
-	\item{react}
-	\item{diffuse free particles}
-	\item{increment time by dt and go to 1}
-\end{enumerate}
 
 
-\subsection*{Sed ac quam id nisi malesuada congue}
+\begin{thebibliography}{10}
 
-Nulla mi mi, venenatis sed ipsum varius, volutpat euismod diam. Proin rutrum vel massa non gravida. Quisque tempor sem et dignissim rutrum. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi at justo vitae nulla elementum commodo eu id massa. In vitae diam ac augue semper tincidunt eu ut eros. Fusce fringilla erat porttitor lectus cursus, vel sagittis arcu lobortis. Aliquam in enim semper, aliquam massa id, cursus neque. Praesent faucibus semper libero.
-
-\begin{itemize}
-	\item First bulleted item.
-	\item Second bulleted item.
-	\item Third bulleted item.
-\end{itemize}
-
-\section*{Discussion}
-Nulla mi mi, venenatis sed ipsum varius, Table~\ref{table1} volutpat euismod diam. Proin rutrum vel massa non gravida. Quisque tempor sem et dignissim rutrum. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi at justo vitae nulla elementum commodo eu id massa. In vitae diam ac augue semper tincidunt eu ut eros. Fusce fringilla erat porttitor lectus cursus, vel sagittis arcu lobortis. Aliquam in enim semper, aliquam massa id, cursus neque. Praesent faucibus semper libero~\cite{bib3}.
-
-\section*{Conclusion}
-
-CO\textsubscript{2} Maecenas convallis mauris sit amet sem ultrices gravida. Etiam eget sapien nibh. Sed ac ipsum eget enim egestas ullamcorper nec euismod ligula. Curabitur fringilla pulvinar lectus consectetur pellentesque. Quisque augue sem, tincidunt sit amet feugiat eget, ullamcorper sed velit. 
-
-Sed non aliquet felis. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris commodo justo ac dui pretium imperdiet. Sed suscipit iaculis mi at feugiat. Ut neque ipsum, luctus id lacus ut, laoreet scelerisque urna. Phasellus venenatis, tortor nec vestibulum mattis, massa tortor interdum felis, nec pellentesque metus tortor nec nisl. Ut ornare mauris tellus, vel dapibus arcu suscipit sed. Nam condimentum sem eget mollis euismod. Nullam dui urna, gravida venenatis dui et, tincidunt sodales ex. Nunc est dui, sodales sed mauris nec, auctor sagittis leo. Aliquam tincidunt, ex in facilisis elementum, libero lectus luctus est, non vulputate nisl augue at dolor. For more information, see \nameref{S1_Appendix}.
-
-\section*{Supporting information}
-
-% Include only the SI item label in the paragraph heading. Use the \nameref{label} command to cite SI items in the text.
-\paragraph*{S1 Fig.}
-\label{S1_Fig}
-{\bf Bold the title sentence.} Add descriptive text after the title of the item (optional).
-
-\paragraph*{S2 Fig.}
-\label{S2_Fig}
-{\bf Lorem ipsum.} Maecenas convallis mauris sit amet sem ultrices gravida. Etiam eget sapien nibh. Sed ac ipsum eget enim egestas ullamcorper nec euismod ligula. Curabitur fringilla pulvinar lectus consectetur pellentesque.
-
-\paragraph*{S1 File.}
-\label{S1_File}
-{\bf Lorem ipsum.}  Maecenas convallis mauris sit amet sem ultrices gravida. Etiam eget sapien nibh. Sed ac ipsum eget enim egestas ullamcorper nec euismod ligula. Curabitur fringilla pulvinar lectus consectetur pellentesque.
-
-\paragraph*{S1 Video.}
-\label{S1_Video}
-{\bf Lorem ipsum.}  Maecenas convallis mauris sit amet sem ultrices gravida. Etiam eget sapien nibh. Sed ac ipsum eget enim egestas ullamcorper nec euismod ligula. Curabitur fringilla pulvinar lectus consectetur pellentesque.
-
-\paragraph*{S1 Appendix.}
-\label{S1_Appendix}
-{\bf Lorem ipsum.} Maecenas convallis mauris sit amet sem ultrices gravida. Etiam eget sapien nibh. Sed ac ipsum eget enim egestas ullamcorper nec euismod ligula. Curabitur fringilla pulvinar lectus consectetur pellentesque.
-
-\paragraph*{S1 Table.}
-\label{S1_Table}
-{\bf Lorem ipsum.} Maecenas convallis mauris sit amet sem ultrices gravida. Etiam eget sapien nibh. Sed ac ipsum eget enim egestas ullamcorper nec euismod ligula. Curabitur fringilla pulvinar lectus consectetur pellentesque.
-
-\section*{Acknowledgments}
-Cras egestas velit mauris, eu mollis turpis pellentesque sit amet. Interdum et malesuada fames ac ante ipsum primis in faucibus. Nam id pretium nisi. Sed ac quam id nisi malesuada congue. Sed interdum aliquet augue, at pellentesque quam rhoncus vitae.
-
-\nolinenumbers
-
-% Either type in your references using
-% \begin{thebibliography}{}
-% \bibitem{}
-% Text
-% \end{thebibliography}
-%
-% or
-%
-% Compile your BiBTeX database using our plos2015.bst
-% style file and paste the contents of your .bbl file
-% here. See http://journals.plos.org/plosone/s/latex for 
-% step-by-step instructions.
-% 
-
-\begin{thebibliography}{1}
+\bibitem{caporaso2010qiime}
+J~Gregory Caporaso, Justin Kuczynski, Jesse Stombaugh, Kyle Bittinger,
+  Frederic~D Bushman, Elizabeth~K Costello, Noah Fierer, Antonio~Gonzalez
+  Pe{\~n}a, Julia~K Goodrich, Jeffrey~I Gordon, et~al.
+\newblock Qiime allows analysis of high-throughput community sequencing data.
+\newblock {\em Nature methods}, 7(5):335--336, 2010.
 
 \bibitem{chavez2001searching}
 Edgar Ch{\'a}vez, Gonzalo Navarro, Ricardo Baeza-Yates, and Jos{\'e}~Luis
@@ -429,10 +405,22 @@ Richard~M Karp and Michael~O Rabin.
 \newblock Efficient randomized pattern-matching algorithms.
 \newblock {\em IBM Journal of Research and Development}, 31(2):249--260, 1987.
 
+\bibitem{leinonen2010sequence}
+Rasko Leinonen, Hideaki Sugawara, and Martin Shumway.
+\newblock The sequence read archive.
+\newblock {\em Nucleic acids research}, page gkq1019, 2010.
+
 \bibitem{lin1991divergence}
 Jianhua Lin.
 \newblock Divergence measures based on the shannon entropy.
 \newblock {\em IEEE Transactions on Information theory}, 37(1):145--151, 1991.
+
+\bibitem{lozupone2011unifrac}
+Catherine Lozupone, Manuel~E Lladser, Dan Knights, Jesse Stombaugh, and Rob
+  Knight.
+\newblock Unifrac: an effective distance metric for microbial community
+  comparison.
+\newblock {\em The ISME journal}, 5(2):169, 2011.
 
 \bibitem{yianilos1993data}
 Peter~N Yianilos.
@@ -441,6 +429,7 @@ Peter~N Yianilos.
 \newblock In {\em SODA}, volume~93, pages 311--21, 1993.
 
 \end{thebibliography}
+
 
 
 \end{document}
