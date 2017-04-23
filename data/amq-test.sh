@@ -7,17 +7,16 @@ function amq_test {
 
     test_size=100
     #wu_table="/home/ilia/storage/metagen/bench/ref/$build_size/wu/weighted_unifrac_otu_table.txt"
-    bc_table="/home/ilia/storage/metagen/bench/ref/$build_size/bc/bray_curtis_otu_table.txt"
-    to_test=$(find ${split_dir}/$build_size/main -type l -name "${pattern}" -exec readlink {} \; | shuf -n $test_size | xargs realpath)
+    bc_table="/home/ilia/storage/metagen/bench/ref/$build_size/bc/bray_curtis_otu_table.txt" 
 
+    to_test=$(find ${split_dir}/$build_size/main -type l -name "${pattern}" -exec readlink {} \; | shuf -n $test_size | xargs realpath)
     amq --workon "${index_dir}" use origin
-    k=5
 
     echo $build_size...
     for k in 1 3 5 7 10 15 20
     do
         #amq-test -q precision `echo ${to_test}` -r "$wu_table" -k "$k" > "${index_dir}/test_wu_${k}.log"
-        amq-test -q precision `echo ${to_test}` -r "$wu_table" -k "$k" > "${index_dir}/test_bc_${k}.log" 
+        amq-test -q precision `echo ${to_test}` -r "$bc_table" -k "$k" > "${index_dir}/test_bc_${k}.log" 
         echo $k
     done;
 
