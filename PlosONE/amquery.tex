@@ -238,10 +238,10 @@ As the number of published 16S amplicon libraries keeps growing so does the dema
 
 
 \section*{Methods}
-There are two main ideas behind the implementation of Amquery. The first is the use of empirical distribution of k-mers as representation of each library sample. The second is the use of information-theoretic divergence measure as distance function between these representations. 
+There are two main ideas behind the implementation of Amquery. The first is the use of empirical distribution of k-mers as a representation of each library sample. The second is the use of information-theoretic divergence measure as a distance function between these representations. 
 
 \subsection*{k-mer counting}
-Given a set of 16S amplicon libraries (samples), Amquery begins by representing each of them as a k-mer histogram of corresponding k-mer counts. To reduce memory consumption, each k-mer value is stored as a proper quarternary number.
+Given a set of 16S amplicon libraries (samples), Amquery begins by representing each of them as a k-mer histogram of corresponding k-mer counts. To reduce memory consumption, each k-mer value is stored as a proper quaternary number.
 More formally, every k-mer of input sequence $s = s_0,\dots,s_{n-1}$ is represented as its \textit{lexicographic rank} $\mathrm{lxr}_k(s)$, which equals to the position of the k-mer in the list of all possible k-mers, sorted lexicographically:
 
 \begin{eqnarray}
@@ -251,7 +251,7 @@ More formally, every k-mer of input sequence $s = s_0,\dots,s_{n-1}$ is represen
 
 Here $\mathrm{ord}(s_i)$ is a value of ordering function at $s_i$ over the alphabet ${\mathcal{L}} = \{A, C, G, T \}$. 
 
-The disadvatage of this approach is the upper limit on the length of k-mer, due to the combinatorial explosion of the number of all possible k-mers. Thus, we assume $k \leq 32$ for x64 machine, which allows for storing a k-mer value in a single machine word.
+The disadvantage of this approach is the upper limit on the length of k-mer, due to the combinatorial explosion of the number of all possible k-mers. Thus, we assume $k \leq 32$ for x64 machine, which allows for storing a k-mer value in a single machine word.
 The advantage of this representation is that $\mathrm{lxr}_k$ is a special case of Karp-Rabin hash fingerprint \cite{karp1987efficient}, so it is possible to evaluate a quarternary representation $\mathrm{lxr}_k(s_{i:i+k-1})$ of k-mer $s_{i:i+k-1}$, using the value $\mathrm{lxr}_k(s_{i−1:i+k-2})$ of the previous k-mer $s_{i−1:i+k-2}$, in constant time:
 
 \begin{eqnarray}
@@ -266,7 +266,7 @@ A set of all lexicographic ranks of k-mers of input sequences is inserted into a
 At the next stage, the counted k-mers from the previous step are normalized. Since k-mer distribution vectors are high-dimensional and sparse, Amquery represents them as sparse arrays, each of which is sorted in natural order of integer numbers. 
 In our implementation, a sparse array is a key-value storage in which the keys are the lexicographic ranks of corresponding k-mers, and the values are the empirical frequencies.
 
-Thus, each input sample corresponds to a frequency distribution of k-mers, stored implicitly as numbers in quaternary numeral system. These distributions are compared to each other by square root of \textit{Jensen-Shannon divergence} (RJSD) \cite{lin1991divergence}, which satisfies many statistical properties and fits many cases of high-dimensional spaces in $\mathbb{R^\star}$ as distance metric \cite{fuglede2004jensen, endres2003new}. We make use of advantage of specific form of RJSD, presented in \cite{connor2013evaluation}, to speed up distance evaluation over sparse distributions of k-mer frequencies.
+Thus, each input sample corresponds to a frequency distribution of k-mers, stored implicitly as numbers in the quaternary numeral system. These distributions are compared to each other by square root of \textit{Jensen-Shannon divergence} (RJSD) \cite{lin1991divergence}, which satisfies many statistical properties and fits many cases of high-dimensional spaces in $\mathbb{R^\star}$ as distance metric \cite{fuglede2004jensen, endres2003new}. We make use of the advantage of the specific form of RJSD, presented in \cite{connor2013evaluation}, to speed up distance evaluation over sparse distributions of k-mer frequencies.
 
 
 \subsection*{Metric indexing}
@@ -279,60 +279,124 @@ For more detailed analysis of vp-tree performance, see \cite{yianilos1993data}.
 
 \section*{Results}
 The implementation of Amquery was compared against our own custom solution of similarity search, based on the classic microbiome analysis QIIME pipeline, in the following fashion.
-We computed pairwise weighted Unifrac distances \cite{lozupone2011unifrac} and Bray-Curtis similarities for huge 16S metagenomic dataset, and compared the results of similarity search, obtained by Amquery for the same dataset, with weighted Unifrac and Bray-Curtis based similarity search, in terms of speed and time efficiency, and overall search relevance. All of the experiments were run on a machine equipped with an Intel Xeon CPU E5-2650 v3 (2.30 GHz) and a 
-Seagate Constellation ES.3 ST3000NM0033 hard drive.
+We computed pairwise weighted Unifrac distances \cite{lozupone2011unifrac} and Bray-Curtis similarities for huge 16S metagenomic dataset by performing both a reference-based and \textit{de novo} OTU picking.
+Both of resulting pairwise distance matrices were used for naive top-k nearest neighbor selection as a reference to estimate search relevance of Amquery. 
+We also compare speed and memory efficiency of index construction by Amquery against these QIIME based beta-diversity pipelines.
+All of the experiments were run on a machine equipped with an Intel Xeon CPU E5-2650 v3 (2.30 GHz) and a Seagate Constellation ES.3 ST3000NM0033 hard drive.
 
-\subsection*{16S rRNA gene metagenomic data}
-We analyzed a human gut 16S metagenomic dataset, which consist of 1978 samples, obtained from the Sequence Read Archive \cite{leinonen2010sequence}. 
-For each sample, the reads was filtered by length with 250+bp threshold, and rarefied by choosing 1000 sequences per sample randomly.
-Resulting samples are split into two parts: referred below to as \textit{main}, the size of which varies in range (100, 200, $\dots$, 1000), and referred below to as \textit{additional}, consist of all the rest samples, accordingly. 
+\subsection*{Data}
+We analyzed a human gut 16S metagenomic dataset, which consists of 1978 samples, obtained from the Sequence Read Archive \cite{leinonen2010sequence}. 
+For each sample, the reads were filtered by length with 250 base pairs threshold and rarefied by choosing 1000 sequences per sample randomly.
+Resulting samples are split into two parts: referred below to as \texttt{main}, the size of which varies in range (100, 200, $\dots$, 1000), and referred below to as \texttt{additional}, 
+consist of all the rest samples, accordingly. Resulting pairs of (\texttt{main}, \texttt{additional}) sample subsets were used in further processing.
 
+\subsection*{Data processing}
+\subsubsection*{By Amquery}
+For every split of the dataset, Amquery index was built for the \texttt{main} part, using $k=15$ as k-mer size. 100 random samples from the \texttt{main} part were searched in resulting index,
+and a random subset of the \texttt{additional} sample set of size 100, 200, $\dots$, 1000 was added to the index separately. At every stage of processing, peak RAM usage and computational time were measured.
 
-\subsection*{Dataset processing using Amquery}
-For every split of the dataset, Amquery index is built for the main part, using $k=15$ as k-mer size. 100 random samples from the main part are searched in resulting index. 
-Then a random subset of additional of size 100, 200, $\dots$, 1000 are added to the index separetely. At every stage of processing, peak RAM usage and computational time are measured.
-
-
-\subsection*{Beta-diversity analysis using QIIME}
-\subsubsection*{Reference-based OTU picking}
-\subsubsection*{\textit{De novo} OTU picking}
-
+\subsubsection*{By QIIME}
+We used QIIME versions 1.9.1 to perform OTU picking and beta-diversity analyses for the \texttt{main} part of every dataset split.
+Reference-based and \textit{de novo} OTU picking were done using the default options as implemented in QIIME at the 95\% sequence similarity threshold, 
+except for \texttt{uclust\_ref} OTU picking method for the reference-based case.
 
 \subsection*{Speed and memory efficiency}
-Elapsed time measurements at each stage of processing for reference-based QIIME pipeline (for weighted Unifrac and Bray-Curtis similarities) and Amquery are presented in Table~\ref{table1}. 
-The rows present measurements, made for each of the dataset splits, the columns present elapsed time at each stage of pipelines. 
-Peak RAM usage for both of pipelines presented in Table~\ref{table2}.
+Elapsed time measurements at each stage of processing both for reference-based and \textit{de novo} QIIME pipeline against Amquery are presented in Fig~\ref{fig1} and Fig~\ref{fig2} respectively.
+More detailed view of these measurements is presented Table~\ref{table1} and Table~\ref{table2},
+where rows present measurements, made for each of the dataset splits, and the columns present elapsed time at each stage of pipelines. 
+Similarly, peak RAM usage presented in Fig~\ref{fig3} and Fig~\ref{fig4} graphically and in Table~\ref{table3} and Table~\ref{table4} in numbers.
+
+
+\begin{figure}[!h]
+\caption{{\bf Elapsed time for QIIME (reference-based OTU picking) and Amquery pipelines for sets of samples of different size.}
+A, B: Measurements of elapsed time, spended for reference-based OTU picking and beta-diversity analysis by QIIME using Bray-Curtis similarity (A) and weighted Unifrac (B). 
+C: Measurements of elapsed time, spended for RJSD metric indexing by Amquery.}
+\label{fig1}
+\end{figure}
+
+\begin{figure}[!h]
+\caption{{\bf Elapsed time for QIIME (\textit{de novo} OTU picking) and Amquery pipelines for sets of samples of different size.}
+A, B: Measurements of elapsed time, spended for \textit{de novo} OTU picking and beta-diversity analysis by QIIME using Bray-Curtis similarity (A) and weighted Unifrac (B). 
+C: Measurements of elapsed time, spended for RJSD metric indexing by Amquery. Note that the C subfigure is the Fig~\ref{fig1}.C subfigure in the scale of A and B measurements. }
+\label{fig2}
+\end{figure}
+
+\begin{figure}[!h]
+\caption{{\bf Peak RAM Usage for QIIME (reference-based OTU picking) and Amquery pipelines for sets of samples of different size.}
+A, B: Peak RAM usage during reference-based OTU picking and beta-diversity analysis by QIIME using Bray-Curtis similarity (A) and weighted Unifrac (B). 
+C: Peak RAM usage during sample indexing by Amquery.}
+\label{fig3}
+\end{figure}
+
+\begin{figure}[!h]
+\caption{{\bf Peak RAM Usage for QIIME (\textit{de novo} OTU picking) and Amquery pipelines for sets of samples of different size.}
+A, B: Peak RAM usage during \textit{de novo} OTU picking and beta-diversity analysis by QIIME using Bray-Curtis similarity (A) and weighted Unifrac (B). 
+C: Peak RAM usage during sample indexing by Amquery, the same as Fig~\ref{fig3}.C subfigure in the scale of A and B measurements.}
+\label{fig4}
+\end{figure}
+
 
 \begin{table}[!ht]
 \begin{adjustwidth}{-2.25in}{0in} % Comment out/remove adjustwidth environment if table fits in text column.
 \centering
-\caption{{\bf Measurements of processing time (m:ss.ms) of Amquery and QIIME-base pipelines }}
+\caption{{\bf Measurements of processing time (mm:ss.ms) of Amquery and reference-based QIIME pipelines }}
 \begin{tabular}{|l+l|l|l|l|l|l|l|l|l|}
 \hline
 \textit{size} & \multicolumn{3}{|l|}{\bf Amquery} & \multicolumn{6}{|l|}{\bf Reference-based QIIME}\\ \hline
-& k-mers & indexing & {\bf Total} & pick\_otus & make\_otu & bdiv (wu) & beta\_div (bc) & {\bf Total (wu)} & {\bf Total (bc)}  \\ \thickhline
-100 & 0:43.08 & 0:00.74 & {\bf 0:43.82 } & 0:56.55 & 0:01.33 & 0:01.46 & 0:01.52 & {\bf 0:59.34 } & {\bf 0:59.40 } \\ \hline
-200 & 1:25.16 & 0:01.51 & {\bf 1:26.67 } & 1:59.69 & 0:01.41 & 0:02.79 & 0:03.31 & {\bf 2:03.89 } & {\bf 2:04.41 } \\ \hline
-300 & 2:10.24 & 0:02.40 & {\bf 2:12.64 } & 2:53.94 & 0:01.59 & 0:05.09 & 0:07.61 & {\bf 3:00.62 } & {\bf 3:03.14 } \\ \hline
-400 & 2:44.32 & 0:03.13 & {\bf 2:47.45 } & 3:41.92 & 0:01.40 & 0:08.56 & 0:14.67 & {\bf 3:51.88 } & {\bf 3:57.99 } \\ \hline
-500 & 3:37.39 & 0:04.31 & {\bf 3:41.70 } & 5:33.65 & 0:01.77 & 0:14.82 & 0:28.01 & {\bf 5:50.24 } & {\bf 6:03.43 } \\ \hline
-600 & 4:17.47 & 0:05.45 & {\bf 4:22.92 } & 6:42.26 & 0:01.98 & 0:21.03 & 0:46.02 & {\bf 7:05.27 } & {\bf 7:30.26 } \\ \hline
-700 & 5:08.55 & 0:06.00 & {\bf 5:14.55 } & 7:52.58 & 0:02.15 & 0:28.10 & 1:08.47 & {\bf 8:22.83 } & {\bf 9:03.20 } \\ \hline
-800 & 5:38.59 & 0:07.07 & {\bf 5:45.66 } & 9:30.34 & 0:02.25 & 0:39.75 & 1:40.54 & {\bf 10:12.34 } & {\bf 11:13.13 } \\ \hline
-900 & 6:33.67 & 0:07.83 & {\bf 6:41.50 } & 10:55.35 & 0:02.47 & 0:50.01 & 2:22.95 & {\bf 11:47.83 } & {\bf 13:20.77 } \\ \hline
-1000 & 7:15.78 & 0:09.25 & {\bf 7:25.03 } & 11:54.37 & 0:02.54 & 1:04.56 & 2:58.86 & {\bf 13:01.47 } & {\bf 14:55.77 } \\ \hline
+& k-mers & indexing & {\bf Total} & pick\_otus & make\_otu & bdiv\_wu & bdiv\_bc & {\bf Total (wu)} & {\bf Total (bc)}  \\ \thickhline
+100 & 0:43.08 & 0:00.74 & {\bf 0:43.82 } & 0:56.55 & 0:01.33 & 0:01.46 & 0:01.52 & {\bf 0:59.34} & {\bf 0:59.40} \\ \hline
+200 & 1:25.16 & 0:01.51 & {\bf 1:26.67 } & 1:59.69 & 0:01.41 & 0:02.79 & 0:03.31 & {\bf 2:03.89} & {\bf 2:04.41} \\ \hline
+300 & 2:10.24 & 0:02.40 & {\bf 2:12.64 } & 2:53.94 & 0:01.59 & 0:05.09 & 0:07.61 & {\bf 3:00.62} & {\bf 3:03.14} \\ \hline
+400 & 2:44.32 & 0:03.13 & {\bf 2:47.45 } & 3:41.92 & 0:01.40 & 0:08.56 & 0:14.67 & {\bf 3:51.88} & {\bf 3:57.99} \\ \hline
+500 & 3:37.39 & 0:04.31 & {\bf 3:41.70 } & 5:33.65 & 0:01.77 & 0:14.82 & 0:28.01 & {\bf 5:50.24} & {\bf 6:03.43} \\ \hline
+600 & 4:17.47 & 0:05.45 & {\bf 4:22.92 } & 6:42.26 & 0:01.98 & 0:21.03 & 0:46.02 & {\bf 7:05.27} & {\bf 7:30.26} \\ \hline
+700 & 5:08.55 & 0:06.00 & {\bf 5:14.55 } & 7:52.58 & 0:02.15 & 0:28.10 & 1:08.47 & {\bf 8:22.83} & {\bf 9:03.20} \\ \hline
+800 & 5:38.59 & 0:07.07 & {\bf 5:45.66 } & 9:30.34 & 0:02.25 & 0:39.75 & 1:40.54 & {\bf 10:12.34} & {\bf 11:13.13} \\ \hline
+900 & 6:33.67 & 0:07.83 & {\bf 6:41.50 } & 10:55.35 & 0:02.47 & 0:50.01 & 2:22.95 & {\bf 11:47.83} & {\bf 13:20.77} \\ \hline
+1000 & 7:15.78 & 0:09.25 & {\bf 7:25.03 } & 11:54.37 & 0:02.54 & 1:04.56 & 2:58.86 & {\bf 13:01.47} & {\bf 14:55.77} \\ \hline
 \end{tabular}
 \begin{flushleft}
 Interpretation of headings: \textit{size} is the number of samples, used for index construction. 
-\textit{k-mers} is the time spent on k-mer counting. 
+\textit{k-mers} is the time spent on k-mer counting.
 \textit{indexing} is the time spent on vp-tree construction, including calculation of necessary RJSD distance values.
 \textit{Total} is the total time of processing by Amquery.
-\textit{pick\_otus} is the total time spent by pick\_otus.py script.
-\textit{make\_otu} is the total time spent by make\_otu\_table.py script.
-\textit{bdiv (wu)} and \textit{bdiv (bc)} are the total time spent by beta\_diversity.py script for weighted Unifrac and Bray-Curtis similarities accordingly.
-\textit{Total (wu)} and \textit{Total (bc)} are the total time spent by QIIME pipeline for weighted Unifrac and Bray-Curtis similarities accordingly.
+\textit{pick\_otus} and \textit{make\_otu} are the total time spent by the \texttt{pick\_otus.py} and the \texttt{make\_otu\_table.py} scripts accordingly.
+\textit{bdiv\_wu} and \textit{bdiv\_bc} are the total time spent by the \texttt{beta\_diversity.py} script for weighted Unifrac and Bray-Curtis similarities accordingly.
+\textit{Total (wu)} and \textit{Total (bc)} are the total time spent by the QIIME pipeline for weighted Unifrac and Bray-Curtis similarities accordingly.
 \end{flushleft}
 \label{table1}
+\end{adjustwidth}
+\end{table}
+
+
+
+\begin{table}[!ht]
+\begin{adjustwidth}{-2.25in}{0in} % Comment out/remove adjustwidth environment if table fits in text column.
+\centering
+\caption{{\bf Measurements of processing time (mm:ss.ms or hh:mm:ss.ms) of \textit{de novo} based QIIME pipeline }}
+\begin{tabular}{|l+l|l|l|l|l|l|l|l|l|l|}
+\hline
+\textit{size} & \multicolumn{10}{|l|}{\bf \textit{De novo} based QIIME}\\ \hline
+& pick\_otus & rep\_set & align & filt\_aln & make\_phyl & make\_otu & bdiv\_wu & bdiv\_bc & {\bf Total (wu)} & {\bf Total (bc)}  \\ \thickhline
+100 & 0:30.08 & 0:02.73 & 8:16.56 & 0:26.63 & 2:48.41 & 0:01.29 & 0:02.48 & 0:01.28 & {\bf 12:08.18} & {\bf 12:06.98} \\ \hline
+200 & 1:03.83 & 0:04.11 & 15:33.94 & 0:46.64 & 5:10.33 & 0:01.46 & 0:07.04 & 0:03.14 & {\bf 22:47.35} & {\bf 22:43.45} \\ \hline
+300 & 1:48.02 & 0:05.69 & 21:56.02 & 1:15.08 & 8:42.55 & 0:01.38 & 0:21.08 & 0:06.89 & {\bf 34:09.82} & {\bf 33:55.63} \\ \hline
+400 & 2:25.44 & 0:06.97 & 26:42.65 & 1:26.78 & 11:38.27 & 0:01.52 & 0:40.01 & 0:13.04 & {\bf 43:01.64} & {\bf 42:34.67} \\ \hline
+500 & 3:33.26 & 0:08.66 & 36:45.55 & 2:01.01 & 17:12.79 & 0:01.82 & 1:22.73 & 0:25.17 & {\bf 01:01:05.82} & {\bf 01:00:08.26} \\ \hline
+600 & 4:38.02 & 0:10.59 & 42:20.45 & 2:26.52 & 22:15.39 & 0:01.75 & 2:22.34 & 0:42.02 & {\bf 01:14:15.06} & {\bf 01:12:34.74} \\ \hline
+700 & 5:35.56 & 0:11.72 & 48:38.01 & 2:37.39 & 24:16.03 & 0:01.90 & 3:28.34 & 1:04.51 & {\bf 01:24:48.95} & {\bf 01:22:25.12} \\ \hline
+800 & 7:03.39 & 0:13.10 & 55:14.31 & 2:55.26 & 27:43.87 & 0:02.19 & 7:49.36 & 1:32.94 & {\bf 01:41:01.48} & {\bf 01:34:45.06} \\ \hline
+900 & 8:16.08 & 0:14.90 & 1:00:22 & 3:32.20 & 32:22.70 & 0:02.25 & 7:31.52 & 2:09.78 & {\bf 01:52:21.65} & {\bf 01:46:59.91} \\ \hline
+1000 & 9:08.44 & 0:16.10 & 1:01:21 & 3:42.98 & 36:39.14 & 0:02.41 & 9:46.51 & 2:52.90 & {\bf 02:00:56.58} & {\bf 01:54:02.97} \\ \hline
+\end{tabular}
+\begin{flushleft}
+
+\textit{pick\_otus}, \textit{make\_otu}, \textit{bdiv\_wu}, \textit{bdiv\_bc}, \textit{Total (wu)} and \textit{Total (bc)} columns have the same meanings as in the Table~\ref{table1}.
+\textit{rep\_set}, \textit{align}, \textit{filt\_aln} and \textit{make\_phyl} contain the total time spent by the
+\texttt{pick\_rep\_set.py}, \texttt{align\_seqs.py}, \texttt{filter\_alignment.py} and \texttt{make\_phylogeny.py} scripts accordingly.
+
+\end{flushleft}
+\label{table2}
 \end{adjustwidth}
 \end{table}
 
@@ -342,11 +406,11 @@ Interpretation of headings: \textit{size} is the number of samples, used for ind
 \begin{table}[!ht]
 \begin{adjustwidth}{-2.25in}{0in} % Comment out/remove adjustwidth environment if table fits in text column.
 \centering
-\caption{{\bf Peak RAM usage of Amquery and QIIME-base pipelines }}
+\caption{{\bf Peak RAM usage of Amquery and reference-based QIIME pipelines }}
 \begin{tabular}{|l+l|l|l|l|l|l|l|}
 \hline
 \textit{size} & {\bf Amquery} & \multicolumn{6}{|l|}{\bf Reference-based QIIME}\\ \hline
-& {\bf Peak} & pick\_otus & make\_otu & bdiv (wu) & beta\_div (bc) & {\bf Peak (wu)} & {\bf Peak (bc)}  \\ \thickhline
+& {\bf Peak} & pick\_otus & make\_otu & bdiv\_wu & bdiv\_bc & {\bf Peak (wu)} & {\bf Peak (bc)}  \\ \thickhline
 100 & 100Mb & 242Mb & 120Mb & 145Mb & 135Mb & 242Mb & 242Mb \\ \hline
 200 & 149Mb & 344Mb & 130Mb & 209Mb & 197Mb & 344Mb & 344Mb \\ \hline
 300 & 222Mb & 437Mb & 135Mb & 295Mb & 275Mb & 437Mb & 437Mb \\ \hline
@@ -359,11 +423,43 @@ Interpretation of headings: \textit{size} is the number of samples, used for ind
 1000 & 515Mb & 1.0Gb & 183Mb & 1.4Gb & 1.4Gb & 1.4Gb & 1.4Gb \\ \hline
 \end{tabular}
 \begin{flushleft}
-Interpretation of headings is similar to the Table~\ref{table1}. \textit{Peak} columns present the peak RAM usage of corresponding pipelines.   
+Column naming notation corresponds to the Table~\ref{table1}. \textit{Peak} columns present the peak RAM usage of corresponding pipelines.   
 \end{flushleft}
-\label{table2}
+\label{table3}
 \end{adjustwidth}
 \end{table}
+
+
+
+\begin{table}[!ht]
+\begin{adjustwidth}{-2.25in}{0in} % Comment out/remove adjustwidth environment if table fits in text column.
+\centering
+\caption{{\bf Peak RAM usage of \textit{de novo} based QIIME pipeline }}
+\begin{tabular}{|l+l|l|l|l|l|l|l|l|l|l|}
+\hline
+\textit{size} & \multicolumn{10}{|l|}{\bf \textit{De novo} based QIIME}\\ \hline
+& pick\_otus & rep\_set & align & filt\_aln & make\_phyl & make\_otu & bdiv\_wu & bdiv\_bc & {\bf Peak (wu)} & {\bf Peak (bc)}  \\ \thickhline
+
+100 & 174Mb & 174Mb & 298Mb & 166Mb & 149Mb & 118Mb & 169Mb & 132Mb & 298Mb & 298Mb \\ \hline
+200 & 250Mb & 234Mb & 424Mb & 211Mb & 173Mb & 123Mb & 259Mb & 184Mb & 424Mb & 424Mb \\ \hline
+300 & 345Mb & 295Mb & 578Mb & 269Mb & 205Mb & 131Mb & 407Mb & 264Mb & 578Mb & 578Mb \\ \hline
+400 & 404Mb & 356Mb & 638Mb & 291Mb & 281Mb & 137Mb & 541Mb & 353Mb & 638Mb & 638Mb \\ \hline
+500 & 545Mb & 420Mb & 822Mb & 363Mb & 377Mb & 142Mb & 793Mb & 492Mb & 822Mb & 822Mb \\ \hline
+600 & 645Mb & 476Mb & 976Mb & 422Mb & 462Mb & 151Mb & 1Gb & 650Mb & 1Gb & 976Mb\\ \hline
+700 & 716Mb & 553Mb & 1.0Gb & 445Mb & 500Mb & 161Mb & 1.3Gb & 803Mb & 1.3Gb & 1.0Gb\\ \hline
+800 & 791Mb & 607Mb & 1.1Gb & 478Mb & 548Mb & 167Mb & 1.6Gb & 981Mb & 1.6Gb & 1.1Gb\\ \hline
+900 & 871Mb & 666Mb & 1.3Gb & 548Mb & 570Mb & 174Mb & 2.Gb & 1.1Gb & 2.Gb & 1.3Gb\\ \hline
+1000 & 903Mb & 726Mb & 1.4Gb & 568Mb & 676Mb & 179Mb & 2.2Gb & 1.3Gb & 2.2Gb & 1.4Gb \\ \hline
+
+\end{tabular}
+\begin{flushleft}
+Column namings correspond to the tables above.   
+\end{flushleft}
+\label{table3}
+\end{adjustwidth}
+\end{table}
+
+
 
 
 \subsection*{Similarity search effectiveness}
@@ -383,22 +479,17 @@ $R(q, r)$ values for these metrics are binarized as follows:
 
 MP@k, MAP@k, NDCG@k evaluation results presented in Fig~\ref{fig1}, Fig~\ref{fig2} and Fig~\ref{fig3} respectively.
 
-\begin{figure}[!h]
-\caption{{\bf Mean precision at k for Amquery search queries and random sampling from the index as baseline.}
-A: According to weighted Unifrac based relevance function. B: According to Bray-Curtis similarity based relevance function.}
-\label{fig1}
-\end{figure}
 
 \begin{figure}[!h]
 \caption{{\bf Mean average precision at k for Amquery search queries and random sampling from the index as baseline.}
 A: According to weighted Unifrac based relevance function. B: According to Bray-Curtis similarity based relevance function.}
-\label{fig2}
+\label{fig3}
 \end{figure}
 
 \begin{figure}[!h]
 \caption{{\bf Normalized cumulative discounted gain at k for Amquery search queries and random sampling from the index as baseline.}
 A: According to weighted Unifrac based relevance function. B: According to Bray-Curtis similarity based relevance function.}
-\label{fig3}
+\label{fig4}
 \end{figure}
 
 
