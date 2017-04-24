@@ -321,21 +321,6 @@ C: Measurements of elapsed time, spended for RJSD metric indexing by Amquery. No
 \label{fig2}
 \end{figure}
 
-\begin{figure}[!h]
-\caption{{\bf Peak RAM Usage for QIIME (reference-based OTU picking) and Amquery pipelines for sets of samples of different size.}
-A, B: Peak RAM usage during reference-based OTU picking and beta-diversity analysis by QIIME using Bray-Curtis similarity (A) and weighted Unifrac (B). 
-C: Peak RAM usage during sample indexing by Amquery.}
-\label{fig3}
-\end{figure}
-
-\begin{figure}[!h]
-\caption{{\bf Peak RAM Usage for QIIME (\textit{de novo} OTU picking) and Amquery pipelines for sets of samples of different size.}
-A, B: Peak RAM usage during \textit{de novo} OTU picking and beta-diversity analysis by QIIME using Bray-Curtis similarity (A) and weighted Unifrac (B). 
-C: Peak RAM usage during sample indexing by Amquery, the same as Fig~\ref{fig3}.C subfigure in the scale of A and B measurements.}
-\label{fig4}
-\end{figure}
-
-
 \begin{table}[!ht]
 \begin{adjustwidth}{-2.25in}{0in} % Comment out/remove adjustwidth environment if table fits in text column.
 \centering
@@ -402,6 +387,21 @@ Interpretation of headings: \textit{size} is the number of samples, used for ind
 
 
 
+\begin{figure}[!h]
+\caption{{\bf Peak RAM Usage for QIIME (reference-based OTU picking) and Amquery pipelines for sets of samples of different size.}
+A, B: Peak RAM usage during reference-based OTU picking and beta-diversity analysis by QIIME using Bray-Curtis similarity (A) and weighted Unifrac (B). 
+C: Peak RAM usage during sample indexing by Amquery.}
+\label{fig3}
+\end{figure}
+
+\begin{figure}[!h]
+\caption{{\bf Peak RAM Usage for QIIME (\textit{de novo} OTU picking) and Amquery pipelines for sets of samples of different size.}
+A, B: Peak RAM usage during \textit{de novo} OTU picking and beta-diversity analysis by QIIME using Bray-Curtis similarity (A) and weighted Unifrac (B). 
+C: Peak RAM usage during sample indexing by Amquery, the same as Fig~\ref{fig3}.C subfigure in the scale of A and B measurements.}
+\label{fig4}
+\end{figure}
+
+
 
 \begin{table}[!ht]
 \begin{adjustwidth}{-2.25in}{0in} % Comment out/remove adjustwidth environment if table fits in text column.
@@ -455,7 +455,7 @@ Column naming notation corresponds to the Table~\ref{table1}. \textit{Peak} colu
 \begin{flushleft}
 Column namings correspond to the tables above.   
 \end{flushleft}
-\label{table3}
+\label{table4}
 \end{adjustwidth}
 \end{table}
 
@@ -464,32 +464,26 @@ Column namings correspond to the tables above.
 
 \subsection*{Similarity search effectiveness}
 To estimate relevance of similarity search, provided by Amquery, mean precision at k (MP@K), mean average precision at k (MAP@K), and normalized cumulative discounted gain at k (NCDG@k) \cite{book, jarvelin2000ir, jarvelin2002cumulated}
-are evaluated, with the relevance function, declared as follows. For every search query $q$, all the pairwise distances $dist_{QIIME}(q, x)$, provided by QIIME, from $q$ to every sample $x$ in the index, are normalized. 
-Thus, resulting relevance value $R(q, r)$ for search output result $r$ is value $dist_{QIIME}(q, r)$, normalized over all the $dist_{QIIME}(q, x)$. Here we use the notation of $dist_{QIIME}(q, r)$ for weighted Unifrac and Bray-Curtis similarity distances.
+are evaluated, with the relevance function, declared as follows. For every search query $q$, all the pairwise distances $D(q, x)$ provided by QIIME pipeline from $q$ to every sample $x$ in the index, are normalized. 
+Thus, resulting relevance value $R(q, r)$ for search output result $r$ is the value $1 - \hat{D}(q, r)$, whree $\hat{D}$ is the normalized value of $D(q, x)$ over all the $x$ in the index. Here we use the notation of $D(q, r)$ for weighted Unifrac and Bray-Curtis similarity distances.
 
-All effectiveness metrics are evaluated among all the dataset splits, mentioned above, for search query size $k = {1, 3, 5, 7, 10, 15, 20}$ and 100 random samples from the index. Since precision metrics as MP@k and MAP@k require binary relevance function,
+All the metrics are evaluated among all the dataset splits, mentioned above, for search query size $k = {1, 3, 5, 7, 10, 15, 20}$ and 100 random samples from the index. Since precision metrics as MP@k and MAP@k require binary relevance function,
 $R(q, r)$ values for these metrics are binarized as follows:
 
 \[ R_b(q, r)  =
   \begin{cases}
-    1  & r \text{ in top-} k \text{ nearest samples of } q, \text{ according to } dist_{QIIME}\\
+    1  & r \text{ in top-} k \text{ nearest samples of } q, \text{ according to } D(q, r)\\
     0  &  otherwise \\
   \end{cases}
 \] 
 
-MP@k, MAP@k, NDCG@k evaluation results presented in Fig~\ref{fig1}, Fig~\ref{fig2} and Fig~\ref{fig3} respectively.
+MP@k, MAP@k, NDCG@k evaluation results presented in the Fig~\ref{fig5}.
 
 
 \begin{figure}[!h]
-\caption{{\bf Mean average precision at k for Amquery search queries and random sampling from the index as baseline.}
-A: According to weighted Unifrac based relevance function. B: According to Bray-Curtis similarity based relevance function.}
-\label{fig3}
-\end{figure}
-
-\begin{figure}[!h]
-\caption{{\bf Normalized cumulative discounted gain at k for Amquery search queries and random sampling from the index as baseline.}
-A: According to weighted Unifrac based relevance function. B: According to Bray-Curtis similarity based relevance function.}
-\label{fig4}
+\caption{{\bf MP@k (A, D), MAP@k (B, E) and NDCG@k (C, F) for Amquery search queries and random sampling from the index as a baseline, according to relevance functions, based on the reference-based QIIME pipeline result.}
+A, B, C are calculated according to weighted Unifrac, while D, E, F are calculated according to Bray-Curtis similarity as a relevance function.}
+\label{fig5}
 \end{figure}
 
 

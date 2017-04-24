@@ -38,8 +38,9 @@ class KmerCountFunction:
         if os.path.exists(sample.make_kmer_index_obj_filename(self.config)):
             sample.load_kmer_index(self.config)
         else:
-            kmer_ref_list = [np.concatenate([self._count_seq(seq), self._count_seq(self.rev_c(seq))])
-                             for seq in sample.iter_seqs()]
+            #kmer_ref_list = [np.concatenate([self._count_seq(seq), self._count_seq(self.rev_c(seq))])
+            #                 for seq in sample.iter_seqs()]
+            kmer_ref_list = [self._count_seq(seq) for seq in sample.iter_seqs()]
             counter = Counter(np.concatenate(kmer_ref_list))
             cols = np.array(sorted(list(counter.keys())), dtype=np.uint64)
             data = np.array([counter[key] for key in cols], dtype=np.float)

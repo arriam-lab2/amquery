@@ -44,15 +44,22 @@ precision.combined <- function(files) {
     p1 <- precision.plot(files[1], files[2]) + labs(x="")
     p2 <- precision.plot(files[3], files[4]) + labs(x="Search size, k")
     p3 <- precision.plot(files[5], files[6]) + labs(x="")
+    p4 <- precision.plot(files[7], files[8]) + labs(x="")
+    p5 <- precision.plot(files[9], files[10]) + labs(x="Search size, k")
+    p6 <- precision.plot(files[11], files[12]) + labs(x="")
 
     prow <- plot_grid(
         p1 + theme(legend.position="none"),
         p2 + theme(legend.position="none"),
         p3 + theme(legend.position="none"),
+        p4 + theme(legend.position="none"),
+        p5 + theme(legend.position="none"),
+        p6 + theme(legend.position="none"),
+
         align = 'vh',
-        labels = c("A", "B", "C"),
+        labels = c("A", "B", "C", "D", "E", "F"),
         hjust = -1,
-        nrow = 1
+        nrow = 2
     )
 
     legend <- get_legend(p1)
@@ -208,11 +215,9 @@ mem.denovo.combined <- function(filename) {
 }
 
 
-p1 <- precision.combined(c('wu_mp_at_k.txt', 'wu_bmp_at_k.txt', 'wu_map_at_k.txt', 'wu_bmap_at_k.txt', 'wu_gain_at_k.txt', 'wu_bgain_at_k.txt'))
-ggsave("wu_precision.tiff", p1, width=18, height=8, units="cm")
-
-p2 <- precision.combined(c('bc_mp_at_k.txt', 'bc_bmp_at_k.txt', 'bc_map_at_k.txt', 'bc_bmap_at_k.txt', 'bc_gain_at_k.txt', 'bc_bgain_at_k.txt'))
-ggsave("bc_precision.tiff", p2, width=18, height=8, units="cm")
+p1 <- precision.combined(c('wu_mp_at_k.txt', 'wu_bmp_at_k.txt', 'wu_map_at_k.txt', 'wu_bmap_at_k.txt', 'wu_gain_at_k.txt', 'wu_bgain_at_k.txt',
+                           'bc_mp_at_k.txt', 'bc_bmp_at_k.txt', 'bc_map_at_k.txt', 'bc_bmap_at_k.txt', 'bc_gain_at_k.txt', 'bc_bgain_at_k.txt'))
+ggsave("ref_precision.tiff", p1, width=18, height=16, units="cm")
 
 p3 <- time.ref.combined('ref_time.txt')
 ggsave("ref_time.tiff", p3, width=18, height=9, units="cm")
