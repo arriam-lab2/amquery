@@ -7,7 +7,6 @@ import json
 from typing import Callable, Any, Sequence, Mapping, Tuple
 
 from amquery.core.distance import PwMatrix
-from amquery.core.coord_system import CoordSystem
 from amquery.core.sample import Sample
 from amquery.core.sample_map import SampleMap
 from amquery.core.tree.search import neighbors
@@ -107,23 +106,13 @@ class BaseVpTree:
     def empty(cls):
         return cls(None, 0, None, None, None)
 
-def euclidean(a: np.array, b: np.array):
-    return np.linalg.norm(a - b)
 
-
-# Euclidean distance in a proper coordinate system
 class TreeDistance:
-    def __init__(self,
-                 coord_system: CoordSystem,
-                 pwmatrix: PwMatrix):
-
-        self.coord_system = coord_system
+    def __init__(self, pwmatrix: PwMatrix):
         self.pwmatrix = pwmatrix
 
     def __call__(self, a: Sample, b: Sample):
-        x = np.array([self.pwmatrix[a, c] for c in self.coord_system.values()])
-        y = np.array([self.pwmatrix[b, c] for c in self.coord_system.values()])
-        return euclidean(x, y)
+        return self.pwmatrix[a, b]
 
     @property
     def samples(self) -> Sequence[Any]:
@@ -150,6 +139,10 @@ class VpTree:
 
     @measure_time(enabled=True)
     def build(self, tree_distance: Callable):
+        # filling diagonal of the pairwise matrix
+        for sample in tree_distance.samples:
+            tree_distance(sample, sample)
+
         self.tree.build(list(tree_distance.samples), tree_distance)
         return self
 
@@ -163,6 +156,8 @@ class VpTree:
     def add_sample(self,
                    sample: Sample,
                    tree_distance: Callable):
+        # filling diagonal of the pairwise matrix
+        tree_distance(sample, sample)
         tree_distance.add_sample(sample)
         self.tree.insert(sample, tree_distance)
 

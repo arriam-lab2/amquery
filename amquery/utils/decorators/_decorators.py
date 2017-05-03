@@ -2,9 +2,9 @@ def singleton(cls):
     instances = {}
 
     @staticmethod
-    def instance(*args):
+    def instance(*args, **kwargs):
         if cls not in instances:
-            instances[cls] = cls(*args)
+            instances[cls] = cls(*args, **kwargs)
 
         return instances[cls]
 

@@ -1,18 +1,14 @@
 from typing import Callable, Iterable, List
 import itertools
-import os
 import multiprocessing as mp
 
 from amquery.utils.decorators import singleton
 
-N_JOBS = int(os.getenv("PWM_JOBS", 1))
-
 
 @singleton
 class Pool:
-
-    def __init__(self):
-        self.pool = mp.Pool(processes=N_JOBS)
+    def __init__(self, **kwargs):
+        self.pool = mp.Pool(processes=kwargs.get("jobs", 1))
         self.manager = mp.Manager()
         self.queue = self.manager.Queue()
 
@@ -25,7 +21,6 @@ class Pool:
 
 
 class PackedUnaryFunction:
-
     def __init__(self,
                  func: Callable,
                  queue: mp.Queue):
@@ -38,7 +33,6 @@ class PackedUnaryFunction:
 
 
 class PackedBinaryFunction:
-
     def __init__(self,
                  func: Callable,
                  queue: mp.Queue):

@@ -1,12 +1,11 @@
 import numpy as np
 from collections import Counter
 from typing import List
-from ctypes import POINTER, c_uint8, c_uint64, c_size_t, c_int
+from ctypes import POINTER, c_uint8, c_uint64
 
 from amquery.core.kmers_distr.sparse_array import SparseArray
 from amquery.core.kmers_distr.lexrank import ranklib
 from amquery.core.sample import Sample
-
 from amquery.utils.benchmarking import measure_time
 from amquery.utils.ui import progress_bar
 from amquery.utils.multiprocess import Pool
@@ -49,7 +48,7 @@ class KmerCountFunction:
 def kmerize_samples(sample_files: List[str], k: int):
     packed_task = KmerCountFunction(k, Pool.instance().queue)
     result = Pool.instance().map_async(packed_task, sample_files)
-    progress_bar(result, Pool.instance().queue, len(sample_files))
+    progress_bar(result, Pool.instance().queue, len(sample_files), 'Counting k-mers:')
 
     samples = result.get()
     Pool.instance().clear()

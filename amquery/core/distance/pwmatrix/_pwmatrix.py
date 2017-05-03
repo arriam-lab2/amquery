@@ -1,17 +1,11 @@
 from typing import Callable, List
-import itertools
 import numpy as np
 import pandas as pd
-import scipy.spatial.distance
 
 from amquery.core.distance.metrics import distances
 from amquery.core.sample_map import SampleMap
 from amquery.core.sample import Sample
-
-from amquery.utils.ui import progress_bar
 from amquery.utils.config import Config
-from amquery.utils.benchmarking import measure_time
-from amquery.utils.multiprocess import Pool, PackedBinaryFunction
 
 
 class PwMatrix:
@@ -27,28 +21,12 @@ class PwMatrix:
         self.__dataframe = dataframe
         self.__distfunc = distance_func
 
-    @staticmethod
-    @measure_time(enabled=True)
-    def create(config: Config, sample_map: SampleMap):
-        distributions = [x.kmer_index(config) \
-                         for x in sample_map.samples]
-        pairs = list(itertools.combinations(distributions, 2))
-        distance_func = distances[config.dist.func]
-
-        packed_task = PackedBinaryFunction(
-            distance_func, Pool.instance().queue)
-        result = Pool.instance().map_async(packed_task, pairs)
-        progress_bar(result, Pool.instance().queue, len(pairs))
-
-        data = result.get()
-        Pool.instance().clear()
-        matrix = scipy.spatial.distance.squareform(data)
-        dataframe = pd.DataFrame(matrix,
-                                 index=sample_map.labels,
+    @classmethod
+    def create(cls, config: Config, sample_map: SampleMap):
+        dataframe = pd.DataFrame(index=sample_map.labels,
                                  columns=sample_map.labels)
 
-        return PwMatrix(config, sample_map, dataframe,
-                        distances[config.dist.func])
+        return cls(config, sample_map, dataframe, distances[config.dist.func])
 
     @staticmethod
     def load(config: Config):
@@ -91,7 +69,7 @@ class PwMatrix:
             value = self.__distfunc(a.kmer_index(self.config),
                                     b.kmer_index(self.config))
 
-            self.__dataframe[a.name][b.name] = value
+            self.__dataframe[a.name][b.name] = value if not np.isnan(value) else 0.0
 
         return self.dataframe[a.name][b.name]
 

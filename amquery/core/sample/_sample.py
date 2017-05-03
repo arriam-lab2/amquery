@@ -13,7 +13,6 @@ from amquery.utils.decorators import hide_field
 
 
 class SampleFile:
-
     def __init__(self, path: str):
         self._path = path
         self._format = os.path.splitext(os.path.basename(path))[1][1:]
@@ -44,6 +43,7 @@ def _validate(sequence: Sequence[Any]):
 def _transform(sequence: Sequence[Any]) -> List:
     return np.array([_alphabet[char] for char in sequence], dtype=np.uint8)
 
+
 def _md5_hash(string: str) -> str:
     m = hashlib.md5()
     m.update(string.encode("utf8"))
@@ -51,7 +51,6 @@ def _md5_hash(string: str) -> str:
 
 
 class Sample:
-
     def __init__(self, source_file: str):
         self._name = _md5_hash(source_file)
         self._original_name = os.path.splitext(os.path.basename(source_file))[0]

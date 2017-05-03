@@ -12,13 +12,16 @@ from amquery.core.tree.vptree import VpTree
 class ConfigMock:
     pass
 
+
 class SampleMock:
     def __init__(self, name, values):
         self.name = name
         self.values = values
 
+
 def euclidean(a: np.array, b: np.array):
     return np.linalg.norm(a - b)
+
 
 class SampleDistanceMock:
     def __init__(self, function, sample_map):
@@ -35,8 +38,10 @@ class SampleDistanceMock:
     def add_sample(self, sample):
         self.sample_map[sample.name] = sample
 
+
 class SampleMapMock(dict):
     pass
+
 
 def random_name():
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
@@ -61,7 +66,6 @@ class TestVptree(unittest.TestCase):
 
         vptree_file = tempfile.NamedTemporaryFile(delete=False)
         self.config.vptree_path = vptree_file.name
-
 
     def test_search(self):
         self._test_search(self.tree)
