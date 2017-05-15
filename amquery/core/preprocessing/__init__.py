@@ -1,5 +1,6 @@
-from .vptree import *
-from .search import *
+from ._preprocessor import Preprocessor
+from .dummy import DummyPreprocessor
+from .kmer_counter import KmerCounter
 
 
 __license__ = "MIT"

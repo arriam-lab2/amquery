@@ -1,4 +1,8 @@
-from ._config import Config
+from ._config import get_default_config, \
+    read_config, \
+    get_distance_path, \
+    get_storage_path, \
+    get_kmers_dir
 
 
 __license__ = "MIT"

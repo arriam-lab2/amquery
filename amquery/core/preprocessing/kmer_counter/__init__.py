@@ -1,4 +1,4 @@
-from ._kmer_index import kmerize_samples
+from ._kmer_counter import KmerCounter
 
 
 __license__ = "MIT"

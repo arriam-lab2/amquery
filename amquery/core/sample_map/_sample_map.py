@@ -4,18 +4,17 @@ import os
 import json
 
 from amquery.utils.iof import make_sure_exists
-from amquery.utils.config import Config
 from amquery.utils.decorators import hide_field
 from amquery.core.sample import Sample
 
 
 class SampleMap(dict):
-    def __init__(self, config: Config, *args, **kwargs):
+    def __init__(self, config, *args, **kwargs):
         self.config = config
         super(SampleMap, self).__init__(*args, **kwargs)
 
     @staticmethod
-    def load(config: Config):
+    def load(config):
         with open(config.sample_map_path) as json_data:
             hash_list = json.load(json_data)
             samples = { hash: Sample.load(config, os.path.join(config.sample_dir, hash)) \

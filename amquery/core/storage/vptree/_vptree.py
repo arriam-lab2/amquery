@@ -1,17 +1,15 @@
 #!/usr/bin/env python3
 
-import itertools
-import random
 import numpy as np
+import itertools
 import json
-from typing import Callable, Any, Sequence, Mapping, Tuple
-
-from amquery.core.distance import PwMatrix
+import random
 from amquery.core.sample import Sample
 from amquery.core.sample_map import SampleMap
-from amquery.core.tree.search import neighbors
-from amquery.utils.config import Config
+from amquery.core.storage.vptree.search import neighbors
 from amquery.utils.benchmarking import measure_time
+from amquery.utils.config import get_storage_path
+from amquery.core.storage import Storage
 
 
 # Vantage-point tree
@@ -23,7 +21,12 @@ class BaseVpTree:
         self.left = left
         self.right = right
     
-    def build(self, points: np.array, func: Callable):
+    def build(self, func, points):
+        """
+        :param func: Callable
+        :param points: np.array
+        :return: BaseVpTree
+        """
         if len(points) == 1:
             self.vp = points[0]
             self.size = 1
@@ -45,15 +48,15 @@ class BaseVpTree:
                          if distarr[i] > self.median]
 
             if len(leftside) > 0:
-                self.left = BaseVpTree.from_points(leftside, func)
+                self.left = BaseVpTree.from_points(func, leftside)
                 self.size += self.left.size
             if len(rightside) > 0:
-                self.right = BaseVpTree.from_points(rightside, func)
+                self.right = BaseVpTree.from_points(func, rightside)
                 self.size += self.right.size
 
         return self
 
-    def insert(self, point: Any, func: Callable):
+    def insert(self, point, func):
         if self.size == 0:
             self.vp = point
         else:
@@ -63,12 +66,12 @@ class BaseVpTree:
 
             if distance_value <= self.median:
                 if not self.left:
-                    self.left = BaseVpTree.from_points([point], func)
+                    self.left = BaseVpTree.from_points(func, [point])
                 else:
                     self.left.insert(point, func)
             else:
                 if not self.right:
-                    self.right = BaseVpTree.from_points([point], func)
+                    self.right = BaseVpTree.from_points(func, [point])
                 else:
                     self.right.insert(point, func)
 
@@ -86,7 +89,7 @@ class BaseVpTree:
         return json_dict
 
     @classmethod
-    def from_dict(cls, json_dict: Mapping, sample_map: SampleMap):
+    def from_dict(cls, json_dict, sample_map):
         vp = sample_map[json_dict['vp']]
         size = json_dict['size']
         median = json_dict['median'] if 'median' in json_dict else None
@@ -95,8 +98,8 @@ class BaseVpTree:
         return cls(vp, size, median, left, right)
 
     @classmethod
-    def from_points(cls, points: np.array, func: Callable):
-        return cls.empty().build(points, func)
+    def from_points(cls, func, points):
+        return cls.empty().build(func, points)
 
     @classmethod
     def from_tree(cls, tree):
@@ -108,59 +111,54 @@ class BaseVpTree:
 
 
 class TreeDistance:
-    def __init__(self, pwmatrix: PwMatrix):
+    def __init__(self, pwmatrix):
         self.pwmatrix = pwmatrix
 
-    def __call__(self, a: Sample, b: Sample):
+    def __call__(self, a, b):
         return self.pwmatrix[a, b]
 
     @property
-    def samples(self) -> Sequence[Any]:
+    def samples(self):
         return self.pwmatrix.sample_map.samples
 
     def add_sample(self, sample: Sample) -> None:
         self.pwmatrix.add_sample(sample)
 
 
-class VpTree:
-    def __init__(self, config: Config, vptree: BaseVpTree = None):
+class VpTree(Storage):
+    def __init__(self, vptree = None):
         self.tree = vptree if vptree else BaseVpTree.empty()
-        self.config = config
 
     def save(self):
-        with open(self.config.vptree_path, 'w') as outfile:
+        with open(get_storage_path(), 'w') as outfile:
             json.dump(self.tree.to_dict(), outfile)
 
     @classmethod
-    def load(cls, config: Config, sample_map: SampleMap):
-        with open(config.vptree_path, 'r') as infile:
+    def load(cls):
+        with open(get_storage_path, 'r') as infile:
             json_dict = json.loads(infile.read())
-            return cls(config, BaseVpTree.from_dict(json_dict, sample_map))
+            return cls(BaseVpTree.from_dict(json_dict))
 
-    @measure_time(enabled=True)
-    def build(self, tree_distance: Callable):
-        # filling diagonal of the pairwise matrix
-        for sample in tree_distance.samples:
-            tree_distance(sample, sample)
-
-        self.tree.build(list(tree_distance.samples), tree_distance)
+    #@measure_time(enabled=True)
+    def build(self, distance, samples):
+        """
+        :param distance: PairwiseDistance
+        :param samples: Sequence[Sample]
+        :return: 
+        """
+        self.tree.build(distance, np.array(samples))
         return self
 
     @measure_time(enabled=True)
-    def add_samples(self,
-                    samples: Sequence[Sample],
-                    tree_distance: Callable):
+    def add_samples(self, samples, tree_distance):
         for sample_file in samples:
             self.add_sample(sample_file, tree_distance)
 
-    def add_sample(self,
-                   sample: Sample,
-                   tree_distance: Callable):
+    def add_sample(self, sample, tree_distance):
         # filling diagonal of the pairwise matrix
         tree_distance(sample, sample)
         tree_distance.add_sample(sample)
         self.tree.insert(sample, tree_distance)
 
-    def search(self, query_point: Any, k: int,
-               tree_distance: Callable) -> Tuple[np.array, np.array]:
+    def search(self, query_point, k,tree_distance):
         return neighbors(self.tree, query_point, k, tree_distance)

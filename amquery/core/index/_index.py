@@ -1,52 +1,79 @@
-from typing import List
+import abc
 
-from amquery.core.distance import PwMatrix
-from amquery.core.tree import VpTree, TreeDistance
-from amquery.core.kmers_distr import kmerize_samples
-from amquery.core.sample_map import SampleMap
-from amquery.utils.config import Config
-from amquery.utils.benchmarking import measure_time
+from amquery.core.distance.factory import Factory as DistanceFactory
+from amquery.core.preprocessing.factory import Factory as PreprocessorFactory
+from amquery.core.storage.factory import Factory as StorageFactory
+from amquery.core.storage import Storage
+from amquery.core.sample import Sample
+from amquery.utils.config import read_config
+
+
+class SampleReference:
+    @abc.abstractmethod
+    def name(self):
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def content(self):
+        raise NotImplementedError()
+
+
+class SampleCollection:
+    @abc.abstractmethod
+    def __getitem__(self, item):
+        """
+        :param item: SampleReference 
+        :return: Sample
+        """
+        raise NotImplementedError()
 
 
 class Index:
-    def __init__(self,
-                 config: Config,
-                 pwmatrix: PwMatrix,
-                 vptree: VpTree):
+    def __init__(self, distance, storage):
+        """
+        :param distance: SampleDistance
+        :param storage: MetricIndexStorage
+        """
+        self._distance = distance
+        self._storage = storage
 
-        self._config = config
-        self._pwmatrix = pwmatrix
-        self._vptree = vptree
-
-    @measure_time(enabled=True)
+    #@measure_time(enabled=True)
     def save(self):
-        self.pwmatrix.save()
-        self.vptree.save()
+        self.distance.save()
+        self.storage.save()
 
     @staticmethod
-    @measure_time(enabled=True)
-    def load(config: Config):
-        pwmatrix = PwMatrix.load(config)
-        vptree = VpTree.load(config, pwmatrix.sample_map)
-        return Index(config, pwmatrix, vptree)
+    #@measure_time(enabled=True)
+    def load(config):
+        distance = SamplePairwiseDistance.load(config)
+        storage = Storage.load(config)
+        return Index(distance, storage)
 
     @staticmethod
-    def build(config: Config, sample_files: List[str]):
-        sample_map = SampleMap(config, kmerize_samples(sample_files,
-                                                       config.dist.kmer_size))
-        pwmatrix = PwMatrix.create(config, sample_map)
-        tree_distance = TreeDistance(pwmatrix)
-        vptree = VpTree(config).build(tree_distance)
+    def build(sample_files):
+        config = read_config()
 
-        return Index(config, pwmatrix, vptree)
+        distance = DistanceFactory.create(config)
+        preprocessor = PreprocessorFactory.create(config)
+        storage = StorageFactory.create(config)
+
+        samples = [Sample(sample_file) for sample_file in sample_files]
+        processed_samples = [preprocessor(sample) for sample in samples]
+        storage.build(distance, processed_samples)
+        return Index(distance, storage)
+
+        #sample_map = SampleMap(kmerize_samples(sample_files, config.dist.kmer_size))
+        #pwmatrix = PwMatrix.create(sample_map)
+        #tree_distance = TreeDistance(pwmatrix)
+        #vptree = VpTree(config).build(tree_distance)
+        #return Index(pwmatrix, vptree)
 
     def refine(self):
         self._pwmatrix = PwMatrix.create(self.config, self.pwmatrix.sample_map)
-        
         tree_distance = TreeDistance(self.pwmatrix)
         self._vptree = VpTree(self.config).build(tree_distance)
 
-    def add(self, sample_files: List[str]):
+    def add(self, sample_files):
         sample_map = SampleMap(self.config,
                                kmerize_samples(sample_files,
                                                self.config.dist.kmer_size)
@@ -68,17 +95,19 @@ class Index:
         return values, points
 
     @property
-    def config(self) -> Config:
+    def config(self):
         return self._config
 
     @property
-    def pwmatrix(self) -> PwMatrix:
-        return self._pwmatrix
+    def distance(self):
+        """
+        :return: PairwiseDistance 
+        """
+        return self._distance
 
     @property
-    def vptree(self) -> VpTree:
-        return self._vptree
-
-    @property
-    def sample_map(self) -> SampleMap:
-        return self.pwmatrix.sample_map
+    def storage(self):
+        """
+        :return: Storage 
+        """
+        return self._storage

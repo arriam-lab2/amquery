@@ -6,7 +6,7 @@ import string
 import random
 from sklearn.neighbors import NearestNeighbors
 
-from amquery.core.tree.vptree import VpTree
+from amquery.core.storage.vptree import VpTree
 
 
 class ConfigMock:

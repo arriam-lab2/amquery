@@ -1,21 +1,18 @@
 import numpy as np
 from collections import Counter
-from typing import List
 from ctypes import POINTER, c_uint8, c_uint64
-
-from amquery.core.kmers_distr.sparse_array import SparseArray
-from amquery.core.kmers_distr.lexrank import ranklib
-from amquery.core.sample import Sample
+from typing import List
+from amquery.core.preprocessing.kmer_counter.lexrank import ranklib
+from amquery.core.distance.kmers_distr.sparse_array import SparseArray
 from amquery.utils.benchmarking import measure_time
-from amquery.utils.ui import progress_bar
 from amquery.utils.multiprocess import Pool
+from amquery.utils.ui import progress_bar
+from amquery.core.preprocessing import Preprocessor
 
 
-class KmerCountFunction:
-
-    def __init__(self, k, queue):
+class KmerCounter(Preprocessor):
+    def __init__(self, k):
         self.k = k
-        self.queue = queue
 
     def _count_seq(self, seq: np.array):
         if seq.size > 0 and seq.size >= self.k:
@@ -28,19 +25,17 @@ class KmerCountFunction:
         else:
             return seq
 
-    def __call__(self, sample_file: str):
-        sample = Sample(sample_file)
-        kmer_refs = np.concatenate(
-            list(self._count_seq(seq) for seq in sample.iter_seqs())
-        )
-
+    def __call__(self, sample):
+        """
+        :param sample: Sample
+        :return: Sample
+        """
+        kmer_refs = np.concatenate(list(self._count_seq(seq) for seq in sample.iter_seqs()))
         counter = Counter(kmer_refs)
         cols = np.array(sorted(list(counter.keys())), dtype=np.uint64)
         data = np.array([counter[key] for key in cols], dtype=np.float)
         data /= np.sum(data)
         sample.set_kmer_index(SparseArray(cols, data))
-
-        self.queue.put(1)
         return sample
 
 
