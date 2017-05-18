@@ -236,46 +236,34 @@ Amquery is freely available at https://github.com/nromashchenko/amquery.
 High-throughput sequencing of 16S amplicon libraries has become a very popular and powerful way of assessing the structure of various microbial communities \cite{qin2010human, seedorf2014bacteria, ligi2014characterization}.
 As the number of published 16S amplicon libraries keeps growing so does the demand for a way to quickly process samples to find related communities similarly to the way BLAST for sequences. Nowadays a single amplicon library can easily contain many thousands of reads, making clustering-based pipelines, implemented in tools such as QIIME \cite{caporaso2010qiime}, inapplicable to large databases. To address these problems, we developed Amquery.
 
+\pagebreak
 
 \section*{Methods}
-There are two main ideas behind the implementation of Amquery. The first is the use of empirical distribution of k-mers as a representation of each library sample. The second is the use of information-theoretic divergence measure as a distance function between these representations. 
+Amquery implements two major components: 1. a $k$-mer counting-based sample preprocessing routine and 2. a metric community dissimilarity measure.
 
-\subsection*{k-mer counting}
-Given a set of 16S amplicon libraries (samples), Amquery begins by representing each of them as a k-mer histogram of corresponding k-mer counts. To reduce memory consumption, each k-mer value is stored as a proper quaternary number.
-More formally, every k-mer of input sequence $s = s_0,\dots,s_{n-1}$ is represented as its \textit{lexicographic rank} $\mathrm{lxr}_k(s)$, which equals to the position of the k-mer in the list of all possible k-mers, sorted lexicographically:
+\subsection*{k-mer counting and sample representation}
+Given a word-length $k$, Amquery represents an arbitrary amplicon library as a discrete probability distribution over the corresponding $k$-mer space. To reduce memory consumption, the $k$-mers are encoded as quaternary values. More formally, each $k$-mer in a sequence $s = s_0,\dots,s_{n-1}$ is represented as its \textit{lexicographic rank} $\mathrm{lxr}_k(s)$, corresponding to the $k$-mer's position in the lexicographically sorted list of all possible $k$-mers.
 
 \begin{eqnarray}
 \label{eq:schemeP}
     \mathrm{lxr}_k(s) = \sum_{i=0}^{k−1} \mathrm{ord}(s_i) \cdot |{\mathcal{L}}|^{k−i−1}
 \end{eqnarray}
-
-Here $\mathrm{ord}(s_i)$ is a value of ordering function at $s_i$ over the alphabet ${\mathcal{L}} = \{A, C, G, T \}$. 
-
-The disadvantage of this approach is the upper limit on the length of k-mer, due to the combinatorial explosion of the number of all possible k-mers. Thus, we assume $k \leq 32$ for x64 machine, which allows for storing a k-mer value in a single machine word.
-The advantage of this representation is that $\mathrm{lxr}_k$ is a special case of Karp-Rabin hash fingerprint \cite{karp1987efficient}, so it is possible to evaluate a quarternary representation $\mathrm{lxr}_k(s_{i:i+k-1})$ of k-mer $s_{i:i+k-1}$, using the value $\mathrm{lxr}_k(s_{i−1:i+k-2})$ of the previous k-mer $s_{i−1:i+k-2}$, in constant time:
+Here $\mathrm{ord}(s_i)$ is a value of ordering function at $s_i$ over the alphabet ${\mathcal{L}} = \{A, C, G, T \}$. The most important advantage of this representation is that $\mathrm{lxr}_k$ is a special case of the Karp-Rabin hash fingerprint \cite{karp1987efficient}, making it possible to map $k$-mer $s_{i:i+k-1}$ to quaternary value $\mathrm{lxr}_k(s_{i:i+k-1})$, given the previous $k$-mer $s_{i−1:i+k-2}$ and its quaternary $\mathrm{lxr}_k(s_{i−1:i+k-2})$, in constant time:
 
 \begin{eqnarray}
 \label{eq:schemeP}
     \mathrm{lxr}_k(s_{i:i+k-1}) = |{\mathcal{L}}| \cdot (\mathrm{lxr}_k(s_{i−1:i+k-2}) − ord(s_{i−1}) \cdot 
 									 |{\mathcal{L}}|^{k−1}) + ord(s_{i+k−1})
 \end{eqnarray}
-
-A set of all lexicographic ranks of k-mers of input sequences is inserted into a counting hash table. Theoretically, a fully k-mer-abundant sample could make this table to grow rapidly, so it is reasonable to limit the size of k-mer to avoid insane expansion of this hash table. Below we demonstrate an example of memory consumption for real metagenomic data on this stage.
+This advantage, however, imposes an upper-bound on the word-length $k$, since the number of possible $k$-mers grows exponentially with increasing word-length. That is, for a $k$-mer value to fit in a single machine word, we assume $k \leq 32$ for x64 architectures.
+Since realistic sample ${k}$-mer distribution vectors are extremely high-dimensional and sparse, Amquery represents them as rank-sorted sparse arrays. In our implementation, a sparse array is a key-value storage in which the keys are the lexicographic ranks and the values are the empirical probabilities (i.e. relative abundances of the corresponding k-mers).
 
 \subsection*{Distance metric}
-At the next stage, the counted k-mers from the previous step are normalized. Since k-mer distribution vectors are high-dimensional and sparse, Amquery represents them as sparse arrays, each of which is sorted in natural order of integer numbers. 
-In our implementation, a sparse array is a key-value storage in which the keys are the lexicographic ranks of corresponding k-mers, and the values are the empirical frequencies.
 
-Thus, each input sample corresponds to a frequency distribution of k-mers, stored implicitly as numbers in the quaternary numeral system. These distributions are compared to each other by square root of \textit{Jensen-Shannon divergence} (RJSD) \cite{lin1991divergence}, which satisfies many statistical properties and fits many cases of high-dimensional spaces in $\mathbb{R^\star}$ as distance metric \cite{fuglede2004jensen, endres2003new}. We make use of the advantage of the specific form of RJSD, presented in \cite{connor2013evaluation}, to speed up distance evaluation over sparse distributions of k-mer frequencies.
-
+After Amquery transforms a set of samples into discrete probability distributions, it is quite natural to use some metric on distributions to compare samples. Amquery utilises the square root of \textit{Jensen-Shannon divergence} (RJSD) \cite{lin1991divergence} that satisfies many statistical properties and fits many cases of high-dimensional spaces in $\mathbb{R^\star}$ as a distance metric \cite{fuglede2004jensen, endres2003new}. We make use of the specific form of RJSD, introduced by Connor et al. \cite{connor2013evaluation}, to speed up distance evaluation over sparse $k$-mer distributions.
 
 \subsection*{Metric indexing}
-Amquery uses vantage-point tree (vp-tree) \cite{yianilos1993data, chavez2001searching} as main data structure to provide efficient metric-based indexing and search, using pairwise distances between input 
-samples, described above.
-Since vantage-point tree is designed to be independent of the space dimension \cite{yianilos1993data}, this allows us to store high-dimensional sparse vectors for virtually no loss of indexing and 
-search performance: it takes $\mathcal{O}(n)$ space and $\mathcal{O}(n \log n)$ time in worst case to be built (for input set of $n$ samples), and search query is argued to be $\mathcal{O}(\log n)$ in time, with some reservations. 
-For more detailed analysis of vp-tree performance, see \cite{yianilos1993data}.
-
+Amquery utilises vantage-point tree (vp-tree) \cite{yianilos1993data, chavez2001searching} as an efficient data structure, providing fast metric-based indexing and search. Since vantage-point tree is designed to be independent of the space dimensionality \cite{yianilos1993data}, this allows us to store high-dimensional sparse vectors with virtually no loss of indexing and search performance: it takes $\mathcal{O}(n)$ space and $\mathcal{O}(n \log n)$ time in the worst case to be built (for an input set of $n$ samples), and a search query is argued to require $\mathcal{O}(\log n)$ of time, with some reservations. For more detailed analysis of vp-tree performance, see \cite{yianilos1993data}.
 
 \section*{Results}
 The implementation of Amquery was compared against our own custom solution of similarity search, based on the classic microbiome analysis QIIME pipeline, in the following fashion.
