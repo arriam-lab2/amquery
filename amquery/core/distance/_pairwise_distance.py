@@ -1,7 +1,10 @@
+import os
 import abc
 import numpy as np
 import pandas as pd
 from amquery.core.distance.metrics import distances
+from amquery.core.sample import Sample
+from amquery.core.sample_map import SampleMap
 from amquery.utils.config import get_distance_path
 
 
@@ -14,7 +17,7 @@ class PairwiseDistance:
         :param item: Tuple[Any, Any]
         :return: float
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class SamplePairwiseDistanceFunction:
@@ -25,26 +28,17 @@ class SamplePairwiseDistanceFunction:
         :param b: Sample
         :return: float
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class SamplePairwiseDistance(PairwiseDistance):
-    def __init__(self, distance_function, dataframe=pd.DataFrame()):
+    def __init__(self, distance_function, dataframe=pd.DataFrame(), sample_map=SampleMap()):
         """
         :param distance_function: SamplePairwiseDistanceFunction
         """
         self._distance_function = distance_function
         self._dataframe = dataframe
-
-    #@classmethod
-    #def create(cls, config):
-    #    """
-    #    :param config: Config
-    #    :return: LazyPairwiseDistance
-    #    """
-    #    #dataframe = pd.DataFrame(index=sample_map.labels, columns=sample_map.labels)
-    #    #return cls(config, sample_map, dataframe, distances[config.dist.func])
-    #    return cls(distances[config.dist.func])
+        self._sample_map = sample_map
 
     @staticmethod
     def load(config):
@@ -52,7 +46,6 @@ class SamplePairwiseDistance(PairwiseDistance):
         :param config: Config 
         :return: SamplePairwiseDistance
         """
-        #sample_map = SampleMap.load(config)
         if os.path.exists(get_distance_path()):
             dataframe = pd.read_csv(get_distance_path(), sep='\t')
             dataframe['id'] = dataframe.keys()
@@ -60,26 +53,42 @@ class SamplePairwiseDistance(PairwiseDistance):
         else:
             dataframe = pd.DataFrame()
 
+        sample_map = SampleMap.load()
         method = config.get('distance', 'method')
-        return SamplePairwiseDistance(distances[method], dataframe=dataframe)
+        return SamplePairwiseDistance(distances[method], dataframe=dataframe, sample_map=sample_map)
 
     def save(self):
         self._dataframe.to_csv(get_distance_path(), sep='\t', na_rep="N/A", index=False)
-        #self._sample_map.save()
+        self._sample_map.save()
 
     def add_sample(self, sample):
         """
-        :param sample: Sample 
+        :param sample: Sample
         :return: None
         """
         if sample.name not in self.labels:
             init_values = [np.nan for x in range(len(self._dataframe))]
             self._dataframe[sample.name] = pd.Series(init_values, index=self.dataframe.index)
             self._dataframe.loc[sample.name] = init_values + [np.nan]
-            #self._sample_map[sample.name] = sample
+            self._sample_map[sample.name] = sample
+
+    def add_samples(self, samples):
+        """
+        :param samples: Sequence[Sample] 
+        :return: None
+        """
+        for sample in samples:
+            self.add_sample(sample)
 
     def __getitem__(self, pair):
         a, b = pair
+        if isinstance(a, np.str) and self._sample_map:
+            a = self._sample_map[a]
+        if isinstance(b, np.str) and self._sample_map:
+            b = self._sample_map[b]
+
+        assert isinstance(a, Sample)
+        assert isinstance(b, Sample)
 
         for x in [a, b]:
             if x.name not in self.labels:

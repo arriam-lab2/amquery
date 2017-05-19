@@ -1,9 +1,7 @@
 import abc
-
 from amquery.core.distance.factory import Factory as DistanceFactory
 from amquery.core.preprocessing.factory import Factory as PreprocessorFactory
 from amquery.core.storage.factory import Factory as StorageFactory
-from amquery.core.storage import Storage
 from amquery.core.sample import Sample
 from amquery.utils.config import read_config
 
@@ -29,13 +27,21 @@ class SampleCollection:
 
 
 class Index:
-    def __init__(self, distance, storage):
+    def __init__(self, distance, preprocessor, storage):
         """
         :param distance: SampleDistance
+        :param preprocessor: Preprocessor
         :param storage: MetricIndexStorage
         """
         self._distance = distance
+        self._preprocessor = preprocessor
         self._storage = storage
+
+    def __len__(self):
+        """
+        :return: int 
+        """
+        return len(self._storage) if self._storage else 0
 
     #@measure_time(enabled=True)
     def save(self):
@@ -43,14 +49,21 @@ class Index:
         self.storage.save()
 
     @staticmethod
-    #@measure_time(enabled=True)
-    def load(config):
-        distance = SamplePairwiseDistance.load(config)
-        storage = Storage.load(config)
-        return Index(distance, storage)
+
+    def load():
+        config = read_config()
+
+        distance = DistanceFactory.load(config)
+        preprocessor = PreprocessorFactory.create(config)
+        storage = StorageFactory.load(config)
+        return Index(distance, preprocessor, storage)
 
     @staticmethod
     def build(sample_files):
+        """
+        :param sample_files: Sequence[str] 
+        :return: Index
+        """
         config = read_config()
 
         distance = DistanceFactory.create(config)
@@ -58,15 +71,10 @@ class Index:
         storage = StorageFactory.create(config)
 
         samples = [Sample(sample_file) for sample_file in sample_files]
+        distance.add_samples(samples)
         processed_samples = [preprocessor(sample) for sample in samples]
         storage.build(distance, processed_samples)
-        return Index(distance, storage)
-
-        #sample_map = SampleMap(kmerize_samples(sample_files, config.dist.kmer_size))
-        #pwmatrix = PwMatrix.create(sample_map)
-        #tree_distance = TreeDistance(pwmatrix)
-        #vptree = VpTree(config).build(tree_distance)
-        #return Index(pwmatrix, vptree)
+        return Index(distance, preprocessor, storage)
 
     def refine(self):
         self._pwmatrix = PwMatrix.create(self.config, self.pwmatrix.sample_map)
@@ -74,29 +82,22 @@ class Index:
         self._vptree = VpTree(self.config).build(tree_distance)
 
     def add(self, sample_files):
-        sample_map = SampleMap(self.config,
-                               kmerize_samples(sample_files,
-                                               self.config.dist.kmer_size)
-                               )
+        """
+        :param sample_files: Sequence[str] 
+        :return: None
+        """
+        processed_samples = [self._preprocessor(Sample(sample_file)) for sample_file in sample_files]
+        self.distance.add_samples(processed_samples)
+        self.storage.add_samples(processed_samples, self.distance)
 
-        self.sample_map.update(sample_map)
-        tree_distance = TreeDistance(self.pwmatrix)
-        self.vptree.add_samples(sample_map.values(), tree_distance)
-
-    def find(self, sample_file: str, k: int):
-        sample_map = SampleMap(self.config,
-                               kmerize_samples([sample_file],
-                                               self.config.dist.kmer_size)
-                               )
-        sample = list(sample_map.values())[0]
-
-        tree_distance = TreeDistance(self.pwmatrix)
-        values, points = self.vptree.search(sample, k, tree_distance)
-        return values, points
-
-    @property
-    def config(self):
-        return self._config
+    def find(self, sample_file, k):
+        """
+        :param sample_file: str 
+        :param k: int
+        :return: Tuple[Sequence[np.float], Sequence[np.str]]
+        """
+        processed_sample = self._preprocessor(Sample(sample_file))
+        return self.storage.find(self.distance, processed_sample, k)
 
     @property
     def distance(self):

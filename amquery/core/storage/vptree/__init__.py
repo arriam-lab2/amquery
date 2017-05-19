@@ -1,4 +1,4 @@
-from ._vptree import VpTree, BaseVpTree, TreeDistance
+from ._vptree import VpTree, BaseVpTree
 from .search import *
 
 

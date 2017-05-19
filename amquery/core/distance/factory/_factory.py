@@ -10,3 +10,12 @@ class Factory:
         """
         method = config.get('distance', 'method')
         return SamplePairwiseDistance(distances[method])
+
+
+    @staticmethod
+    def load(config):
+        """
+        :param config: Config
+        :return: PairWiseDistance 
+        """
+        return SamplePairwiseDistance.load(config)

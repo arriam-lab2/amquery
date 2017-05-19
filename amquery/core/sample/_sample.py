@@ -7,7 +7,8 @@ import joblib
 import hashlib
 from Bio import SeqIO
 from amquery.utils.decorators import hide_field
-from amquery.utils.config import get_kmers_dir
+from amquery.utils.config import get_kmers_dir, get_sample_dir
+from amquery.utils.iof import make_sure_exists
 
 
 class SampleFile:
@@ -65,14 +66,14 @@ class Sample:
 
     @staticmethod
     def make_sample_obj_filename(source_filename):
-        return os.path.join(config.sample_dir, _md5_hash(source_filename))
+        return os.path.join(get_sample_dir(), _md5_hash(source_filename))
 
     @staticmethod
     def make_kmer_index_obj_filename(source_filename):
         return os.path.join(get_kmers_dir(), _md5_hash(source_filename))
 
     @staticmethod
-    def load(config, object_file):
+    def load(object_file):
         sample = joblib.load(object_file)
         return sample
 
@@ -80,12 +81,13 @@ class Sample:
         self._kmer_index = joblib.load(Sample.make_kmer_index_obj_filename(self.source_file.path))
 
     @hide_field("_kmer_index")
-    def _save(self, config):
+    def _save(self):
         self._kmer_index = None
-        joblib.dump(self, Sample.make_sample_obj_filename(config, self.source_file.path))
+        joblib.dump(self, Sample.make_sample_obj_filename(self.source_file.path))
 
-    def save(self, config):
-        self._save(config)
+    def save(self):
+        make_sure_exists(get_sample_dir())
+        self._save()
 
         if self._kmer_index:
             joblib.dump(self._kmer_index, Sample.make_kmer_index_obj_filename(self.source_file.path))

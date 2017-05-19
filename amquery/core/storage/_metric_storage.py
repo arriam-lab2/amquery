@@ -8,7 +8,7 @@ class Storage:
         :param collection: SampleCollection 
         :return: Boolean
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def find(self, sample_ref, k):
@@ -17,7 +17,7 @@ class Storage:
         :param k: int
         :return: Sequence[SampleReference]
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractstaticmethod
     def create(self, config):
@@ -25,4 +25,11 @@ class Storage:
         :param config: Config
         :return: MetricIndexStorage 
         """
-        raise NotImplementedError()
+        raise NotImplementedError
+
+    @abc.abstractstaticmethod
+    def __len__(self):
+        """
+        :return: int 
+        """
+        raise NotImplementedError

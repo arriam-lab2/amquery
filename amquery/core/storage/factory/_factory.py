@@ -9,3 +9,11 @@ class Factory:
         :return: Storage
         """
         return VpTree()
+
+    @staticmethod
+    def load(config):
+        """
+        :param config: Config
+        :return: Storage
+        """
+        return VpTree.load()

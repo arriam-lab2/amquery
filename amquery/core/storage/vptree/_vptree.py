@@ -4,8 +4,6 @@ import numpy as np
 import itertools
 import json
 import random
-from amquery.core.sample import Sample
-from amquery.core.sample_map import SampleMap
 from amquery.core.storage.vptree.search import neighbors
 from amquery.utils.benchmarking import measure_time
 from amquery.utils.config import get_storage_path
@@ -78,7 +76,7 @@ class BaseVpTree:
         self.size += 1
 
     def to_dict(self):
-        json_dict = {'vp': self.vp.name, 'size': self.size }
+        json_dict = {'vp': self.vp, 'size': self.size }
         if self.median:
             json_dict['median'] = self.median
         if self.left: 
@@ -89,12 +87,12 @@ class BaseVpTree:
         return json_dict
 
     @classmethod
-    def from_dict(cls, json_dict, sample_map):
-        vp = sample_map[json_dict['vp']]
+    def from_dict(cls, json_dict):
+        vp = json_dict['vp']
         size = json_dict['size']
         median = json_dict['median'] if 'median' in json_dict else None
-        left = cls.from_dict(json_dict['left'], sample_map) if 'left' in json_dict else None
-        right = cls.from_dict(json_dict['right'], sample_map) if 'right' in json_dict else None
+        left = cls.from_dict(json_dict['left']) if 'left' in json_dict else None
+        right = cls.from_dict(json_dict['right']) if 'right' in json_dict else None
         return cls(vp, size, median, left, right)
 
     @classmethod
@@ -110,21 +108,6 @@ class BaseVpTree:
         return cls(None, 0, None, None, None)
 
 
-class TreeDistance:
-    def __init__(self, pwmatrix):
-        self.pwmatrix = pwmatrix
-
-    def __call__(self, a, b):
-        return self.pwmatrix[a, b]
-
-    @property
-    def samples(self):
-        return self.pwmatrix.sample_map.samples
-
-    def add_sample(self, sample: Sample) -> None:
-        self.pwmatrix.add_sample(sample)
-
-
 class VpTree(Storage):
     def __init__(self, vptree = None):
         self.tree = vptree if vptree else BaseVpTree.empty()
@@ -135,7 +118,7 @@ class VpTree(Storage):
 
     @classmethod
     def load(cls):
-        with open(get_storage_path, 'r') as infile:
+        with open(get_storage_path(), 'r') as infile:
             json_dict = json.loads(infile.read())
             return cls(BaseVpTree.from_dict(json_dict))
 
@@ -144,21 +127,21 @@ class VpTree(Storage):
         """
         :param distance: PairwiseDistance
         :param samples: Sequence[Sample]
-        :return: 
+        :return: VpTree
         """
-        self.tree.build(distance, np.array(samples))
+        self.tree.build(distance, np.array([sample.name for sample in samples]))
         return self
+
+    def __len__(self):
+        """
+        :return: int 
+        """
+        return self.tree.size if self.tree else 0
 
     @measure_time(enabled=True)
     def add_samples(self, samples, tree_distance):
-        for sample_file in samples:
-            self.add_sample(sample_file, tree_distance)
+        for sample in samples:
+            self.tree.insert(sample.name, tree_distance)
 
-    def add_sample(self, sample, tree_distance):
-        # filling diagonal of the pairwise matrix
-        tree_distance(sample, sample)
-        tree_distance.add_sample(sample)
-        self.tree.insert(sample, tree_distance)
-
-    def search(self, query_point, k,tree_distance):
-        return neighbors(self.tree, query_point, k, tree_distance)
+    def find(self, distance, sample, k):
+        return neighbors(self.tree, distance, sample, k)

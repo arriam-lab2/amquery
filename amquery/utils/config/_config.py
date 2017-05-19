@@ -30,6 +30,14 @@ def get_kmers_dir():
     return os.path.join(get_index_path(), 'kmers')
 
 
+def get_sample_dir():
+    return os.path.join(get_index_path(), 'samples')
+
+
+def get_samplemap_path():
+    return os.path.join(get_index_path(), 'sample_map.json')
+
+
 def read_config():
     config = configparser.ConfigParser()
     config.read(get_config_path())
