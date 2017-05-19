@@ -14,7 +14,7 @@ from amquery.core import Index
 @click.option('--force', '-f', is_flag=True, help='Force overwrite output directory')
 @click.option('--quiet', '-q', is_flag=True, help='Be quiet')
 @click.option('--jobs', '-j', type=int, default=1, help='Number of jobs to start in parallel')
-def cli(force: bool, quiet: bool, jobs: int):
+def cli(force, quiet, jobs):
     #config = Config.load()
     #config.temp.force = force
     #config.temp.quiet = quiet
@@ -24,13 +24,12 @@ def cli(force: bool, quiet: bool, jobs: int):
 
 
 @cli.command()
-@click.argument("name", type=str, required=False)
 @click.option("--method", type=click.Choice(distances.keys()), default=DEFAULT_DISTANCE)
 @click.option("--rep_tree", type=click.Path())
 @click.option("--rep_set", type=click.Path())
 @click.option("--kmer_size", "-k", type=int, default=15)
-def init(name, method, rep_tree, rep_set, kmer_size):
-    index_dir = os.path.join(os.getcwd(), name, '.amq') if name else os.path.join(os.getcwd(), '.amq')
+def init(method, rep_tree, rep_set, kmer_size):
+    index_dir = os.path.join(os.getcwd(), '.amq')
     iof.make_sure_exists(index_dir)
     index_path = os.path.join(index_dir, 'config')
 
