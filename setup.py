@@ -29,8 +29,8 @@ setup(
         amq=amquery.cli:cli
         amquery=amquery.cli:cli
     ''',
-    ext_modules=[Extension('amquery.core.kmers_distr.lexrank.lexrank',
-                           sources=['amquery/core/kmers_distr/lexrank/lexrank.cpp'],
+    ext_modules=[Extension('amquery.core.preprocessing.kmer_counter.lexrank.lexrank',
+                           sources=['amquery/core/preprocessing/kmer_counter/lexrank/lexrank.cpp'],
                            extra_compile_args=['-std=c++11'],
                            ),
                  Extension('amquery.core.distance.metrics.jsd',

@@ -1,8 +1,6 @@
 import click
 import os
 from bunch import Bunch
-from typing import List
-import configparser
 import amquery.utils.iof as iof
 from amquery.utils.config import get_default_config
 from amquery.utils.multiprocess import Pool
