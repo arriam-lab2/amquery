@@ -1,4 +1,5 @@
-from ._pwmatrix import PwMatrix
+from ._vptree import VpTree, BaseVpTree
+from .search import *
 
 
 __license__ = "MIT"

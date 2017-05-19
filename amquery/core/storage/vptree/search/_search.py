@@ -1,12 +1,8 @@
-from typing import Any, Tuple, Callable
 import numpy as np
 import queue
 
 
-def _neighbors(tree,
-               query_point: Any,
-               k: int,
-               tree_distance: Callable):
+def _neighbors(tree, distance, sample, k):
     tau = np.inf
     neighbors = queue.PriorityQueue()
     node_queue = queue.Queue()
@@ -15,7 +11,7 @@ def _neighbors(tree,
     while not node_queue.empty():
         node = node_queue.get()
         if node:
-            d = tree_distance(query_point, node.vp)
+            d = distance(sample, node.vp)
 
             if len(neighbors.queue) < k:
                 neighbors.put((-d, node.vp))
@@ -44,12 +40,8 @@ def _neighbors(tree,
     return neighbors.queue
 
 
-def neighbors(vptree,
-              query_point: Any,
-              k: int,
-              tree_distance: Callable) -> Tuple[np.array, np.array]:
-
-    result = _neighbors(vptree, query_point, k, tree_distance)
+def neighbors(vptree, distance, sample, k):
+    result = _neighbors(vptree, distance, sample, k)
     result = sorted([(-value, point) for value, point in result])
     values, points = zip(*result)
     return np.array(values), np.array(points)

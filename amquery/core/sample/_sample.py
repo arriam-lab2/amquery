@@ -5,11 +5,10 @@ import itertools
 import operator as op
 import joblib
 import hashlib
-from typing import Sequence, Any, List
 from Bio import SeqIO
-
-from amquery.utils.config import Config
 from amquery.utils.decorators import hide_field
+from amquery.utils.config import get_kmers_dir, get_sample_dir
+from amquery.utils.iof import make_sure_exists
 
 
 class SampleFile:
@@ -20,11 +19,11 @@ class SampleFile:
             self._format = 'fasta'
 
     @property
-    def path(self) -> str:
+    def path(self):
         return self._path
 
     @property
-    def file_format(self) -> str:
+    def file_format(self):
         return self._format
 
 
@@ -32,19 +31,19 @@ _alphabet = dict(zip([char for char in ('A', 'C', 'G', 'T')],
                      itertools.count()))
 
 
-def _isvalid(sequence: Sequence[Any]) -> bool:
+def _isvalid(sequence):
     return functools.reduce(op.and_, [char in _alphabet for char in sequence])
 
 
-def _validate(sequence: Sequence[Any]):
+def _validate(sequence):
     return sequence if _isvalid(sequence) else []
 
 
-def _transform(sequence: Sequence[Any]) -> List:
+def _transform(sequence):
     return np.array([_alphabet[char] for char in sequence], dtype=np.uint8)
 
 
-def _md5_hash(string: str) -> str:
+def _md5_hash(string):
     m = hashlib.md5()
     m.update(string.encode("utf8"))
     return m.hexdigest()
@@ -58,47 +57,49 @@ class Sample:
         self._kmer_index = None
 
     @property
-    def name(self) -> str:
+    def name(self):
         return self._name
 
     @property
-    def original_name(self) -> str:
+    def original_name(self):
         return self._original_name
 
     @staticmethod
-    def make_sample_obj_filename(config: Config, source_filename: str) -> str:
-        return os.path.join(config.sample_dir, _md5_hash(source_filename))
+    def make_sample_obj_filename(source_filename):
+        return os.path.join(get_sample_dir(), _md5_hash(source_filename))
 
     @staticmethod
-    def make_kmer_index_obj_filename(config: Config, source_filename: str) -> str:
-        return os.path.join(config.kmer_index_dir, _md5_hash(source_filename))
-        
+    def make_kmer_index_obj_filename(source_filename):
+        return os.path.join(get_kmers_dir(), _md5_hash(source_filename))
+
     @staticmethod
-    def load(config: Config, object_file):
+    def load(object_file):
         sample = joblib.load(object_file)
         return sample
 
-    def load_kmer_index(self, config: Config) -> None:
-        self._kmer_index = joblib.load(Sample.make_kmer_index_obj_filename(config, self.source_file.path))
+    def load_kmer_index(self):
+        self._kmer_index = joblib.load(Sample.make_kmer_index_obj_filename(self.source_file.path))
 
     @hide_field("_kmer_index")
-    def _save(self, config: Config):
+    def _save(self):
         self._kmer_index = None
-        joblib.dump(self, Sample.make_sample_obj_filename(config, self.source_file.path))
-    
-    def save(self, config: Config) -> None:
-        self._save(config)
-        
+        joblib.dump(self, Sample.make_sample_obj_filename(self.source_file.path))
+
+    def save(self):
+        make_sure_exists(get_sample_dir())
+        self._save()
+
         if self._kmer_index:
-            joblib.dump(self._kmer_index, Sample.make_kmer_index_obj_filename(config, self.source_file.path))
+            joblib.dump(self._kmer_index, Sample.make_kmer_index_obj_filename(self.source_file.path))
 
     @property
-    def source_file(self) -> str:
+    def source_file(self):
         return self._source_file
 
-    def kmer_index(self, config):
+    @property
+    def kmer_index(self):
         if not self._kmer_index:
-            self.load_kmer_index(config)
+            self.load_kmer_index()
 
         return self._kmer_index
 

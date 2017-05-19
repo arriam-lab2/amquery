@@ -1,68 +1,44 @@
-from bunch import Bunch
-from typing import Mapping
-import json
 import os
-
-from ..iof import exists, make_sure_exists
-
-
-class ConfigBase(Bunch):
-
-    def __init__(self, *args, **kwargs):
-        super(ConfigBase, self).__init__(*args, **kwargs)
-        self.temp = Bunch()
-        self.temp.config_path = '.amq.config'
-
-    def load(self, workon: str):
-        self.workon = make_sure_exists(workon)
-        if exists(self.temp.config_path):
-            with open(self.temp.config_path) as data_file:
-                loaded_dict = json.load(data_file)
-                self.update(loaded_dict)
-
-    def save(self):
-        config_path = self.temp.config_path
-        del self.temp
-
-        with open(config_path, "w") as f:
-            print("", json.dumps(self), file=f)
-
-    def update(self, dictionary: Mapping):
-        for k, v in dictionary.items():
-            if type(v) == dict:
-                self[k] = Bunch()
-                self[k].update(v)
-            else:
-                self[k] = v
+import configparser
 
 
-class Config(ConfigBase):
+def get_default_config():
+    config = configparser.ConfigParser()
+    config.add_section('config')
+    config.add_section('distance')
+    config.add_section('index')
+    return config
 
-    @property
-    def index_path(self):
-        return os.path.join(self.workon, self.current_index)
 
-    @property
-    def pwmatrix_path(self):
-        return os.path.join(self.index_path, "pwmatrix.txt")
+def get_index_path():
+    return os.path.join(os.getcwd(), '.amq')
 
-    @property
-    def coordsys_path(self):
-        return os.path.join(self.index_path, "coord_system.json")
 
-    @property
-    def vptree_path(self):
-        return os.path.join(self.index_path, "vptree.json")
+def get_config_path():
+    return os.path.join(get_index_path(), 'config')
 
-    @property
-    def sample_map_path(self):
-        return os.path.join(self.index_path, "sample_map.json")
 
-    @property
-    def sample_dir(self):
-        return os.path.join(self.index_path, "samples")
+def get_distance_path():
+    return os.path.join(get_index_path(), 'distance.txt')
 
-    @property
-    def kmer_index_dir(self):
-        return os.path.join(self.index_path,
-                            "kmer_indices." + str(self.dist.kmer_size))
+
+def get_storage_path():
+    return os.path.join(get_index_path(), 'storage.json')
+
+
+def get_kmers_dir():
+    return os.path.join(get_index_path(), 'kmers')
+
+
+def get_sample_dir():
+    return os.path.join(get_index_path(), 'samples')
+
+
+def get_samplemap_path():
+    return os.path.join(get_index_path(), 'sample_map.json')
+
+
+def read_config():
+    config = configparser.ConfigParser()
+    config.read(get_config_path())
+    return config
