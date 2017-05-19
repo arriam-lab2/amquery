@@ -47,9 +47,12 @@ class SamplePairwiseDistance(PairwiseDistance):
         :return: SamplePairwiseDistance
         """
         if os.path.exists(get_distance_path()):
-            dataframe = pd.read_csv(get_distance_path(), sep='\t')
-            dataframe['id'] = dataframe.keys()
-            dataframe = dataframe.set_index('id')
+            try:
+                dataframe = pd.read_csv(get_distance_path(), sep='\t')
+                dataframe['id'] = dataframe.keys()
+                dataframe = dataframe.set_index('id')
+            except pd.io.common.EmptyDataError:
+                dataframe = pd.DataFrame()
         else:
             dataframe = pd.DataFrame()
 

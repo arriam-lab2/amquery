@@ -47,11 +47,15 @@ def init(name, method, rep_tree, rep_set, kmer_size):
     with open(config.get('config', 'path'), 'w') as f:
         config.write(f)
 
+    index = Index.init()
+    index.save()
+
 
 @cli.command()
 @click.argument('input_files', type=click.Path(exists=True), nargs=-1, required=True)
 def build(input_files):
-    index = Index.build(input_files)
+    index = Index.load()
+    index.build(input_files)
     index.save()
 
 

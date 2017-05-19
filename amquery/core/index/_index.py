@@ -43,13 +43,23 @@ class Index:
         """
         return len(self._storage) if self._storage else 0
 
+    @staticmethod
+    def init():
+        """
+        :return: Index 
+        """
+        config = read_config()
+        distance = DistanceFactory.create(config)
+        preprocessor = PreprocessorFactory.create(config)
+        storage = StorageFactory.create(config)
+        return Index(distance, preprocessor, storage)
+
     #@measure_time(enabled=True)
     def save(self):
         self.distance.save()
         self.storage.save()
 
     @staticmethod
-
     def load():
         config = read_config()
 
@@ -58,23 +68,21 @@ class Index:
         storage = StorageFactory.load(config)
         return Index(distance, preprocessor, storage)
 
-    @staticmethod
-    def build(sample_files):
+    def build(self, sample_files):
         """
         :param sample_files: Sequence[str] 
-        :return: Index
+        :return:
         """
         config = read_config()
-
-        distance = DistanceFactory.create(config)
-        preprocessor = PreprocessorFactory.create(config)
-        storage = StorageFactory.create(config)
+        self._distance = DistanceFactory.create(config)
+        self._preprocessor = PreprocessorFactory.create(config)
+        self._storage = StorageFactory.create(config)
 
         samples = [Sample(sample_file) for sample_file in sample_files]
-        distance.add_samples(samples)
-        processed_samples = [preprocessor(sample) for sample in samples]
-        storage.build(distance, processed_samples)
-        return Index(distance, preprocessor, storage)
+        self.distance.add_samples(samples)
+        processed_samples = [self._preprocessor(sample) for sample in samples]
+        self.storage.build(self.distance, processed_samples)
+
 
     def refine(self):
         self._pwmatrix = PwMatrix.create(self.config, self.pwmatrix.sample_map)
