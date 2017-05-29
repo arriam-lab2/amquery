@@ -233,10 +233,68 @@ Amquery is freely available at https://github.com/nromashchenko/amquery.
 
 % Use "Eq" instead of "Equation" for equation citations.
 \section*{Introduction}
-High-throughput sequencing of 16S amplicon libraries has become a very popular and powerful way of assessing the structure of various microbial communities \cite{qin2010human, seedorf2014bacteria, ligi2014characterization}.
-As the number of published 16S amplicon libraries keeps growing so does the demand for a way to quickly process samples to find related communities similarly to the way BLAST for sequences. Nowadays a single amplicon library can easily contain many thousands of reads, making clustering-based pipelines, implemented in tools such as QIIME \cite{caporaso2010qiime}, inapplicable to large databases. To address these problems, we developed Amquery.
+Deep high-throughput amplicon sequencing has become the de-facto standard method for taxonomic community profiling in environmental, 
+medical and industrial microbiology, because it provides cheap high-resolution data in a snap \cite{}. Consequently, the 
+number of samples deposited in public databases, such as NCBI SRA and MG-RAST, keeps growing at a hyper-linear rate, 
+which resembles the period of rapid accumulation of individual sequences in the NCBI GenBank database. 
+And as much as rapid growth of the GenBank drove the development of fast and efficient tools for database-wide 
+sequence comparison (i.e. FASTA and, subsequently, BLAST) \cite{}, the ever-growing number of publicly available amplicon 
+libraries necessitates a mean to query the databases for similar samples without relying on available metadata, which is 
+often scarce, incomplete and hard to quantify. Yet, several factors make this task seem computationally intractable within 
+the conventional analytical framework and available software. A standard workflow (e.g. implemented in QIIME \cite{}) 
+for comparing amplicon libraries usually comprises several major steps: 
+1. library demultiplexing, 2. OTU-picking, 3. beta-diversity estimation. Library demultiplexing (mostly adapter and primer 
+trimming) is probably the least computationally intensive and straightforward to run on multiple processing units in parallel, 
+hence we are not going to get into details on that. 
 
-\pagebreak
+On the other hand, OTU-picking is one of the most computationally intensive steps, coming in three major flavours: 
+de-novo, closed-reference and open-reference picking (the latter is a combination of the other). 
+Since amplicon sequencing is all about taxonomic screening of a community, OTU-picking algorithms group similar 
+sequences into clusters that can be regarded as formally defined quasi-taxonomic entities dubbed OTUs (Operational 
+Taxonomic Units). The clustering compensates for sequencing errors and, most importantly, makes standard downstream 
+analyses more biologically sound and computationally tractable. In de-novo OTU-picking clusters are created from scratch 
+without any prior information, which, if done accurately, becomes unfeasible for any realistically sized amplicon libraries, 
+giving way for efficient and heavily heuristic algorithms, such as UCLAST \cite{} and CD-HIT \cite{}. In closed-reference picking 
+no clusters are created from scratch – instead, a user provides a set of reference sequences to use as cluster seeds. 
+Any sequence, failing to hit a given similarity threshold to any reference, is discarded. In open-reference picking 
+these discarded sequences are subjected to de-novo clustering. Reference-based picking is easier to run on multiple 
+processing units and is less prone to artefacts, rooted in the aggressive heuristics of fast sequence alignment and 
+clustering tools. Anyway, after an algorithm/pipeline finishes the clustering, it picks a single representative sequence 
+out of each cluster (in closed-reference picking the references are the representatives). This representative set can be 
+used for downstream analyses, such as taxonomic identification and phylogenetics. The set also makes the results of 
+de-novo and open-reference picking reproducible and stable, because it can be supplied to a closed-reference OTU-picking 
+pipeline \cite{}.
+
+After picking is over, each amplicon library can be represented as a count-vector, giving the per-OTU number of 
+observations/reads. A matrix of such vectors (knows as the OTU-table) represents a set of microbial communities. 
+To compare them, common pipelines calculate a square pair-wise dissimilarity matrix (aka the beta-diversity matrix), 
+using a beta-diversity measure, most notably one of the UniFrac family [7]. These dissimilarity measures leverage 
+phylogenetic information by projecting the communities onto a phylogenetic tree of its inhabitants, hence all variations 
+of UniFrac require a tree of cluster representatives.
+
+The preface immediately introduces two main issues a searchable database would need to address: OTU-picking and 
+similarity estimation. First, we must choose a viable OTU-picking strategy or find a way to around it altogether. 
+The hyper-linear complexity and, even more so, the clustering instability of de-novo and open-reference pipelines 
+strike them out of the options to consider, leaving a single method on the list – the closed-reference picking, 
+which requires a set of representatives. As self-obvious as it may seem, to make downstream beta-diversity estimations 
+unbiased, the set must be representative of the expected cumulative diversity of all samples that can be added to the 
+database. Additionally, since the overwhelming majority of amplicon libraries comprise short-reads targeting various 
+regions in a marker gene (e.g. V1-V9 hypervariable regions of the 16S rRNA gene), complete-gene references are especially 
+valuable, because they allow read-mapping-based picking, mitigating incompatibility of amplicon libraries generated 
+for different regions of the same gene. While extensive reference sets of full-length marker genes exist for some 
+major fields of microbiology (most notably, the HITdb 16S rRNA reference set designed for medical biology), in many 
+cases such a set is yet to be created (e.g. for aquatic or soil environmental microbiology). Nevertheless, an 
+exhaustive de-novo clustering based on hundreds or thousands of communities sampled from a specific environment (e.g. soil) 
+n produce a set of references to use in a database until better alternatives become available. It’s important to stress, 
+that the lack of full-length references makes it nearly impossible to create a unified searchable database of 
+short-read libraries targeting different regions of the same gene. Therefore, in the absence of full-length 
+references a searchable database would have to provide several subsections based on the commonly targeted regions. 
+To use UniFrac for downstream similarity estimations, a phylogenetic tree would have to be inferred for each set of 
+representatives, which can be computationally unachievable via accurate methods, because even a single set of 
+communities (sampled from the same environment) often harbour many thousands of clusters. Furthermore, fast sequence 
+clustering algorithms, such as UCLUST, tend to create spurious clusters, inflating representative sets, which not only 
+affects different beta-diversity indices, but makes it increasingly hard to create a phylogenetic tree.
+
 
 \section*{Methods}
 Amquery implements two major components: 1. a $k$-mer counting-based sample preprocessing routine and 2. a metric community dissimilarity measure.
@@ -259,11 +317,16 @@ This advantage, however, imposes an upper-bound on the word-length $k$, since th
 Since realistic sample ${k}$-mer distribution vectors are extremely high-dimensional and sparse, Amquery represents them as rank-sorted sparse arrays. In our implementation, a sparse array is a key-value storage in which the keys are the lexicographic ranks and the values are the empirical probabilities (i.e. relative abundances of the corresponding k-mers).
 
 \subsection*{Distance metric}
-
 After Amquery transforms a set of samples into discrete probability distributions, it is quite natural to use some metric on distributions to compare samples. Amquery utilises the square root of \textit{Jensen-Shannon divergence} (RJSD) \cite{lin1991divergence} that satisfies many statistical properties and fits many cases of high-dimensional spaces in $\mathbb{R^\star}$ as a distance metric \cite{fuglede2004jensen, endres2003new}. We make use of the specific form of RJSD, introduced by Connor et al. \cite{connor2013evaluation}, to speed up distance evaluation over sparse $k$-mer distributions.
 
 \subsection*{Metric indexing}
-Amquery utilises vantage-point tree (vp-tree) \cite{yianilos1993data, chavez2001searching} as an efficient data structure, providing fast metric-based indexing and search. Since vantage-point tree is designed to be independent of the space dimensionality \cite{yianilos1993data}, this allows us to store high-dimensional sparse vectors with virtually no loss of indexing and search performance: it takes $\mathcal{O}(n)$ space and $\mathcal{O}(n \log n)$ time in the worst case to be built (for an input set of $n$ samples), and a search query is argued to require $\mathcal{O}(\log n)$ of time, with some reservations. For more detailed analysis of vp-tree performance, see \cite{yianilos1993data}.
+In order to provide efficient distance metric based retrieval of amplicon library samples, Amquery implements a heavily researched concept of metric indexing. Generally speaking, metric indexing is a preprocessing of data designed to provide 
+efficient metric based similarity search (see \cite{hetland2009basic} for more detailed overview).
+Amquery utilises vantage-point tree (vp-tree) \cite{yianilos1993data, chavez2001searching} as an indexing data structure, which refers to so-called pivot-based metric indexing.
+In short, pivot-based metric indexing exploits the idea of sequential partitioning of origin metric space, reducing the cost of traversing across the metric space during similarity search query.
+
+
+Since vantage-point tree is designed to be independent of the space dimensionality \cite{yianilos1993data}, this allows us to store high-dimensional sparse vectors with virtually no loss of indexing and search performance: it takes $\mathcal{O}(n)$ space and $\mathcal{O}(n \log n)$ time in the worst case to be built (for an input set of $n$ samples), and a search query is argued to require $\mathcal{O}(\log n)$ of time, with some reservations. For more detailed analysis of vp-tree performance, see \cite{yianilos1993data}.
 
 \section*{Results}
 The implementation of Amquery was compared against our own custom solution of similarity search, based on the classic microbiome analysis QIIME pipeline, in the following fashion.
