@@ -12,7 +12,7 @@ function run_amq_test {
         amq-test --workon "${index_dir}" -q minprecision \
             $(find ${split_dir}/$build_size/main -type l -name "${pattern}" -exec readlink {} \;) \
             -r /home/ilia/storage/metagen/bench/denovo/${build_size}/wu/weighted_unifrac_otu_table.txt \
-            > "${index_dir}/minp_$k.txt" 2> "${index_dir}/minp.log"
+            -k $k$ > "${index_dir}/minp_$k.txt" 2> "${index_dir}/minp.log"
     done;
 }
 
