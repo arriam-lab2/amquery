@@ -106,8 +106,6 @@ def minprecision(config, input_files, reference, k):
 
     result = []
     for input_file in input_files:
-        m = k - 1
-
         values, points = index.find(input_file, index_size)
         best_by_amq = [s.name for s in points]
 
@@ -124,7 +122,7 @@ def minprecision(config, input_files, reference, k):
             if not best_by_reference:
                 break
 
-        result.append(i)
+        result.append(i + 1)
 
     #print(np.sum(result) / len(input_files))
     print("\n".join(str(x) for x in result))
