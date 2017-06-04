@@ -91,3 +91,41 @@ def precision(config, input_files, reference, k):
     m = len(input_files)
     print(np.sum(p_at_k) / m, np.sum(ap_at_k) / m, np.sum(gain_at_k) / m)
 
+
+
+@cli.command()
+@click.argument('input_files', type=click.Path(exists=True), nargs=-1, required=True)
+@click.option('--reference', '-r', type=click.Path(exists=True), required=True)
+@click.option('-k', type=int, required=True, help='Count of nearest neighbors')
+@pass_config
+def minprecision(config, input_files, reference, k):
+    reference_df = load(reference)
+    index = Index.load(config)
+
+    index_size = len(index.sample_map)
+
+    result = []
+    for input_file in input_files:
+        m = k - 1
+
+        values, points = index.find(input_file, index_size)
+        best_by_amq = [s.name for s in points]
+
+        sample = Sample(input_file)
+        best_by_reference = reference_df[sample.name].sort_values()
+        best_by_reference = list(best_by_reference.index)[:k]
+        
+        #print(best_by_reference)
+        for i in range(index_size):
+            if best_by_amq[i] in best_by_reference:
+                best_by_reference.remove(best_by_amq[i])
+                #print('remove', best_by_amq[i])
+
+            if not best_by_reference:
+                break
+
+        result.append(i)
+
+    #print(np.sum(result) / len(input_files))
+    print("\n".join(str(x) for x in result))
+    

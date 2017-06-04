@@ -12,7 +12,7 @@ setup(
     include_package_data=True,
     install_requires=[
         'numpy==1.11.0',
-	    'scipy==0.17.0',
+	    'scipy>=0.17.0',
         'click==6.6',
         'biopython==1.66',
         'joblib==0.9.4',
