@@ -1,4 +1,4 @@
-from amquery.core.distance import SamplePairwiseDistance, distances
+from amquery.core.distance import SamplePairwiseDistance, distances, WEIGHTED_UNIFRAC
 
 
 class Factory:
@@ -6,11 +6,10 @@ class Factory:
     def create(config):
         """
         :param config: Config
-        :return: PairWiseDistance 
+        :return: PairwiseDistance 
         """
         method = config.get('distance', 'method')
-        return SamplePairwiseDistance(distances[method])
-
+        return SamplePairwiseDistance(distances[method](config))
 
     @staticmethod
     def load(config):

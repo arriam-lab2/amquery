@@ -20,21 +20,10 @@ class PairwiseDistance:
         raise NotImplementedError
 
 
-class SamplePairwiseDistanceFunction:
-    @abc.abstractmethod
-    def __call__(self, a, b):
-        """
-        :param a: Sample 
-        :param b: Sample
-        :return: float
-        """
-        raise NotImplementedError
-
-
 class SamplePairwiseDistance(PairwiseDistance):
     def __init__(self, distance_function, dataframe=pd.DataFrame(), sample_map=SampleMap()):
         """
-        :param distance_function: SamplePairwiseDistanceFunction
+        :param distance_function: amquery.core.metrics.SamplePairwiseDistanceFunction
         """
         self._distance_function = distance_function
         self._dataframe = dataframe
@@ -51,7 +40,7 @@ class SamplePairwiseDistance(PairwiseDistance):
                 dataframe = pd.read_csv(get_distance_path(), sep='\t')
                 dataframe['id'] = dataframe.keys()
                 dataframe = dataframe.set_index('id')
-            except pd.io.common.EmptyDataError:
+            except ValueError:
                 dataframe = pd.DataFrame()
         else:
             dataframe = pd.DataFrame()

@@ -1,6 +1,5 @@
 import click
 import os
-from bunch import Bunch
 import amquery.utils.iof as iof
 from amquery.utils.config import get_default_config
 from amquery.utils.multiprocess import Pool
@@ -13,20 +12,16 @@ from amquery.core import Index
 @click.option('--quiet', '-q', is_flag=True, help='Be quiet')
 @click.option('--jobs', '-j', type=int, default=1, help='Number of jobs to start in parallel')
 def cli(force, quiet, jobs):
-    #config = Config.load()
-    #config.temp.force = force
-    #config.temp.quiet = quiet
-    #config.temp.jobs = jobs
-
     Pool.instance(jobs=jobs)
 
 
 @cli.command()
 @click.option("--method", type=click.Choice(distances.keys()), default=DEFAULT_DISTANCE)
 @click.option("--rep_tree", type=click.Path())
-@click.option("--rep_set", type=click.Path())
+@click.option("--biom_table", type=click.Path())
+@click.option("--unaligned", type=click.Path())
 @click.option("--kmer_size", "-k", type=int, default=15)
-def init(method, rep_tree, rep_set, kmer_size):
+def init(method, rep_tree, biom_table, unaligned, kmer_size):
     index_dir = os.path.join(os.getcwd(), '.amq')
     iof.make_sure_exists(index_dir)
     index_path = os.path.join(index_dir, 'config')
@@ -34,10 +29,13 @@ def init(method, rep_tree, rep_set, kmer_size):
     config = get_default_config()
     config.set('config', 'path', index_path)
     config.set('distance', 'method', method)
+
     if rep_tree:
-        config.set('distance', 'rep_tree', rep_tree)
-    if rep_set:
-        config.set('distance', 'rep_set', rep_set)
+        config.set('distance', 'rep_tree', str(rep_tree))
+    if biom_table:
+        config.set('distance', 'biom_table', str(biom_table))
+    if unaligned:
+        config.set('distance', 'unaligned', str(unaligned))
     if kmer_size:
         config.set('distance', 'kmer_size', str(kmer_size))
 
@@ -62,16 +60,16 @@ def build(input_files):
 def refine(config, kmer_size, distance):
     _index_check(config)
 
-    config.dist = Bunch()
-    config.dist.func = distance
-    config.dist.kmer_size = kmer_size
+    #config.dist = Bunch()
+    #config.dist.func = distance
+    #config.dist.kmer_size = kmer_size
 
-    index = Index.load(config)
-    index.refine()
-    index.save()
+    #index = Index.load(config)
+    #index.refine()
+    #index.save()
 
-    config.built = "true"
-    config.save()
+    #config.built = "true"
+    #config.save()
 
 
 @cli.command()

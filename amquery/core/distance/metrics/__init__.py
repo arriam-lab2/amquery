@@ -1,8 +1,10 @@
-from ._metrics import distances,\
-    jsd, \
+from ._metrics import distances, \
+    Ffp_JSD, \
     FFP_JSD, \
     WEIGHTED_UNIFRAC, \
-    DEFAULT_DISTANCE
+    WeightedUnifrac, \
+    DEFAULT_DISTANCE, \
+    SamplePairwiseDistanceFunction
 
 __license__ = "MIT"
 __version__ = "0.2.1"
