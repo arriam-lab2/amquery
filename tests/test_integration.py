@@ -12,7 +12,7 @@ class TestIntegration(unittest.TestCase):
 
     def _get_test_files(self):
         test_data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_data")
-        return [os.path.join(test_data_dir, f) for f in os.listdir(test_data_dir)]
+        return [os.path.join(test_data_dir, "all.fasta")]
 
     def test_build(self):
         runner = CliRunner()

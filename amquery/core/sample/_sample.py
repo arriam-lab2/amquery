@@ -4,7 +4,6 @@ import functools
 import itertools
 import operator as op
 import joblib
-import hashlib
 from Bio import SeqIO
 from amquery.utils.decorators import hide_field
 from amquery.utils.config import get_kmers_dir, get_sample_dir
@@ -43,17 +42,14 @@ def _transform(sequence):
     return np.array([_alphabet[char] for char in sequence], dtype=np.uint8)
 
 
-def _md5_hash(string):
-    m = hashlib.md5()
-    m.update(string.encode("utf8"))
-    return m.hexdigest()
+def _parse_sample_name(sample_file):
+    return os.path.basename(sample_file).split(".fasta")[0]
 
 
 class Sample:
-    def __init__(self, source_file: str):
-        self._name = _md5_hash(source_file)
-        self._original_name = os.path.splitext(os.path.basename(source_file))[0]
-        self._source_file = SampleFile(source_file)
+    def __init__(self, sample_file):
+        self._name = _parse_sample_name(sample_file)
+        self._source_file = SampleFile(sample_file)
         self._kmer_index = None
 
     @property
@@ -66,11 +62,11 @@ class Sample:
 
     @staticmethod
     def make_sample_obj_filename(source_filename):
-        return os.path.join(get_sample_dir(), _md5_hash(source_filename))
+        return os.path.join(get_sample_dir(), _parse_sample_name(source_filename))
 
     @staticmethod
     def make_kmer_index_obj_filename(source_filename):
-        return os.path.join(get_kmers_dir(), _md5_hash(source_filename))
+        return os.path.join(get_kmers_dir(), _parse_sample_name(source_filename))
 
     @staticmethod
     def load(object_file):

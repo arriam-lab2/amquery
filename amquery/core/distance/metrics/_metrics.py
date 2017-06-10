@@ -63,9 +63,7 @@ class WeightedUnifrac(SamplePairwiseDistanceFunction):
         """
         s1 = self.otu_table.data(a.name)[self.id_mask]
         s2 = self.otu_table.data(b.name)[self.id_mask]
-        x = beta.weighted_unifrac(s1, s2, self.masked_ids, self.tree)
-        print("beta", s1, s2, x)
-        return x
+        return beta.weighted_unifrac(s1, s2, self.masked_ids, self.tree)
 
 
 FFP_JSD = 'ffp-jsd'

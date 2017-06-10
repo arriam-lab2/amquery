@@ -7,6 +7,9 @@ from amquery.core.distance import distances, DEFAULT_DISTANCE
 from amquery.core import Index
 
 
+CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
+
+
 @click.group()
 @click.option('--force', '-f', is_flag=True, help='Force overwrite output directory')
 @click.option('--quiet', '-q', is_flag=True, help='Be quiet')

@@ -14,7 +14,7 @@ class KmerCounter(Preprocessor):
     def __init__(self, k):
         self.k = k
 
-    def _count_seq(self, seq: np.array):
+    def _count_seq(self, seq):
         if seq.size > 0 and seq.size >= self.k:
             ranks = np.zeros(len(seq) - self.k + 1, dtype=np.uint64)
             seq_pointer = seq.ctypes.data_as(POINTER(c_uint8))
