@@ -93,15 +93,24 @@ def stats():
 
 
 @cli.command()
-@click.argument('input_file', type=click.Path(exists=True), required=True)
-@click.option('-k', type=int, required=True, help='Count of nearest neighbors')
-def find(input_file: str, k: int):
+def ls():
     index = Index.load()
-    values, points = index.find(input_file, k)
+
+    click.secho("Indexed", bold=True)
+    sample_names = sorted(list(sample.name for sample in index.samples))
+    for name in sample_names:
+        click.secho("%s" % name, fg='blue')
+
+
+@cli.command()
+@click.argument('sample_name', type=str, required=True)
+@click.option('-k', type=int, required=True, help='Count of nearest neighbors')
+def find(sample_name, k):
+    index = Index.load()
+    values, points = index.find(sample_name, k)
     click.secho("%s nearest neighbors:" % k, bold=True)
     click.secho('\t'.join(x for x in ['Hash', 'Sample', 'Similarity']), bold=True)
 
     for value, sample_id in zip(values, points):
         click.secho("%s\t" % sample_id[:7], fg='blue', nl=False)
-        #click.echo(sample.original_name if len(sample.original_name) <= 8 else sample.original_name[:5] + "..", nl=False)
         click.echo("\t%f\t" % value)

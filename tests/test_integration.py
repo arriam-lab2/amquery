@@ -24,6 +24,11 @@ class TestIntegration(unittest.TestCase):
         result = runner.invoke(cli, ["stats"])
         assert(result.exit_code == 0)
 
+    def test_find(self):
+        runner = CliRunner()
+        result = runner.invoke(cli, ["find", "115", "-k", "5"])
+        assert(result.exit_code == 0)
+
 
 if __name__ == '__main__':
     unittest.main()

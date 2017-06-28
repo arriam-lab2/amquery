@@ -47,7 +47,7 @@ class SamplePairwiseDistance(PairwiseDistance):
 
         sample_map = SampleMap.load()
         method = config.get('distance', 'method')
-        return SamplePairwiseDistance(distances[method], dataframe=dataframe, sample_map=sample_map)
+        return SamplePairwiseDistance(distances[method](config), dataframe=dataframe, sample_map=sample_map)
 
     def save(self):
         self._dataframe.to_csv(get_distance_path(), sep='\t', na_rep="N/A", index=False)
@@ -92,14 +92,13 @@ class SamplePairwiseDistance(PairwiseDistance):
 
         return self.dataframe[a.name][b.name]
 
-
     def __call__(self, a, b):
         """
         :param a: Sample 
         :param b: Sample
         :return: float
         """
-        return self[a, b]
+        return self[(a, b)]
 
 
     @property
@@ -107,13 +106,13 @@ class SamplePairwiseDistance(PairwiseDistance):
         return self._dataframe.columns
 
     @property
-    def dataframe(self) -> pd.DataFrame:
+    def sample_map(self):
+        return self._sample_map
+
+    @property
+    def dataframe(self):
         return self._dataframe
 
     @property
-    def matrix(self) -> np.ndarray:
+    def matrix(self):
         return self._dataframe.as_matrix()
-
-    @property
-    def hasvalue(self, a: str, b: str) -> bool:
-        return a in self.labels and b in self.labels
