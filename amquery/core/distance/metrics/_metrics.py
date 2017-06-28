@@ -41,19 +41,18 @@ class WeightedUnifrac(SamplePairwiseDistanceFunction):
     def __init__(self, config):
         biom_fp = config.get("distance", "biom_table")
         tree_path = config.get("distance", "rep_tree")
-        failed_fp = config.get("distance", "unaligned")
 
-        assert(biom_fp and tree_path and failed_fp)
+        assert(biom_fp and tree_path)
 
         self.otu_table = biom.load_table(biom_fp)
         self.sample_names = self.otu_table.ids(axis="sample")
-        self.ids = self.otu_table.ids(axis="observation")
-
-        failed_otus = set(open(failed_fp).read().splitlines())
-        self.id_mask = np.array([id_ not in failed_otus for id_ in self.ids], dtype=bool)
-        self.masked_ids = self.ids[self.id_mask]
 
         self.tree = read(tree_path, format="newick", into=TreeNode).root_at_midpoint()
+        self.tips = [tip.name for tip in self.tree.tips()]
+
+        ids = self.otu_table.ids(axis="observation")
+        self.id_mask = np.array([id_ in self.tips for id_ in ids], dtype=bool)
+        self.masked_ids = ids[self.id_mask]
 
     def __call__(self, a, b):
         """

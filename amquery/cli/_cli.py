@@ -22,9 +22,8 @@ def cli(force, quiet, jobs):
 @click.option("--method", type=click.Choice(distances.keys()), default=DEFAULT_DISTANCE)
 @click.option("--rep_tree", type=click.Path())
 @click.option("--biom_table", type=click.Path())
-@click.option("--unaligned", type=click.Path())
 @click.option("--kmer_size", "-k", type=int, default=15)
-def init(method, rep_tree, biom_table, unaligned, kmer_size):
+def init(method, rep_tree, biom_table, kmer_size):
     index_dir = os.path.join(os.getcwd(), '.amq')
     iof.make_sure_exists(index_dir)
     index_path = os.path.join(index_dir, 'config')
@@ -37,8 +36,6 @@ def init(method, rep_tree, biom_table, unaligned, kmer_size):
         config.set('distance', 'rep_tree', str(rep_tree))
     if biom_table:
         config.set('distance', 'biom_table', str(biom_table))
-    if unaligned:
-        config.set('distance', 'unaligned', str(unaligned))
     if kmer_size:
         config.set('distance', 'kmer_size', str(kmer_size))
 
