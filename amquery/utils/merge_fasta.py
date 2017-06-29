@@ -5,11 +5,14 @@ import os
 import os.path
 
 
-def merge_fasta(input_files, output_file):
+def merge_fasta(dirlist, output_file):
+    files = [os.path.join(dirname, f) for dirname in dirlist
+             for f in os.listdir(dirname)
+             if os.path.isfile(os.path.join(dirname, f)) and f.endswith(".fasta")]
+
     with open(output_file, 'w') as outfile:
         for f in input_files:
             with open(f) as infile:
-                print(f)
                 for line in infile:
                     outfile.write(line)
 

@@ -1,34 +1,34 @@
-#!/usr/bin/env python3
-
 import click
 import os
 import os.path
 import collections
-from Bio import SeqIO
-
+import Bio
 from amquery.utils.iof import make_sure_exists
 
 
-# Split a fasta by sample names
-def split_fasta(input_file: str, output_dir: str):
-    print("Splitting", input_file)
+def split_fasta(input_file, output_dir):
+    """
+    Split a fasta by sample names
+    :param input_file: str
+    :param output_dir: str
+    :return: 
+    """
     read_mapping = collections.defaultdict(list)
     with open(input_file, 'r') as infile:
-        for seq_record in SeqIO.parse(infile, "fasta"):
+        for seq_record in Bio.SeqIO.parse(infile, "fasta"):
             sample_name = seq_record.id.split(" ")[0]
             sample_name = sample_name.split("_")[0]
             read_mapping[sample_name].append(seq_record)
 
-    # creating a folder for splitted files
+    # writing split files
+    result = []
     output_dir = make_sure_exists(output_dir)
-
-    # writing splitted files
     for sample in read_mapping.keys():
-        output_file = os.path.join(output_dir,
-                                   sample + ".fasta")
-        SeqIO.write(read_mapping[sample], output_file, "fasta")
+        output_file = os.path.join(output_dir, sample + ".fasta")
+        Bio.SeqIO.write(read_mapping[sample], output_file, "fasta")
+        result.append(output_file)
 
-    return output_dir
+    return result
 
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
