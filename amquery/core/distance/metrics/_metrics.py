@@ -5,7 +5,8 @@ import numpy as np
 import amquery.utils.iof as iof
 from skbio import read
 from skbio.tree import TreeNode
-from skbio.diversity import beta
+from skbio.diversity import beta_diversity
+from skbio.diversity.beta import weighted_unifrac
 from ctypes import cdll, POINTER, c_uint64, c_size_t, c_double
 
 
@@ -62,7 +63,8 @@ class WeightedUnifrac(SamplePairwiseDistanceFunction):
         """
         s1 = self.otu_table.data(a.name)[self.id_mask]
         s2 = self.otu_table.data(b.name)[self.id_mask]
-        return beta.weighted_unifrac(s1, s2, self.masked_ids, self.tree)
+        return beta_diversity(weighted_unifrac, np.matrix([s1, s2], dtype=int),
+                              tree=self.tree, otu_ids=self.masked_ids)[0][1]
 
 
 FFP_JSD = 'ffp-jsd'
