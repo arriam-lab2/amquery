@@ -64,7 +64,7 @@ def precision(input_file, reference, k):
     samples = [Sample(sample_file) for sample_file in split_fasta(input_file, get_sample_dir())]
 
     for sample in samples:
-        values, best_by_amq = index.find(input_file, k)
+        values, best_by_amq = index.find(sample.name, k)
         best_by_reference = reference_df[sample.name].sort_values()
         reference_worst_result = best_by_reference[-1]
         relevance = [1 - x / reference_worst_result for x in best_by_reference]
@@ -74,6 +74,7 @@ def precision(input_file, reference, k):
         p_at_k.append(precision_at_k(best_by_amq, best_by_reference, k))
         ap_at_k.append(average_precision_at_k(best_by_amq, best_by_reference, k))
         gain_at_k.append(ndcg_at_k(best_by_amq, relevance_dict, k))
+
 
     m = len(samples)
     print(np.sum(p_at_k) / m, np.sum(ap_at_k) / m, np.sum(gain_at_k) / m)
@@ -93,7 +94,6 @@ def minprecision(input_files, reference, k):
     for input_file in input_files:
         values, points = index.find(input_file, index_size)
         best_by_amq = [s.name for s in points]
-
         sample = Sample(input_file)
         best_by_reference = reference_df[sample.name].sort_values()
         best_by_reference = list(best_by_reference.index)[:k]
