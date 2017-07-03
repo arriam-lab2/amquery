@@ -297,10 +297,52 @@ affects different beta-diversity indices, but makes it increasingly hard to crea
 
 
 \section*{Methods}
-Amquery implements two major components: 1. a $k$-mer counting-based sample preprocessing routine and 2. a metric community dissimilarity measure.
+Amquery implements a framework for amplicon libraries metric indexing written in Python, 
+providing support for user-defined dissimilarity metrics. Such definitions consist of two major components:
+1. a sample representation routine
+2. a metric community dissimilarity measure.
 
-\subsection*{k-mer counting and sample representation}
-Given a word-length $k$, Amquery represents an arbitrary amplicon library as a discrete probability distribution over the corresponding $k$-mer space. To reduce memory consumption, the $k$-mers are encoded as quaternary values. More formally, each $k$-mer in a sequence $s = s_0,\dots,s_{n-1}$ is represented as its \textit{lexicographic rank} $\mathrm{lxr}_k(s)$, corresponding to the $k$-mer's position in the lexicographically sorted list of all possible $k$-mers.
+
+\subsection*{Metric indexing storage}
+In order to provide efficient distance metric based retrieval of amplicon library samples, 
+Amquery implements a heavily researched concept of metric indexing. Generally speaking, metric indexing 
+is a preprocessing of data designed to provide efficient metric based similarity search 
+(see \cite{hetland2009basic} for more detailed overview).
+
+Amquery utilises vantage-point tree (vp-tree) \cite{yianilos1993data, chavez2001searching} as an indexing 
+data structure, which refers to so-called pivot-based metric indexing.
+In short, pivot-based metric indexing exploits the idea of sequential partitioning of origin metric 
+space, reducing the cost of traversing across the metric space during similarity search query. 
+To index a set of input samples $S$, one creates a tree node and randomly picks a 'pivot' sample $p \in S$, calculating dissimilarity 
+values between all pairs of the form $(p, x), x \in S \setminus \{ p \}$. 0
+A median of the list of all of these values is a vantage-point for current tree node, which splits the list into two parts. Samples according to left and right part are indexed recursively in left and right subtree of current tree node, respectively.
+To search for most similar samples of input sample $s$, one traverses throw the tree in the following way. Let $p$ to be a pivot sample of current tree node, $f$ to be a dissimilarity function and $k$ to be a number of most similar samples to search.
+Then $f(s, p)$ is compared to corresponding median value, stored in current tree node, in order to choose a subtree for further traversing. If this subtree stores less than $k$ samples (and in some other cases), samples from alternative subtree are also processed in the same way. It is convenient to implement search routine using a queue to track candidate samples and returning first $k$ elements of the queue as a result list.
+
+Since vantage-point tree is designed to be independent of the space dimensionality \cite{yianilos1993data}, this allows to store high-dimensional data with virtually no loss of indexing and search performance: it takes $\mathcal{O}(n)$ space and $\mathcal{O}(n \log n)$ time in the worst case to be built (for an input set of $n$ samples), and a search query is argued to require $\mathcal{O}(\log n)$ of time with some reservations. For more detailed analysis of vp-tree performance, see \cite{yianilos1993data}.
+
+
+\subsection*{Dissimilarity metrics}
+Amquery supports weighted UniFrac \cite{lozupone2011unifrac} as a community dissimilarity metric,
+ which requires OTU-picking and phylogenetic tree construction on a precalculation stage. In this case, 
+ samples are represented as vectors of OTU abundances (i.e. rows of OTU-table), which are directly used 
+ in the calculation of pairwise distance values.
+
+
+Since it can be computationally expensive to use OTU-based dissimilarity metrics, such as weighted UniFrac, Amquery 
+implements an OTU-picking free dissimilarity metric over samples k-mer frequency distributions. Vectors of such distributions
+are known as feature frequency profiles (FFP) and has been used in whole-genome comparison \cite{sims2009alignment}. 
+Amquery utilises the square root of \textit{Jensen-Shannon divergence} (RJSD) \cite{lin1991divergence} that 
+satisfies many statistical properties and fits many cases of high-dimensional spaces in $\mathbb{R^\star}$ as a distance 
+metric \cite{fuglede2004jensen, endres2003new}. We make use of the specific form of RJSD, introduced 
+by Connor et al. \cite{connor2013evaluation}, to speed up distance evaluation over sparse $k$-mer distributions (i.e. sparse FFP).
+
+
+\subsubsection*{k-mer counting}
+In the case of using RJSD as dissimilarity metric, Amquery represents an arbitrary amplicon library as a discrete 
+probability distribution over the corresponding $k$-mer space (for a word-length $k$). 
+To reduce memory consumption, the $k$-mers are encoded as quaternary values. 
+More formally, each $k$-mer in a sequence $s = s_0,\dots,s_{n-1}$ is represented as its \textit{lexicographic rank} $\mathrm{lxr}_k(s)$, corresponding to the $k$-mer's position in the lexicographically sorted list of all possible $k$-mers.
 
 \begin{eqnarray}
 \label{eq:schemeP}
@@ -316,24 +358,21 @@ Here $\mathrm{ord}(s_i)$ is a value of ordering function at $s_i$ over the alpha
 This advantage, however, imposes an upper-bound on the word-length $k$, since the number of possible $k$-mers grows exponentially with increasing word-length. That is, for a $k$-mer value to fit in a single machine word, we assume $k \leq 32$ for x64 architectures.
 Since realistic sample ${k}$-mer distribution vectors are extremely high-dimensional and sparse, Amquery represents them as rank-sorted sparse arrays. In our implementation, a sparse array is a key-value storage in which the keys are the lexicographic ranks and the values are the empirical probabilities (i.e. relative abundances of the corresponding k-mers).
 
-\subsection*{Distance metric}
-After Amquery transforms a set of samples into discrete probability distributions, it is quite natural to use some metric on distributions to compare samples. Amquery utilises the square root of \textit{Jensen-Shannon divergence} (RJSD) \cite{lin1991divergence} that satisfies many statistical properties and fits many cases of high-dimensional spaces in $\mathbb{R^\star}$ as a distance metric \cite{fuglede2004jensen, endres2003new}. We make use of the specific form of RJSD, introduced by Connor et al. \cite{connor2013evaluation}, to speed up distance evaluation over sparse $k$-mer distributions.
-
-\subsection*{Metric indexing}
-In order to provide efficient distance metric based retrieval of amplicon library samples, Amquery implements a heavily researched concept of metric indexing. Generally speaking, metric indexing is a preprocessing of data designed to provide 
-efficient metric based similarity search (see \cite{hetland2009basic} for more detailed overview).
-Amquery utilises vantage-point tree (vp-tree) \cite{yianilos1993data, chavez2001searching} as an indexing data structure, which refers to so-called pivot-based metric indexing.
-In short, pivot-based metric indexing exploits the idea of sequential partitioning of origin metric space, reducing the cost of traversing across the metric space during similarity search query.
 
 
-Since vantage-point tree is designed to be independent of the space dimensionality \cite{yianilos1993data}, this allows us to store high-dimensional sparse vectors with virtually no loss of indexing and search performance: it takes $\mathcal{O}(n)$ space and $\mathcal{O}(n \log n)$ time in the worst case to be built (for an input set of $n$ samples), and a search query is argued to require $\mathcal{O}(\log n)$ of time, with some reservations. For more detailed analysis of vp-tree performance, see \cite{yianilos1993data}.
 
 \section*{Results}
-The implementation of Amquery was compared against our own custom solution of similarity search, based on the classic microbiome analysis QIIME pipeline, in the following fashion.
-We computed pairwise weighted Unifrac distances \cite{lozupone2011unifrac} and Bray-Curtis similarities for huge 16S metagenomic dataset by performing both a reference-based and \textit{de novo} OTU picking.
-Both of resulting pairwise distance matrices were used for naive top-k nearest neighbor selection as a reference to estimate search relevance of Amquery. 
-We also compare speed and memory efficiency of index construction by Amquery against these QIIME based beta-diversity pipelines.
-All of the experiments were run on a machine equipped with an Intel Xeon CPU E5-2650 v3 (2.30 GHz) and a Seagate Constellation ES.3 ST3000NM0033 hard drive.
+
+The weighted UniFrac based implementation of Amquery was compared against the RJSD based one in the following fashion.
+We used the classic microbiome analysis QIIME \cite{caporaso2010qiime} pipeline to perform both a reference-based and \textit{de novo} OTU picking, 
+and phylogenetic tree construction for huge 16S metagenomic dataset.
+Resulting data were used for evaluation of weighted UniFrac distances during an index construction. 
+Nearest neighbor search results for weighted UniFrac based implementation were used as a reference to estimate 
+search relevance of the RJSD based one.
+
+We also compared speed and memory efficiency of index construction between these two implementations.
+All of the experiments were run on a machine equipped with an Intel Xeon CPU E5-2650 v3 (2.30 GHz)
+ and a Seagate Constellation ES.3 ST3000NM0033 hard drive.
 
 \subsection*{Data}
 We analyzed a human gut 16S metagenomic dataset, which consists of 1978 samples, obtained from the Sequence Read Archive \cite{leinonen2010sequence}. 
@@ -342,14 +381,16 @@ Resulting samples are split into two parts: referred below to as \texttt{main}, 
 consist of all the rest samples, accordingly. Resulting pairs of (\texttt{main}, \texttt{additional}) sample subsets were used in further processing.
 
 \subsection*{Data processing}
-\subsubsection*{By Amquery}
-For every split of the dataset, Amquery index was built for the \texttt{main} part, using $k=15$ as k-mer size. 100 random samples from the \texttt{main} part were searched in resulting index,
-and a random subset of the \texttt{additional} sample set of size 100, 200, $\dots$, 1000 was added to the index separately. At every stage of processing, peak RAM usage and computational time were measured.
 
 \subsubsection*{By QIIME}
-We used QIIME versions 1.9.1 to perform OTU picking and beta-diversity analyses for the \texttt{main} part of every dataset split.
+We used QIIME versions 1.9.1 to perform OTU picking and phylogenetic tree construction for the \texttt{main} part of every dataset split.
 Reference-based and \textit{de novo} OTU picking were done using the default options as implemented in QIIME at the 95\% sequence similarity threshold, 
 except for \texttt{uclust\_ref} OTU picking method for the reference-based case.
+
+\subsubsection*{By Amquery}
+For every split of the dataset, Amquery index was built for the \texttt{main} part, using weighted UniFrac and RJSD over FFPs ($k=15$ as k-mer size) as dissimilarity metrics.
+Then, 100 random samples from the \texttt{main} part were searched in resulting index, and a random subset of the \texttt{additional} sample set of size 100 was added to the index. 
+At every stage of processing, peak RAM usage and computational time were measured.
 
 \subsection*{Speed and memory efficiency}
 Elapsed time measurements at each stage of processing both for reference-based and \textit{de novo} QIIME pipeline against Amquery are presented in Fig~\ref{fig1} and Fig~\ref{fig2} respectively.
