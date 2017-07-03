@@ -1,3 +1,4 @@
+import os
 import abc
 from amquery.core.distance.factory import Factory as DistanceFactory
 from amquery.core.preprocessing.factory import Factory as PreprocessorFactory
@@ -47,11 +48,10 @@ class Index:
         return len(self._storage) if self._storage else 0
 
     @staticmethod
-    def init():
+    def init(config):
         """
         :return: Index
         """
-        config = read_config()
         distance = DistanceFactory.create(config)
         preprocessor = PreprocessorFactory.create(config)
         storage = StorageFactory.create(config)
@@ -68,17 +68,17 @@ class Index:
         distance = DistanceFactory.load(config)
         preprocessor = PreprocessorFactory.create(config)
         storage = StorageFactory.load(config)
-        return Index(distance, preprocessor, storage)
+        return Index(distance, preprocessor, storage), config
 
-    def build(self, input_files):
+    def build(self, config, input_files):
         """
+        :param config: configparser.ConfigParser
         :param input_file: Sequence[str]
         :return:
         """
         assert (len(input_files) == 1)
         input_file = input_files[0]
 
-        config = read_config()
         self._distance = DistanceFactory.create(config)
         self._preprocessor = PreprocessorFactory.create(config)
         self._storage = StorageFactory.create(config)
@@ -91,8 +91,9 @@ class Index:
     def refine(self):
         raise NotImplementedError
 
-    def add(self, input_files):
+    def add(self, config, input_files):
         """
+        :param config: configparser.ConfigParser
         :param sample_files: Sequence[str] 
         :return: None
         """
@@ -100,11 +101,9 @@ class Index:
         input_file = input_files[0]
 
         # update biom table if present
-        config = read_config()
-        master_table = config.get("distance", "biom_table")
-        additional_table = config.get("additional", "biom_table")
-        if master_table:
-            assert additional_table
+        if config.has_option("distance", "biom_table"):
+            master_table = config.get("distance", "biom_table")
+            additional_table = config.get("additional", "biom_table")
             merge_biom_tables(master_table, additional_table)
 
         samples = [Sample(sample_file) for sample_file in split_fasta(input_file, get_sample_dir())]
