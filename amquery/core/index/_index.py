@@ -1,6 +1,7 @@
 import abc
 from amquery.core.distance.factory import Factory as DistanceFactory
 from amquery.core.preprocessing.factory import Factory as PreprocessorFactory
+from amquery.core.biom import merge_biom_tables
 from amquery.core.storage.factory import Factory as StorageFactory
 from amquery.utils.config import read_config
 from amquery.core.sample import Sample
@@ -88,9 +89,6 @@ class Index:
         self.storage.build(self.distance, processed_samples)
 
     def refine(self):
-        #self._pwmatrix = PwMatrix.create(self.config, self.pwmatrix.sample_map)
-        #tree_distance = TreeDistance(self.pwmatrix)
-        #self._vptree = VpTree(self.config).build(tree_distance)
         raise NotImplementedError
 
     def add(self, input_files):
@@ -100,6 +98,14 @@ class Index:
         """
         assert (len(input_files) == 1)
         input_file = input_files[0]
+
+        # update biom table if present
+        config = read_config()
+        master_table = config.get("distance", "biom_table")
+        additional_table = config.get("additional", "biom_table")
+        if master_table:
+            assert additional_table
+            merge_biom_tables(master_table, additional_table)
 
         samples = [Sample(sample_file) for sample_file in split_fasta(input_file, get_sample_dir())]
         processed_samples = [self._preprocessor(sample) for sample in samples]

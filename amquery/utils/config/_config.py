@@ -7,6 +7,7 @@ def get_default_config():
     config.add_section('config')
     config.add_section('distance')
     config.add_section('index')
+    config.add_section('additional')
     return config
 
 
