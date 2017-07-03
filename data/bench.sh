@@ -29,7 +29,7 @@ function run_amq {
             "${index_dir}/${add_size}/add_memory.log"
 
         # clean up
-        # rm -r "${index_dir}/$add_size"
+        rm -r "${index_dir}/$add_size"
         echo $build_size: $add_size added
 
         popd
