@@ -108,7 +108,7 @@ class Index:
         :param sample_files: Sequence[str] 
         :return: None
         """
-        assert (len(input_files) == 1)
+        #assert (len(input_files) == 1)
         input_file = input_files[0]
 
         # update biom table if present
@@ -118,7 +118,8 @@ class Index:
             merge_biom_tables(master_table, additional_table)
             self._reload()
 
-        samples = [Sample(sample_file) for sample_file in split_fasta(input_file, get_sample_dir())]
+        #samples = [Sample(sample_file) for sample_file in split_fasta(input_file, get_sample_dir())]
+        samples = [Sample(sample_file) for sample_file in input_files]
         processed_samples = [self._preprocessor(sample) for sample in samples]
 
         self.distance.add_samples(processed_samples)
