@@ -6,7 +6,10 @@ function run_amq {
 
     pushd `pwd`
     mkdir -p ${index_dir}/origin && cd ${index_dir}/origin
+
     amq init
+    qiime_dir=/home/ilia/storage/metagen/bench/denovo/
+    #amq init --rep_tree=${qiime_dir}/$build_size/rep_set.tre --biom_table=${qiime_dir}/$build_size/otu_table.biom --method=weighted-unifrac
 
     # build an index
     /usr/bin/time -v amq build ${split_dir}/$build_size/main.fna \
@@ -15,7 +18,6 @@ function run_amq {
     echo $build_size-samples index built
 
     for add_size in {100..1000..100}
-    #for add_size in {1..5..2}
     do
         # make a copy of the current index 
         cp -r "${index_dir}/origin" "${index_dir}/$add_size"
@@ -36,27 +38,11 @@ function run_amq {
     popd
 }
 
-function merge_fasta {
-    split_dir=$1
-    index_size=$2
-    amq_source=`python -c "import amquery; print(amquery.__file__)"`
-    amq_dir=`dirname ${amq_source}`
-    python ${amq_dir}/utils/merge_fasta.py `find ${split_dir}/${index_size}/main/ -type l -exec readlink {} \; ` -o ${split_dir}/${index_size}/main.fna
-    python ${amq_dir}/utils/merge_fasta.py `find ${split_dir}/${index_size}/additional/ -type l -exec readlink {} \; ` -o ${split_dir}/${index_size}/additional.fna
-    #python ${amq_dir}/utils/merge_fasta.py `find ${split_dir}/${index_size}/main/ -type f` -o ${split_dir}/${index_size}/main.fna
-    #python ${amq_dir}/utils/merge_fasta.py `find ${split_dir}/${index_size}/additional/ -type f` -o ${split_dir}/${index_size}/additional.fna
-}
 
 if [[ $# -ne 2 ]]; then
-    echo "Usage: bash bench.sh <input-dir> <output-dir>"
+    echo "Usage: bash $0 <input-dir> <output-dir>"
 else
-    #for build_size in {100..1000..100}
-    #do
-    #    merge_fasta $1 ${build_size}
-    #done;
-
     for build_size in {100..1000..100}
-    #for build_size in 10
     do
         run_amq $1 $2 $build_size
     done;
