@@ -63,12 +63,23 @@ class Index:
         self.storage.save()
 
     @staticmethod
-    def load():
+    def _load():
         config = read_config()
         distance = DistanceFactory.load(config)
         preprocessor = PreprocessorFactory.create(config)
         storage = StorageFactory.load(config)
+        return distance, preprocessor, storage, config
+
+    @staticmethod
+    def load():
+        distance, preprocessor, storage, config = Index._load()
         return Index(distance, preprocessor, storage), config
+
+    def _reload(self):
+        distance, preprocessor, storage, config = Index._load()
+        self._distance = distance
+        self._preprocessor = preprocessor
+        self._storage = storage
 
     def build(self, config, input_files):
         """
@@ -105,6 +116,7 @@ class Index:
             master_table = config.get("distance", "biom_table")
             additional_table = config.get("additional", "biom_table")
             merge_biom_tables(master_table, additional_table)
+            self._reload()
 
         samples = [Sample(sample_file) for sample_file in split_fasta(input_file, get_sample_dir())]
         processed_samples = [self._preprocessor(sample) for sample in samples]
