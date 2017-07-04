@@ -109,7 +109,7 @@ class Index:
         :return: None
         """
         #assert (len(input_files) == 1)
-        input_file = input_files[0]
+        #input_file = input_files[0]
 
         # update biom table if present
         if config.has_option("distance", "biom_table"):
