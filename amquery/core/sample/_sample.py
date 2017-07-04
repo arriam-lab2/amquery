@@ -43,7 +43,10 @@ def _transform(sequence):
 
 
 def _parse_sample_name(sample_file):
-    return os.path.basename(sample_file).split(".fasta")[0]
+    with open(sample_file, 'r') as f:
+        line = f.readline()
+        while line[0] != '>':
+            return line.split('_')[0].split('>')[1].strip()
 
 
 class Sample:
