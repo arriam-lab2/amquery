@@ -297,7 +297,7 @@ affects different beta-diversity indices, but makes it increasingly hard to crea
 
 
 \section*{Methods}
-Amquery implements a framework for amplicon libraries metric indexing written in Python, 
+Amquery implements a framework for metric indexing of amplicon libraries written in Python, 
 providing support for user-defined dissimilarity metrics. Such definitions consist of two major components:
 1. a sample representation routine
 2. a metric community dissimilarity measure.
@@ -307,7 +307,7 @@ providing support for user-defined dissimilarity metrics. Such definitions consi
 In order to provide efficient distance metric based retrieval of amplicon library samples, 
 Amquery implements a heavily researched concept of metric indexing. Generally speaking, metric indexing 
 is a preprocessing of data designed to provide efficient metric based similarity search 
-(see \cite{hetland2009basic} for more detailed overview).
+(see \cite{hetland2009basic} for the more detailed overview).
 
 Amquery utilises vantage-point tree (vp-tree) \cite{yianilos1993data, chavez2001searching} as an indexing 
 data structure, which refers to so-called pivot-based metric indexing.
@@ -365,7 +365,7 @@ Since realistic sample ${k}$-mer distribution vectors are extremely high-dimensi
 
 The weighted UniFrac based implementation of Amquery was compared against the RJSD based one in the following fashion.
 We used the classic microbiome analysis QIIME \cite{caporaso2010qiime} pipeline to perform both a reference-based and \textit{de novo} OTU picking, 
-and phylogenetic tree construction for huge 16S metagenomic dataset.
+and phylogenetic tree construction for a huge 16S metagenomic dataset.
 Resulting data were used for evaluation of weighted UniFrac distances during an index construction. 
 Nearest neighbor search results for weighted UniFrac based implementation were used as a reference to estimate 
 search relevance of the RJSD based one.
@@ -376,7 +376,7 @@ All of the experiments were run on a machine equipped with an Intel Xeon CPU E5-
 
 \subsection*{Data}
 We analyzed a human gut 16S metagenomic dataset, which consists of 1978 samples, obtained from the Sequence Read Archive \cite{leinonen2010sequence}. 
-For each sample, the reads were filtered by length with 250 base pairs threshold and rarefied by choosing 1000 sequences per sample randomly.
+For each sample, the reads were filtered by the length with 250 base pairs threshold and rarefied by choosing 1000 sequences per sample randomly.
 Resulting samples are split into two parts: referred below to as \texttt{main}, the size of which varies in range (100, 200, $\dots$, 1000), and referred below to as \texttt{additional}, 
 consist of all the rest samples, accordingly. Resulting pairs of (\texttt{main}, \texttt{additional}) sample subsets were used in further processing.
 
@@ -389,13 +389,15 @@ except for \texttt{uclust\_ref} OTU picking method for the reference-based case.
 
 \subsubsection*{By Amquery}
 For every split of the dataset, Amquery index was built for the \texttt{main} part, using weighted UniFrac and RJSD over FFPs ($k=15$ as k-mer size) as dissimilarity metrics.
-Then, 100 random samples from the \texttt{main} part were searched in resulting index, and a random subset of the \texttt{additional} sample set of size 100 was added to the index. 
+Then, 100 random samples from the \texttt{main} part were searched in resulting index, and a random subset of the \texttt{additional} sample set of size (100, 200, $\dots$, 1000) was added to the index separately. 
 At every stage of processing, peak RAM usage and computational time were measured.
 
 \subsection*{Speed and memory efficiency}
-Elapsed time measurements at each stage of processing both for reference-based and \textit{de novo} QIIME pipeline against Amquery are presented in Fig~\ref{fig1} and Fig~\ref{fig2} respectively.
+Elapsed time measurements at each stage of preprocessing and index construction 
+both for weighted UniFrac based on open-reference and \textit{de novo} OTU picking against RJSD based solution 
+are presented in Fig~\ref{fig1} and Fig~\ref{fig2} respectively.
 More detailed view of these measurements is presented Table~\ref{table1} and Table~\ref{table2},
-where rows present measurements, made for each of the dataset splits, and the columns present elapsed time at each stage of pipelines. 
+where rows present measurements, made for each of the dataset splits, and the columns present elapsed time at each stage of processing. 
 Similarly, peak RAM usage presented in Fig~\ref{fig3} and Fig~\ref{fig4} graphically and in Table~\ref{table3} and Table~\ref{table4} in numbers.
 
 
@@ -553,13 +555,18 @@ Column namings correspond to the tables above.
 
 
 
-
 \subsection*{Similarity search effectiveness}
-To estimate relevance of similarity search, provided by Amquery, mean precision at k (MP@K), mean average precision at k (MAP@K), and normalized cumulative discounted gain at k (NCDG@k) \cite{book, jarvelin2000ir, jarvelin2002cumulated}
-are evaluated, with the relevance function, declared as follows. For every search query $q$, all the pairwise distances $D(q, x)$ provided by QIIME pipeline from $q$ to every sample $x$ in the index, are normalized. 
-Thus, resulting relevance value $R(q, r)$ for search output result $r$ is the value $1 - \hat{D}(q, r)$, whree $\hat{D}$ is the normalized value of $D(q, x)$ over all the $x$ in the index. Here we use the notation of $D(q, r)$ for weighted Unifrac and Bray-Curtis similarity distances.
+To estimate relevance of similarity search, provided by Amquery, mean precision at k (MP@K), mean average precision at k (MAP@K), 
+and normalized cumulative discounted gain at k (NCDG@k) \cite{book, jarvelin2000ir, jarvelin2002cumulated}
+are evaluated, with the relevance function, declared as follows. 
+For every search query $q$, all the pairwise distances $D(q, x)$ provided by QIIME pipeline from $q$ to every sample $x$ 
+in the index, are normalized. 
+Thus, resulting relevance value $R(q, r)$ for search output result $r$ is the value $1 - \hat{D}(q, r)$, whree $\hat{D}$ 
+is the normalized value of $D(q, x)$ over all the $x$ in the index. Here we use the notation of $D(q, r)$ for weighted Unifrac 
+and Bray-Curtis similarity distances.
 
-All the metrics are evaluated among all the dataset splits, mentioned above, for search query size $k = {1, 3, 5, 7, 10, 15, 20}$ and 100 random samples from the index. Since precision metrics as MP@k and MAP@k require binary relevance function,
+All the metrics are evaluated among all the dataset splits, mentioned above, for search query size $k = {1, 3, 5, 7, 10, 15, 20}$ 
+and 100 random samples from the index. Since precision metrics as MP@k and MAP@k require binary relevance function,
 $R(q, r)$ values for these metrics are binarized as follows:
 
 \[ R_b(q, r)  =
