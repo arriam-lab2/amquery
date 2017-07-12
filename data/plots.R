@@ -71,72 +71,10 @@ time.plot <- function(df) {
     p <- ggplot(df, aes(size, value, fill=variable)) + 
         geom_bar(stat="identity", position="stack", alpha=0.7) + 
         labs(x="Number of samples", y="Time in seconds") +
-        scale_fill_npg(guide=guide_legend(title="", ncol=1)) +
+        scale_fill_npg(guide=guide_legend(title="", ncol=2)) +
         theme_minimal() + 
         theme(legend.position="bottom") +
         theme(plot.margin = unit(c(15, 6, 6, 6), "pt"))
-    p
-}
-
-time.ref.combined <- function(filename) {
-    df <- read.table(filename)
-    df.amq <- df[c("V1", "V2", "V3")]
-    df.qiime.wu <- df[c("V1", "V4", "V5", "V6")]
-    df.qiime.bc <- df[c("V1", "V4", "V5", "V7")]
-
-    colnames(df.amq) <- c('size', 'k-mer counting', 'Tree construction')
-    colnames(df.qiime.wu) <- c('size', 'pick_otus', 'make_otu_table', 'beta_diversity')
-    colnames(df.qiime.bc) <- c('size', 'pick_otus', 'make_otu_table', 'beta_diversity')
-
-    df.amq <- melt(df.amq, id.vars='size')
-    df.qiime.wu <- melt(df.qiime.wu, id.vars='size')
-    df.qiime.bc <- melt(df.qiime.bc, id.vars='size')
-
-    p1 <- time.plot(df.qiime.bc) + labs(x="") + ylim(0, 900)
-    p2 <- time.plot(df.qiime.wu) + labs(y="") + ylim(0, 900)
-    p3 <- time.plot(df.amq) + labs(x="", y="") + ylim(0, 900)
-
-    p <- plot_grid(
-        p1,
-        p2 ,
-        p3,
-        align = 'vh',
-        labels = c("A", "B", "C"),
-        hjust = -1,
-        nrow = 1
-    )
-    p
-}
-
-time.denovo.combined <- function(filename) {
-    df <- read.table(filename)
-    df.amq <- df[c("V1", "V2", "V3")]
-    df.qiime.wu <- df[c("V1", "V4", "V5", "V6", "V7", "V8", "V9", "V10")]
-    df.qiime.bc <- df[c("V1", "V4", "V5", "V6", "V7", "V8", "V9", "V11")]
-
-    colnames(df.amq) <- c('size', 'k-mer counting', 'Tree construction')
-    qiime_columns <- c('size', 'pick_otus', 'pick_rep_set', 'align_seqs', 'filter_alignment', 
-                       'make_phylogeny', 'make_otu_table', 'beta_diversity')
-    colnames(df.qiime.wu) <- qiime_columns
-    colnames(df.qiime.bc) <- qiime_columns
-
-    df.amq <- melt(df.amq, id.vars='size')
-    df.qiime.wu <- melt(df.qiime.wu, id.vars='size')
-    df.qiime.bc <- melt(df.qiime.bc, id.vars='size')
-
-    p1 <- time.plot(df.qiime.bc) + labs(x="") + ylim(0, 7500)
-    p2 <- time.plot(df.qiime.wu) + labs(y="") + ylim(0, 7500)
-    p3 <- time.plot(df.amq) + labs(x="", y="") + ylim(0, 7500)
-
-    p <- plot_grid(
-        p1,
-        p2 ,
-        p3,
-        align = 'vh',
-        labels = c("A", "B", "C"),
-        hjust = -1,
-        nrow = 1
-    )
     p
 }
 
@@ -151,28 +89,106 @@ mem.plot <- function(df) {
     p
 }
 
-mem.ref.combined <- function(filename) {
+build.time <- function(filename) {
     df <- read.table(filename)
-    df.amq <- df[c("V1", "V2")]
-    df.qiime.wu <- df[c("V1", "V3", "V4", "V5")]
-    df.qiime.bc <- df[c("V1", "V3", "V4", "V6")]
+    df.jsd <- df[c("V1")]
+    df.wu.ref <- df[c("V2", "V3", "V4")]
+    df.wu.denovo <- df[c("V5", "V6", "V7", "V8", "V9", "V10", "V11")]
 
-    colnames(df.amq) <- c('size', 'Overall')
-    qiime_columns <- c('size', 'pick_otus', 'make_otu_table', 'beta_diversity')
-    colnames(df.qiime.wu) <- qiime_columns
-    colnames(df.qiime.bc) <- qiime_columns
+    colnames(df.jsd) <- c('indexing')
+    colnames(df.wu.ref) <- c('pick_otus', 'make_otu_table', 'indexing')
+    colnames(df.wu.denovo) <- c('pick_otus', 'pick_rep_set', 'align_seqs', 
+        'filter_alignment', 'make_phylogeny', 'make_otu_table', 'indexing')
+    
+    index_size <- c(100, 300, 500, 700)
+    df.jsd$size <- index_size
+    df.wu.ref$size <- index_size
+    df.wu.denovo$size <- index_size
 
-    df.amq <- melt(df.amq, id.vars='size')
-    df.qiime.wu <- melt(df.qiime.wu, id.vars='size')
-    df.qiime.bc <- melt(df.qiime.bc, id.vars='size')
+    df.jsd <- melt(df.jsd, id.vars='size')
+    df.wu.ref <- melt(df.wu.ref, id.vars='size')
+    df.wu.denovo <- melt(df.wu.denovo, id.vars='size')
 
-    p1 <- mem.plot(df.qiime.bc) + labs(x="", y="Memory consumption, Mb") + ylim(0, 1500)
-    p2 <- mem.plot(df.qiime.wu) + labs(y="") + ylim(0, 1500)
-    p3 <- mem.plot(df.amq) + labs(x="", y="") + ylim(0, 1500)
+    p1 <- time.plot(df.wu.denovo) + labs(x="") + ylim(0, 7500)
+    p2 <- time.plot(df.wu.ref) + labs(y="") + ylim(0, 7500)
+    p3 <- time.plot(df.jsd) + labs(x="", y="") + ylim(0, 7500)
 
     p <- plot_grid(
         p1,
-        p2 ,
+        p2,
+        p3,
+        align = 'vh',
+        labels = c("A", "B", "C"),
+        hjust = -2.2,
+        vjust = 1.2,
+        nrow = 1
+    )
+    p
+}
+
+build.memory <- function(filename) {
+    df <- read.table(filename)
+    df.jsd <- df[c("V1")]
+    df.wu.ref <- df[c("V2", "V3", "V4")]
+    df.wu.denovo <- df[c("V5", "V6", "V7", "V8", "V9", "V10", "V11")]
+
+    colnames(df.jsd) <- c('indexing')
+    colnames(df.wu.ref) <- c('pick_otus', 'make_otu_table', 'indexing')
+    colnames(df.wu.denovo) <- c('pick_otus', 'pick_rep_set', 'align_seqs', 
+        'filter_alignment', 'make_phylogeny', 'make_otu_table', 'indexing')
+    
+    index_size <- c(100, 300, 500, 700)
+    df.jsd$size <- index_size
+    df.wu.ref$size <- index_size
+    df.wu.denovo$size <- index_size
+
+    df.jsd <- melt(df.jsd, id.vars='size')
+    df.wu.ref <- melt(df.wu.ref, id.vars='size')
+    df.wu.denovo <- melt(df.wu.denovo, id.vars='size')
+
+    p1 <- mem.plot(df.wu.denovo) + labs(x="", y="Memory consumption, Mb") + ylim(0, 1500)
+    p2 <- mem.plot(df.wu.ref) + labs(y="") + ylim(0, 1500)
+    p3 <- mem.plot(df.jsd) + labs(x="", y="") + ylim(0, 1500)
+
+    p <- plot_grid(
+        p1,
+        p2,
+        p3,
+        align = 'vh',
+        labels = c("A", "B", "C"),
+        hjust = -2.2,
+        vjust = 1.2,
+        nrow = 1
+    )
+    p
+}
+
+add.time <- function(filename, ymax) {
+    df <- read.table(filename)
+    df.jsd <- df[c("V1")]
+    df.wu.ref <- df[c("V2", "V3")]
+    df.wu.denovo <- df[c("V4", "V5")]
+
+    colnames(df.jsd) <- c('indexing')
+    colnames(df.wu.ref) <- c('map_reads', 'indexing')
+    colnames(df.wu.denovo) <- c('map_reads', 'indexing')
+    
+    index_size <- c(100, 300, 500, 700)
+    df.jsd$size <- index_size
+    df.wu.ref$size <- index_size
+    df.wu.denovo$size <- index_size
+
+    df.jsd <- melt(df.jsd, id.vars='size')
+    df.wu.ref <- melt(df.wu.ref, id.vars='size')
+    df.wu.denovo <- melt(df.wu.denovo, id.vars='size')
+
+    p1 <- time.plot(df.wu.denovo) + labs(x="") + ylim(0, ymax)
+    p2 <- time.plot(df.wu.ref) + labs(y="") + ylim(0, ymax)
+    p3 <- time.plot(df.jsd) + labs(x="", y="") + ylim(0, ymax)
+
+    p <- plot_grid(
+        p1,
+        p2,
         p3,
         align = 'vh',
         labels = c("A", "B", "C"),
@@ -182,51 +198,19 @@ mem.ref.combined <- function(filename) {
     p
 }
 
-mem.denovo.combined <- function(filename) {
-    df <- read.table(filename)
-    df.amq <- df[c("V1", "V2")]
-    df.qiime.wu <- df[c("V1", "V3", "V4", "V5", "V6", "V7", "V8", "V9")]
-    df.qiime.bc <- df[c("V1", "V3", "V4", "V5", "V6", "V7", "V8", "V10")]
+p1 <- build.time('out/build_time.txt')
+ggsave("out/build_time.tiff", p1, width=18, height=9, units="cm")
 
-    colnames(df.amq) <- c('size', 'Overall')
-    qiime_columns <- c('size', 'pick_otus', 'pick_rep_set', 'align_seqs', 'filter_alignment', 
-                       'make_phylogeny', 'make_otu_table', 'beta_diversity')
-    colnames(df.qiime.wu) <- qiime_columns
-    colnames(df.qiime.bc) <- qiime_columns
+p2 <- build.memory('out/build_memory.txt')
+ggsave("out/build_memory.tiff", p2, width=18, height=9, units="cm")
 
-    df.amq <- melt(df.amq, id.vars='size')
-    df.qiime.wu <- melt(df.qiime.wu, id.vars='size')
-    df.qiime.bc <- melt(df.qiime.bc, id.vars='size')
-
-    p1 <- mem.plot(df.qiime.bc) + labs(x="", y="Memory consumption, Mb") + ylim(0, 2500)
-    p2 <- mem.plot(df.qiime.wu) + labs(y="") + ylim(0, 2500)
-    p3 <- mem.plot(df.amq) + labs(x="", y="") + ylim(0, 2500)
-
-    p <- plot_grid(
-        p1,
-        p2 ,
-        p3,
-        align = 'vh',
-        labels = c("A", "B", "C"),
-        hjust = -1,
-        nrow = 1
-    )
-    p
-}
-
-
-p1 <- precision.combined(c('wu_mp_at_k.txt', 'wu_bmp_at_k.txt', 'wu_map_at_k.txt', 'wu_bmap_at_k.txt', 'wu_gain_at_k.txt', 'wu_bgain_at_k.txt',
-                           'bc_mp_at_k.txt', 'bc_bmp_at_k.txt', 'bc_map_at_k.txt', 'bc_bmap_at_k.txt', 'bc_gain_at_k.txt', 'bc_bgain_at_k.txt'))
-ggsave("ref_precision.tiff", p1, width=18, height=16, units="cm")
-
-p3 <- time.ref.combined('ref_time.txt')
-ggsave("ref_time.tiff", p3, width=18, height=9, units="cm")
-
-p4 <- time.denovo.combined('denovo_time.txt')
-ggsave("denovo_time.tiff", p4, width=18, height=12, units="cm")
-
-p5 <- mem.ref.combined('ref_mem.txt')
-ggsave("ref_mem.tiff", p5, width=18, height=9, units="cm")
-
-p6 <- mem.denovo.combined('denovo_mem.txt')
-ggsave("denovo_mem.tiff", p6, width=18, height=10, units="cm")
+p3 <- add.time('out/add_100_time.txt', 1200)
+ggsave("out/add_100_time.tiff", p3, width=18, height=9, units="cm")
+p4 <- add.time('out/add_300_time.txt', 3000)
+ggsave("out/add_300_time.tiff", p4, width=18, height=9, units="cm")
+p5 <- add.time('out/add_500_time.txt', 5000)
+ggsave("out/add_500_time.tiff", p5, width=18, height=9, units="cm")
+p6 <- add.time('out/add_700_time.txt', 7000)
+ggsave("out/add_700_time.tiff", p6, width=18, height=9, units="cm")
+p7 <- add.time('out/add_1000_time.txt', 18000)
+ggsave("out/add_1000_time.tiff", p7, width=18, height=9, units="cm")
