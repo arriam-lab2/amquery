@@ -44,10 +44,12 @@ def _transform(sequence):
 
 def _parse_sample_name(sample_file):
     with open(sample_file, 'r') as f:
-        line = f.readline()
+        line = ' '
         while line[0] != '>':
-            return line.split('_')[0].split('>')[1].strip()
-
+            line = f.readline()
+        
+        return line.split('_')[0].split('>')[1].strip()
+        
 
 class Sample:
     def __init__(self, sample_file):

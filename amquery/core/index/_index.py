@@ -90,10 +90,6 @@ class Index:
         assert (len(input_files) == 1)
         input_file = input_files[0]
 
-        self._distance = DistanceFactory.create(config)
-        self._preprocessor = PreprocessorFactory.create(config)
-        self._storage = StorageFactory.create(config)
-
         samples = [Sample(sample_file) for sample_file in split_fasta(input_file, get_sample_dir())]
         processed_samples = [self._preprocessor(sample) for sample in samples]
         self.distance.add_samples(processed_samples)
