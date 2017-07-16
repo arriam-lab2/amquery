@@ -12,7 +12,7 @@ function run_amq_denovo {
     rep_tree=${qiime_dir}/$build_size/rep_set.tre 
     rep_set=${qiime_dir}/$build_size/rep_set.fna
 
-    amq init --rep_tree="${rep_tree}" --rep_set="${rep_set}" --biom_table="${biom_table}" --method=weighted-unifrac
+    amq init --rep_tree="${rep_tree}" --biom_table="${biom_table}" --method=weighted-unifrac
 
     /usr/bin/time -v amq build ${split_dir}/$build_size/main.fna \
         > "${index_dir}/build_time.log" 2> "${index_dir}/build_memory.log"
@@ -59,12 +59,13 @@ function run_amq_ref {
     pushd `pwd`
     mkdir -p ${index_dir}/origin && cd ${index_dir}/origin
 
-    qiime_dir=/home/ilia/storage/metagen/bench/denovo/
+    qiime_dir=/home/ilia/storage/metagen/bench/ref/
     biom_table=${qiime_dir}/$build_size/otu_table.biom 
     rep_tree=/home/ilia/storage/metagen/hitdb/HITdb.tre
     rep_set=/home/ilia/storage/metagen/hitdb/HITdb_sequences.fna
 
-    amq init --rep_tree="${rep_tree}" --rep_set="${rep_set}" --biom_table="${biom_table}" --method=weighted-unifrac
+    amq init --rep_tree="${rep_tree}" --biom_table="${biom_table}" --method=weighted-unifrac
+    echo amq init --rep_tree="${rep_tree}" --biom_table="${biom_table}" --method=weighted-unifrac
 
     /usr/bin/time -v amq build ${split_dir}/$build_size/main.fna \
         > "${index_dir}/build_time.log" 2> "${index_dir}/build_memory.log"
@@ -149,11 +150,10 @@ else
     source `/usr/bin/which "virtualenvwrapper.sh"`
     workon amq-env
 
-    #for build_size in 100 300 500 700 1000
-    for build_size in 1000
+    for build_size in 100 300 500 700 1000
     do
         #run_amq_denovo $1 $2 $build_size
+        run_amq_ref $1 $2 $build_size
         #run_amq $1 $2 $build_size
-        #run_amq_ref $1 $2 $build_size
     done;
 fi
