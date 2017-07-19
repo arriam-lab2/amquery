@@ -5,7 +5,6 @@ import numpy as np
 import amquery.utils.iof as iof
 from skbio import read
 from skbio.tree import TreeNode
-from skbio.diversity import beta_diversity
 from skbio.diversity.beta import weighted_unifrac
 from ctypes import cdll, POINTER, c_uint64, c_size_t, c_double
 
@@ -48,23 +47,24 @@ class WeightedUnifrac(SamplePairwiseDistanceFunction):
         self.otu_table = biom.load_table(biom_fp)
         self.sample_names = self.otu_table.ids(axis="sample")
 
-        self.tree = read(tree_path, format="newick", into=TreeNode).root_at_midpoint()
-        self.tips = [tip.name for tip in self.tree.tips()]
+        tree = read(tree_path, format="newick", into=TreeNode).root_at_midpoint()
+        self.tips = [tip.name for tip in tree.tips()]
 
         ids = self.otu_table.ids(axis="observation")
         self.id_mask = np.array([id_ in self.tips for id_ in ids], dtype=bool)
         self.masked_ids = ids[self.id_mask]
+        tree = tree.shear(self.masked_ids)
+        self.tree_index = tree.to_array(nan_length_value=0.0)
 
     def __call__(self, a, b):
         """
-        :param a: Sample 
+        :param a: Sample
         :param b: Sample
         :return: float
         """
         s1 = self.otu_table.data(a.name)[self.id_mask]
         s2 = self.otu_table.data(b.name)[self.id_mask]
-        return beta_diversity(weighted_unifrac, np.matrix([s1, s2], dtype=int),
-                              tree=self.tree, otu_ids=self.masked_ids)[0][1]
+        return weighted_unifrac(s1, s2, self.masked_ids, self.tree_index, normalized=False)
 
 
 FFP_JSD = 'ffp-jsd'

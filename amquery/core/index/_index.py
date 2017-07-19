@@ -1,6 +1,8 @@
+import os
 import abc
 from amquery.core.distance.factory import Factory as DistanceFactory
 from amquery.core.preprocessing.factory import Factory as PreprocessorFactory
+from amquery.core.biom import merge_biom_tables
 from amquery.core.storage.factory import Factory as StorageFactory
 from amquery.utils.config import read_config
 from amquery.core.sample import Sample
@@ -46,11 +48,10 @@ class Index:
         return len(self._storage) if self._storage else 0
 
     @staticmethod
-    def init():
+    def init(config):
         """
         :return: Index
         """
-        config = read_config()
         distance = DistanceFactory.create(config)
         preprocessor = PreprocessorFactory.create(config)
         storage = StorageFactory.create(config)
@@ -62,25 +63,32 @@ class Index:
         self.storage.save()
 
     @staticmethod
-    def load():
+    def _load():
         config = read_config()
         distance = DistanceFactory.load(config)
         preprocessor = PreprocessorFactory.create(config)
         storage = StorageFactory.load(config)
-        return Index(distance, preprocessor, storage)
+        return distance, preprocessor, storage, config
 
-    def build(self, input_files):
+    @staticmethod
+    def load():
+        distance, preprocessor, storage, config = Index._load()
+        return Index(distance, preprocessor, storage), config
+
+    def _reload(self):
+        distance, preprocessor, storage, config = Index._load()
+        self._distance = distance
+        self._preprocessor = preprocessor
+        self._storage = storage
+
+    def build(self, config, input_files):
         """
+        :param config: configparser.ConfigParser
         :param input_file: Sequence[str]
         :return:
         """
         assert (len(input_files) == 1)
         input_file = input_files[0]
-
-        config = read_config()
-        self._distance = DistanceFactory.create(config)
-        self._preprocessor = PreprocessorFactory.create(config)
-        self._storage = StorageFactory.create(config)
 
         samples = [Sample(sample_file) for sample_file in split_fasta(input_file, get_sample_dir())]
         processed_samples = [self._preprocessor(sample) for sample in samples]
@@ -88,20 +96,26 @@ class Index:
         self.storage.build(self.distance, processed_samples)
 
     def refine(self):
-        #self._pwmatrix = PwMatrix.create(self.config, self.pwmatrix.sample_map)
-        #tree_distance = TreeDistance(self.pwmatrix)
-        #self._vptree = VpTree(self.config).build(tree_distance)
         raise NotImplementedError
 
-    def add(self, input_files):
+    def add(self, config, input_files):
         """
+        :param config: configparser.ConfigParser
         :param sample_files: Sequence[str] 
         :return: None
         """
-        assert (len(input_files) == 1)
-        input_file = input_files[0]
+        #assert (len(input_files) == 1)
+        #input_file = input_files[0]
 
-        samples = [Sample(sample_file) for sample_file in split_fasta(input_file, get_sample_dir())]
+        # update biom table if present
+        if config.has_option("distance", "biom_table"):
+            master_table = config.get("distance", "biom_table")
+            additional_table = config.get("additional", "biom_table")
+            merge_biom_tables(master_table, additional_table)
+            self._reload()
+
+        #samples = [Sample(sample_file) for sample_file in split_fasta(input_file, get_sample_dir())]
+        samples = [Sample(sample_file) for sample_file in input_files]
         processed_samples = [self._preprocessor(sample) for sample in samples]
 
         self.distance.add_samples(processed_samples)
