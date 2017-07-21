@@ -55,7 +55,7 @@ def ndcg_at_k(result, relevance_dict, k):
 @click.option('-k', type=int, required=True, help='Count of nearest neighbors')
 def precision(input_file, reference, k):
     reference_df = load(reference)
-    index = Index.load()
+    index, config = Index.load()
 
     p_at_k = []
     ap_at_k = []
