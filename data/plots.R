@@ -67,22 +67,22 @@ precision.combined <- function(files) {
     p
 }
 
-time.plot <- function(df) {
+time.plot <- function(df, breaks=c()) {
     p <- ggplot(df, aes(size, value, fill=variable)) + 
         geom_bar(stat="identity", position="stack", alpha=0.7) + 
         labs(x="Number of samples", y="Time in seconds") +
-        scale_fill_npg(guide=guide_legend(title="", ncol=2)) +
+        scale_fill_npg(guide=guide_legend(title="", ncol=2), breaks=breaks) +
         theme_minimal() + 
         theme(legend.position="bottom") +
         theme(plot.margin = unit(c(15, 6, 6, 6), "pt"))
     p
 }
 
-mem.plot <- function(df) {
+mem.plot <- function(df, breaks=c()) {
     p <- ggplot(df, aes(size, value, fill=variable)) + 
         geom_bar(stat="identity", position="dodge", alpha=0.7) + 
         labs(x="Number of samples", y="Time in seconds") +
-        scale_fill_npg(guide=guide_legend(title="", ncol=2)) +
+        scale_fill_npg(guide=guide_legend(title="", ncol=2), breaks=breaks) +
         theme_minimal() + 
         theme(legend.position="bottom") +
         theme(plot.margin = unit(c(15, 6, 6, 6), "pt"))
@@ -95,23 +95,31 @@ build.time <- function(filename) {
     df.wu.ref <- df[c("V2", "V3", "V4")]
     df.wu.denovo <- df[c("V5", "V6", "V7", "V8", "V9", "V10", "V11")]
 
-    colnames(df.jsd) <- c('indexing')
-    colnames(df.wu.ref) <- c('pick_otus', 'make_otu_table', 'indexing')
-    colnames(df.wu.denovo) <- c('pick_otus', 'pick_rep_set', 'align_seqs', 
-        'filter_alignment', 'make_phylogeny', 'make_otu_table', 'indexing')
-    
-    index_size <- c(100, 300, 500, 700)
+    df.wu.denovo <- df.wu.denovo[c(7, 1, 6, 2, 3, 4, 5)]
+    df.wu.ref <- df.wu.ref[c(3, 1, 2)]
+
+    cols.jsd <- c('indexing')
+    cols.wu.ref <- c('indexing', 'pick_otus', 'make_otu_table')
+    cols.wu.denovo <- c('indexing', 'pick_otus', 'make_otu_table', 'pick_rep_set', 'align_seqs', 
+        'filter_alignment', 'make_phylogeny')
+
+    colnames(df.jsd) <- cols.jsd
+    colnames(df.wu.ref) <- cols.wu.ref 
+    colnames(df.wu.denovo) <- cols.wu.denovo
+
+    index_size <- as.factor(c(100, 300, 500, 700, 1000))
     df.jsd$size <- index_size
     df.wu.ref$size <- index_size
     df.wu.denovo$size <- index_size
-
+    
     df.jsd <- melt(df.jsd, id.vars='size')
     df.wu.ref <- melt(df.wu.ref, id.vars='size')
     df.wu.denovo <- melt(df.wu.denovo, id.vars='size')
 
-    p1 <- time.plot(df.wu.denovo) + labs(x="") + ylim(0, 7500)
-    p2 <- time.plot(df.wu.ref) + labs(y="") + ylim(0, 7500)
-    p3 <- time.plot(df.jsd) + labs(x="", y="") + ylim(0, 7500)
+    ymax <- 7500
+    p1 <- time.plot(df.wu.denovo, breaks=cols.wu.denovo) + labs(x="") + ylim(0, ymax)
+    p2 <- time.plot(df.wu.ref, breaks=cols.wu.ref) + labs(y="") + ylim(0, ymax)
+    p3 <- time.plot(df.jsd, breaks=cols.jsd) + labs(x="", y="") + ylim(0, ymax)
 
     p <- plot_grid(
         p1,
@@ -131,13 +139,20 @@ build.memory <- function(filename) {
     df.jsd <- df[c("V1")]
     df.wu.ref <- df[c("V2", "V3", "V4")]
     df.wu.denovo <- df[c("V5", "V6", "V7", "V8", "V9", "V10", "V11")]
-
-    colnames(df.jsd) <- c('indexing')
-    colnames(df.wu.ref) <- c('pick_otus', 'make_otu_table', 'indexing')
-    colnames(df.wu.denovo) <- c('pick_otus', 'pick_rep_set', 'align_seqs', 
-        'filter_alignment', 'make_phylogeny', 'make_otu_table', 'indexing')
     
-    index_size <- c(100, 300, 500, 700)
+    df.wu.denovo <- df.wu.denovo[c(7, 1, 6, 2, 3, 4, 5)]
+    df.wu.ref <- df.wu.ref[c(3, 1, 2)]
+
+    cols.jsd <- c('indexing')
+    cols.wu.ref <- c('indexing', 'pick_otus', 'make_otu_table')
+    cols.wu.denovo <- c('indexing', 'pick_otus', 'make_otu_table', 'pick_rep_set', 'align_seqs', 
+        'filter_alignment', 'make_phylogeny')
+
+    colnames(df.jsd) <- cols.jsd
+    colnames(df.wu.ref) <- cols.wu.ref 
+    colnames(df.wu.denovo) <- cols.wu.denovo
+
+    index_size <- as.factor(c(100, 300, 500, 700, 1000))
     df.jsd$size <- index_size
     df.wu.ref$size <- index_size
     df.wu.denovo$size <- index_size
@@ -146,9 +161,10 @@ build.memory <- function(filename) {
     df.wu.ref <- melt(df.wu.ref, id.vars='size')
     df.wu.denovo <- melt(df.wu.denovo, id.vars='size')
 
-    p1 <- mem.plot(df.wu.denovo) + labs(x="", y="Memory consumption, Mb") + ylim(0, 1500)
-    p2 <- mem.plot(df.wu.ref) + labs(y="") + ylim(0, 1500)
-    p3 <- mem.plot(df.jsd) + labs(x="", y="") + ylim(0, 1500)
+    ylimit <- 2100
+    p1 <- mem.plot(df.wu.denovo, breaks=cols.wu.denovo) + labs(x="", y="Memory consumption, Mb") + ylim(0, ylimit)
+    p2 <- mem.plot(df.wu.ref, breaks=cols.wu.ref) + labs(y="") + ylim(0, ylimit)
+    p3 <- mem.plot(df.jsd, breaks=cols.jsd) + labs(x="", y="") + ylim(0, ylimit)
 
     p <- plot_grid(
         p1,
@@ -169,11 +185,18 @@ add.time <- function(filename, ymax) {
     df.wu.ref <- df[c("V2", "V3")]
     df.wu.denovo <- df[c("V4", "V5")]
 
-    colnames(df.jsd) <- c('indexing')
-    colnames(df.wu.ref) <- c('map_reads', 'indexing')
-    colnames(df.wu.denovo) <- c('map_reads', 'indexing')
+    df.wu.denovo <- df.wu.denovo[c(2, 1)]
+    df.wu.ref <- df.wu.ref[c(2, 1)]
     
-    index_size <- c(100, 300, 500, 700)
+    cols.jsd <- c('indexing')
+    cols.wu.ref <- c('indexing', 'map_reads')
+    cols.wu.denovo <- c('indexing', 'map_reads')
+    
+    colnames(df.jsd) <- cols.jsd
+    colnames(df.wu.ref) <- cols.wu.ref
+    colnames(df.wu.denovo) <- cols.wu.denovo
+    
+    index_size <- as.factor(c(100, 300, 500, 700, 1000))
     df.jsd$size <- index_size
     df.wu.ref$size <- index_size
     df.wu.denovo$size <- index_size
@@ -182,9 +205,9 @@ add.time <- function(filename, ymax) {
     df.wu.ref <- melt(df.wu.ref, id.vars='size')
     df.wu.denovo <- melt(df.wu.denovo, id.vars='size')
 
-    p1 <- time.plot(df.wu.denovo) + labs(x="") + ylim(0, ymax)
-    p2 <- time.plot(df.wu.ref) + labs(y="") + ylim(0, ymax)
-    p3 <- time.plot(df.jsd) + labs(x="", y="") + ylim(0, ymax)
+    p1 <- time.plot(df.wu.denovo, breaks=cols.wu.denovo) + labs(x="") + ylim(0, ymax)
+    p2 <- time.plot(df.wu.ref, breaks=cols.wu.ref) + labs(y="") + ylim(0, ymax)
+    p3 <- time.plot(df.jsd, breaks=cols.jsd) + labs(x="", y="") + ylim(0, ymax)
 
     p <- plot_grid(
         p1,
@@ -198,19 +221,88 @@ add.time <- function(filename, ymax) {
     p
 }
 
-p1 <- build.time('out/build_time.txt')
-ggsave("out/build_time.tiff", p1, width=18, height=9, units="cm")
+add.memory <- function(filename, ymax) {
+    df <- read.table(filename)
+    df.jsd <- df[c("V1")]
+    df.wu.ref <- df[c("V2", "V3")]
+    df.wu.denovo <- df[c("V4", "V5")]
 
-p2 <- build.memory('out/build_memory.txt')
-ggsave("out/build_memory.tiff", p2, width=18, height=9, units="cm")
+    df.wu.denovo <- df.wu.denovo[c(2, 1)]
+    df.wu.ref <- df.wu.ref[c(2, 1)]
+    
+    cols.jsd <- c('indexing')
+    cols.wu.ref <- c('indexing', 'map_reads')
+    cols.wu.denovo <- c('indexing', 'map_reads')
+    
+    colnames(df.jsd) <- cols.jsd
+    colnames(df.wu.ref) <- cols.wu.ref
+    colnames(df.wu.denovo) <- cols.wu.denovo
 
-p3 <- add.time('out/add_100_time.txt', 1200)
-ggsave("out/add_100_time.tiff", p3, width=18, height=9, units="cm")
-p4 <- add.time('out/add_300_time.txt', 3000)
-ggsave("out/add_300_time.tiff", p4, width=18, height=9, units="cm")
-p5 <- add.time('out/add_500_time.txt', 5000)
-ggsave("out/add_500_time.tiff", p5, width=18, height=9, units="cm")
-p6 <- add.time('out/add_700_time.txt', 7000)
-ggsave("out/add_700_time.tiff", p6, width=18, height=9, units="cm")
-p7 <- add.time('out/add_1000_time.txt', 18000)
-ggsave("out/add_1000_time.tiff", p7, width=18, height=9, units="cm")
+    index_size <- as.factor(c(100, 300, 500, 700, 1000))
+    df.jsd$size <- index_size
+    df.wu.ref$size <- index_size
+    df.wu.denovo$size <- index_size
+
+    df.jsd <- melt(df.jsd, id.vars='size')
+    df.wu.ref <- melt(df.wu.ref, id.vars='size')
+    df.wu.denovo <- melt(df.wu.denovo, id.vars='size')
+
+    p1 <- mem.plot(df.wu.denovo, breaks=cols.wu.denovo) + labs(x="", y="Memory consumption, Mb") + ylim(0, ymax)
+    p2 <- mem.plot(df.wu.ref, breaks=cols.wu.ref) + labs(y="") + ylim(0, ymax)
+    p3 <- mem.plot(df.jsd, breaks=cols.jsd) + labs(x="", y="") + ylim(0, ymax)
+
+    p <- plot_grid(
+        p1,
+        p2,
+        p3,
+        align = 'vh',
+        labels = c("A", "B", "C"),
+        hjust = -2.2,
+        vjust = 1.2,
+        nrow = 1
+    )
+    p
+}
+
+
+draw.build <- function() {
+    p1 <- build.time('out/build_time.txt')
+    ggsave("out/build_time.tiff", p1, width=18, height=9, units="cm")
+
+    p2 <- build.memory('out/build_memory.txt')
+    ggsave("out/build_memory.tiff", p2, width=18, height=9, units="cm")
+}
+
+draw.add <- function() {
+    p <- add.time('out/add_100_time.txt', 1300)
+    ggsave("out/add_100_time.tiff", p, width=18, height=9, units="cm")
+    p <- add.time('out/add_300_time.txt', 3100)
+    ggsave("out/add_300_time.tiff", p, width=18, height=9, units="cm")
+    p <- add.time('out/add_500_time.txt', 5000)
+    ggsave("out/add_500_time.tiff", p, width=18, height=9, units="cm")
+    p <- add.time('out/add_700_time.txt', 7000)
+    ggsave("out/add_700_time.tiff", p, width=18, height=9, units="cm")
+    p <- add.time('out/add_1000_time.txt', 9500)
+    ggsave("out/add_1000_time.tiff", p, width=18, height=9, units="cm")
+
+    p <- add.memory('out/add_100_memory.txt', 1000)
+    ggsave("out/add_100_memory.tiff", p, width=18, height=9, units="cm")
+    p <- add.memory('out/add_300_memory.txt', 1000)
+    ggsave("out/add_300_memory.tiff", p, width=18, height=9, units="cm")
+    p <- add.memory('out/add_500_memory.txt', 1000)
+    ggsave("out/add_500_memory.tiff", p, width=18, height=9, units="cm")
+    p <- add.memory('out/add_700_memory.txt', 1000)
+    ggsave("out/add_700_memory.tiff", p, width=18, height=9, units="cm")
+    p <- add.memory('out/add_1000_memory.txt', 1000)
+    ggsave("out/add_1000_memory.tiff", p, width=18, height=9, units="cm")
+}
+
+precision <- function() {
+    p <- precision.combined(c('wu_mp_at_k.txt', 'wu_bmp_at_k.txt', 'wu_map_at_k.txt', 'wu_bmap_at_k.txt', 'wu_gain_at_k.txt', 'wu_bgain_at_k.txt',
+                           'bc_mp_at_k.txt', 'bc_bmp_at_k.txt', 'bc_map_at_k.txt', 'bc_bmap_at_k.txt', 'bc_gain_at_k.txt', 'bc_bgain_at_k.txt'))
+    ggsave("ref_precision.tiff", p, width=18, height=16, units="cm")
+
+}
+
+#draw.build()
+#draw.add()
