@@ -8,7 +8,7 @@ library(cowplot)
 
 precision.read_data <- function(data_file) {
     df <- read.table(data_file)
-    colnames(df) <- c(100, 200, 300, 400, 500, 600, 700, 800, 900, 1000)
+    colnames(df) <- c(100, 300, 500, 700, 1000)
     rownames(df) <- c(1, 3, 5, 7, 10, 15, 20)
     df$k <- rownames(df)
     df <- melt(df)
