@@ -1,8 +1,8 @@
-ref_input=07_07_17_wuref
+ref_input=16_07_17_ref
 ref_output=out_ref
-denovo_input=05_07_17_wu
+denovo_input=16_07_17_denovo
 denovo_output=out_denovo
-jsd_input=06_07_17_jsd
+jsd_input=16_07_17_jsd
 jsd_output=out_jsd
 output=out
 
@@ -40,9 +40,12 @@ done
 # latex tables
 temp_file=$(mktemp)
 awk '{gsub(/ /,"\\&")}1' out/build_time.txt | cut -f1-4 -d'&' > $temp_file
-paste -d'&' $temp_file <(awk '{gsub(/ /,"+")}1' $ref_output/build_time.txt | bc) > table1.txt
+paste -d'&' $temp_file <(awk '{gsub(/ /,"+")}1' $ref_output/build_time.txt | bc) > table_build_time1.txt
 
 awk '{gsub(/ /,"\\&")}1' out/build_time.txt | cut -f5-11 -d'&' > $temp_file
-paste -d'&' $temp_file <(awk '{gsub(/ /,"+")}1' $denovo_output/build_time.txt | bc) > table2.txt
+paste -d'&' $temp_file <(awk '{gsub(/ /,"+")}1' $denovo_output/build_time.txt | bc) > table_build_time2.txt
+
+awk '{gsub(/ /,"\\&")}1' out/build_memory.txt | cut -f1-4 -d'&' > table_build_memory1.txt
+awk '{gsub(/ /,"\\&")}1' out/build_memory.txt | cut -f5-11 -d'&' > table_build_memory2.txt
 
 rm $temp_file

@@ -28,7 +28,7 @@ function copy_wu_denovo {
     root=$1
     output=$2
 
-    for split_no in 100 300 500 700
+    for split_no in 100 300 500 700 1000
     do
         mkdir -p ${output}/${split_no}
         scp nick@arriam-cpu:"${bench_root}/${bench_dir}/${split_no}/*.log" ${output}/${split_no}

@@ -25,7 +25,7 @@ function parse_results {
     build_memory=$output_dir/build_memory.txt
     rm -f $build_time $build_memory
 
-    for build_size in 100 300 500 700
+    for build_size in 100 300 500 700 1000
     do
         index_dir="${input_dir}/${build_size}"
 

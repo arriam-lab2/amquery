@@ -332,7 +332,7 @@ Amquery supports weighted UniFrac \cite{lozupone2011unifrac} as a community diss
 Since it can be computationally expensive to use OTU-based dissimilarity metrics, such as weighted UniFrac, Amquery 
 implements an OTU-picking free dissimilarity metric over samples k-mer frequency distributions. Vectors of such distributions
 are known as feature frequency profiles (FFP) and has been used in whole-genome comparison \cite{sims2009alignment}. 
-Amquery utilises the square root of \textit{Jensen-Shannon divergence} (RJSD) \cite{lin1991divergence} that 
+Amquery utilises the square root of \textit{Jensen-Shannon divergence} (RJSD) \cite{lin1991divergence} which 
 satisfies many statistical properties and fits many cases of high-dimensional spaces in $\mathbb{R^\star}$ as a distance 
 metric \cite{fuglede2004jensen, endres2003new}. We make use of the specific form of RJSD, introduced 
 by Connor et al. \cite{connor2013evaluation}, to speed up distance evaluation over sparse $k$-mer distributions (i.e. sparse FFP).
@@ -357,7 +357,6 @@ Here $\mathrm{ord}(s_i)$ is a value of ordering function at $s_i$ over the alpha
 \end{eqnarray}
 This advantage, however, imposes an upper-bound on the word-length $k$, since the number of possible $k$-mers grows exponentially with increasing word-length. That is, for a $k$-mer value to fit in a single machine word, we assume $k \leq 32$ for x64 architectures.
 Since realistic sample ${k}$-mer distribution vectors are extremely high-dimensional and sparse, Amquery represents them as rank-sorted sparse arrays. In our implementation, a sparse array is a key-value storage in which the keys are the lexicographic ranks and the values are the empirical probabilities (i.e. relative abundances of the corresponding k-mers).
-
 
 
 
@@ -395,72 +394,66 @@ At every stage of processing, peak RAM usage and computational time were measure
 
 \subsection*{Speed and memory efficiency}
 Elapsed time measurements at each stage of preprocessing and index construction 
-both for weighted UniFrac based on open-reference and \textit{de novo} OTU picking against RJSD based solution 
+both for weighted UniFrac based on open-reference and \textit{de novo} OTU picking (reffered below as \texttt{refWU} and \texttt{denovoWU} accordingly) against RJSD based solution 
 are presented in Fig~\ref{fig1}.
 More detailed view of these measurements is presented Table~\ref{table1} and Table~\ref{table2},
 where rows present measurements, made for each of the dataset splits, and the columns present elapsed time at each stage of processing. 
-Similarly, peak RAM usage presented in Fig~\ref{fig3} and Fig~\ref{fig4} graphically and in Table~\ref{table3}, Table~\ref{table4} in number accordingly.
+Similarly, peak RAM usage presented in Fig~\ref{fig2} graphically and in Table~\ref{table3}, Table~\ref{table4} in numbers accordingly.
+
+These measurements demonstrate that RJSD based indexing is mush more effective than indexing using weighted UniFrac based on \textit{de novo} OTU-picking,
+and slightly more effective than indexing using weighted UniFrac based on open-reference OTU-picking, in terms of the speed of index construction.
 
 
 \begin{figure}[!h]
-\caption{{\bf Elapsed time for QIIME (reference-based OTU picking) and Amquery pipelines for sets of samples of different size.}
-A, B: Measurements of elapsed time, spended for reference-based OTU picking and beta-diversity analysis by QIIME using Bray-Curtis similarity (A) and weighted Unifrac (B). 
-C: Measurements of elapsed time, spended for RJSD metric indexing by Amquery.}
+\caption{{\bf Elapsed time for \texttt{denovoWU}, \texttt{refWU} and \texttt{RJSD} based preprocessing and index construction for sets of samples of different size.}
+A, B: Measurements of elapsed time, spent on preprocessing and index construction using \textit{de novo} (A) and open-reference (B) OTU picking based weighted UniFrac as distance metric. 
+C: Measurements of elapsed time, spent on preprocessing and index construction using RJSD over FFP as distance metric.}
 \label{fig1}
 \end{figure}
 
-\begin{figure}[!h]
-\caption{{\bf Elapsed time for QIIME (\textit{de novo} OTU picking) and Amquery pipelines for sets of samples of different size.}
-A, B: Measurements of elapsed time, spended for \textit{de novo} OTU picking and beta-diversity analysis by QIIME using Bray-Curtis similarity (A) and weighted Unifrac (B). 
-C: Measurements of elapsed time, spended for RJSD metric indexing by Amquery. Note that the C subfigure is the Fig~\ref{fig1}.C subfigure in the scale of A and B measurements. }
-\label{fig2}
-\end{figure}
 
 \begin{table}[!ht]
 \begin{adjustwidth}{-2.25in}{0in} % Comment out/remove adjustwidth environment if table fits in text column.
 \centering
-\caption{{\bf Measurements of processing time (mm:ss.ms) of Amquery and reference-based QIIME pipelines }}
+\caption{\bf Measurements of elapsed time (in seconds) for \texttt{refWU} and \texttt{RJSD} based preprocessing and index construction for sets of samples of different size.}
 \begin{tabular}{|l|l+l|l|l|l|l|}
 \hline
 \textit{size} & {\bf FFP-RJSD} & \multicolumn{4}{|l|}{\bf Weighted UniFrac (open-referenced OTU picking)}\\ \hline
 &  {\bf Total } & pick\_otus & make\_otu & indexing  & {\bf Total} \\ \thickhline
-100 & 49.75&56.55&1.33&123.57&181.45 \\ \hline
-300 & 150.71&173.94&1.59&1068.84&1244.37 \\ \hline
-500 & 242.88&333.65&1.77&2891.71&3227.13 \\ \hline
-700 & 342.58&472.58&2.15&5733.0&6207.73 \\ \hline
+100 & 53.93&56.55&1.33&7.18&65.06 \\ \hline
+300 & 162.18&173.94&1.59&16.34&191.87 \\ \hline
+500 & 261.55&333.65&1.77&30.5&365.92 \\ \hline
+700 & 353.32&472.58&2.15&36.78&511.51 \\ \hline
+1000 & 523.3&714.37&2.54&59.53&776.44 \\ \hline
 
 \end{tabular}
 \begin{flushleft}
-Interpretation of headings: \textit{size} is the number of samples, used for index construction. 
-\textit{k-mers} is the time spent on k-mer counting.
-\textit{indexing} is the time spent on vp-tree construction, including calculation of necessary RJSD distance values.
-\textit{Total} is the total time of processing by Amquery.
+Interpretation of headings: \textit{size} is the number of samples used for index construction. 
+\textit{indexing} is the time spent on vp-tree construction, including the calculation of necessary distance values. This inludes time spent on k-mer counting in the case of RJSD indexing.
 \textit{pick\_otus} and \textit{make\_otu} are the total time spent by the \texttt{pick\_otus.py} and the \texttt{make\_otu\_table.py} scripts accordingly.
-\textit{bdiv\_wu} and \textit{bdiv\_bc} are the total time spent by the \texttt{beta\_diversity.py} script for weighted Unifrac and Bray-Curtis similarities accordingly.
-\textit{Total (wu)} and \textit{Total (bc)} are the total time spent by the QIIME pipeline for weighted Unifrac and Bray-Curtis similarities accordingly.
 \end{flushleft}
 \label{table1}
 \end{adjustwidth}
 \end{table}
 
 
-
 \begin{table}[!ht]
 \begin{adjustwidth}{-2.25in}{0in} % Comment out/remove adjustwidth environment if table fits in text column.
 \centering
-\caption{{\bf Measurements of processing time (mm:ss.ms or hh:mm:ss.ms) of \textit{de novo} based QIIME pipeline }}
+\caption{\bf Measurements of elapsed time (in seconds) for \texttt{denovoWU} based preprocessing and index construction for sets of samples of different size.}
 \begin{tabular}{|l+l|l|l|l|l|l|l|l|l|}
 \hline
 \textit{size} & \multicolumn{8}{|l|}{\bf Weighted UniFrac (\textit{De novo} OTU picking)}\\ \hline
 & pick\_otus & rep\_set & align & filt\_aln & phylogeny & make\_otu & indexing & {\bf Total} \\ \thickhline
-100 & 30.08&2.73&496.56&26.63&168.41&1.29&51.16&776.86\\ \hline
-300 & 108.02&5.69&1316.02&75.08&522.55&1.38&365.08&2393.82\\ \hline
-500 & 213.26&8.66&2205.55&121.01&1032.79&1.82&1080.55&4663.64\\ \hline
-700 & 335.56&11.72&2918.01&157.39&1456.03&1.9&2255.32&7135.93 \\ \hline
+100 & 30.08&2.73&496.56&26.63&168.41&1.29&9.43&735.13 \\ \hline
+300 & 108.02&5.69&1316.02&75.08&522.55&1.38&36.93&2065.67 \\ \hline
+500 & 213.26&8.66&2205.55&121.01&1032.79&1.82&70.79&3653.88 \\ \hline
+700 & 335.56&11.72&2918.01&157.39&1456.03&1.9&132.87&5013.48 \\ \hline
+1000 & 548.44&16.1&3681.0&222.98&2199.14&2.41&247.68&6917.75 \\ \hline
 \end{tabular}
 \begin{flushleft}
 
-\textit{pick\_otus}, \textit{make\_otu}, \textit{bdiv\_wu}, \textit{bdiv\_bc}, \textit{Total (wu)} and \textit{Total (bc)} columns have the same meanings as in the Table~\ref{table1}.
+\textit{indexing}, \textit{pick\_otus} and \textit{make\_otu} columns have the same meanings as in the Table~\ref{table1}.
 \textit{rep\_set}, \textit{align}, \textit{filt\_aln} and \textit{make\_phyl} contain the total time spent by the
 \texttt{pick\_rep\_set.py}, \texttt{align\_seqs.py}, \texttt{filter\_alignment.py} and \texttt{make\_phylogeny.py} scripts accordingly.
 
@@ -471,18 +464,12 @@ Interpretation of headings: \textit{size} is the number of samples, used for ind
 
 
 
-\begin{figure}[!h]
-\caption{{\bf Peak RAM Usage for QIIME (reference-based OTU picking) and Amquery pipelines for sets of samples of different size.}
-A, B: Peak RAM usage during reference-based OTU picking and beta-diversity analysis by QIIME using Bray-Curtis similarity (A) and weighted Unifrac (B). 
-C: Peak RAM usage during sample indexing by Amquery.}
-\label{fig3}
-\end{figure}
 
 \begin{figure}[!h]
-\caption{{\bf Peak RAM Usage for QIIME (\textit{de novo} OTU picking) and Amquery pipelines for sets of samples of different size.}
-A, B: Peak RAM usage during \textit{de novo} OTU picking and beta-diversity analysis by QIIME using Bray-Curtis similarity (A) and weighted Unifrac (B). 
-C: Peak RAM usage during sample indexing by Amquery, the same as Fig~\ref{fig3}.C subfigure in the scale of A and B measurements.}
-\label{fig4}
+\caption{{\bf Peak RAM usage for \texttt{denovoWU}, \texttt{refWU} and \texttt{RJSD} based preprocessing and index construction for sets of samples of different size.}
+A, B: Peak RAM consumption during preprocessing and index construction using \textit{de novo} (A) and open-reference (B) OTU picking based weighted UniFrac as distance metric. 
+C: Peak RAM consumption during preprocessing and index construction using RJSD over FFP as distance metric.}
+\label{fig2}
 \end{figure}
 
 
@@ -490,24 +477,20 @@ C: Peak RAM usage during sample indexing by Amquery, the same as Fig~\ref{fig3}.
 \begin{table}[!ht]
 \begin{adjustwidth}{-2.25in}{0in} % Comment out/remove adjustwidth environment if table fits in text column.
 \centering
-\caption{{\bf Peak RAM usage of Amquery and reference-based QIIME pipelines }}
-\begin{tabular}{|l+l|l|l|l|l|l|l|}
+\caption{{\bf Peak RAM usage (in Mb) of \texttt{refWU} and \texttt{RJSD} based preprocessing and index construction for sets of samples of different size.}}
+\begin{tabular}{|l+l|l|l|l|l|l|}
 \hline
-\textit{size} & {\bf Amquery} & \multicolumn{6}{|l|}{\bf Reference-based QIIME}\\ \hline
-& {\bf Peak} & pick\_otus & make\_otu & bdiv\_wu & bdiv\_bc & {\bf Peak (wu)} & {\bf Peak (bc)}  \\ \thickhline
-100 & 100Mb & 242Mb & 120Mb & 145Mb & 135Mb & 242Mb & 242Mb \\ \hline
-200 & 149Mb & 344Mb & 130Mb & 209Mb & 197Mb & 344Mb & 344Mb \\ \hline
-300 & 222Mb & 437Mb & 135Mb & 295Mb & 275Mb & 437Mb & 437Mb \\ \hline
-400 & 229Mb & 499Mb & 139Mb & 387Mb & 366Mb & 499Mb & 499Mb \\ \hline
-500 & 290Mb & 649Mb & 146Mb & 541Mb & 516Mb & 649Mb & 649Mb \\ \hline
-600 & 334Mb & 759Mb & 153Mb & 716Mb & 686Mb & 759Mb & 759Mb \\ \hline
-700 & 379Mb & 833Mb & 163Mb & 881Mb & 850Mb & 881Mb & 850Mb \\ \hline
-800 & 428Mb & 911Mb & 168Mb & 1.0Gb & 1.0Gb & 1.0Gb & 1.0Gb \\ \hline
-900 & 474Mb & 995Mb & 175Mb & 1.3Gb & 1.2Gb & 1.3Gb & 1.2Gb \\ \hline
-1000 & 515Mb & 1.0Gb & 183Mb & 1.4Gb & 1.4Gb & 1.4Gb & 1.4Gb \\ \hline
+\textit{size} & {\bf FFP-RJSD} & \multicolumn{3}{|l|}{\bf Weighted UniFrac (open-referenced OTU picking)}\\ \hline
+&  {\bf Total } & pick\_otus & make\_otu & indexing \\ \thickhline
+100 & 286.85&241.96&119.67&295.18 \\ \hline
+300 & 641.71&437.43&134.54&653.08 \\ \hline
+500 & 996.98&649.14&146.12&1013.72 \\ \hline
+700 & 1349.62&832.76&162.74&1369.97 \\ \hline
+1000 & 1876.98&1026.71&182.5&1901.8 \\ \hline
+
 \end{tabular}
 \begin{flushleft}
-Column naming notation corresponds to the Table~\ref{table1}. \textit{Peak} columns present the peak RAM usage of corresponding pipelines.   
+The column name notation corresponds to the Table~\ref{table1}.
 \end{flushleft}
 \label{table3}
 \end{adjustwidth}
@@ -518,67 +501,83 @@ Column naming notation corresponds to the Table~\ref{table1}. \textit{Peak} colu
 \begin{table}[!ht]
 \begin{adjustwidth}{-2.25in}{0in} % Comment out/remove adjustwidth environment if table fits in text column.
 \centering
-\caption{{\bf Peak RAM usage of \textit{de novo} based QIIME pipeline }}
-\begin{tabular}{|l+l|l|l|l|l|l|l|l|l|l|}
+\caption{{\bf Peak RAM usage (in Mb) of \texttt{denovoWU} based preprocessing and index construction for sets of samples of different size.}}
+\begin{tabular}{|l+l|l|l|l|l|l|l|l|}
 \hline
-\textit{size} & \multicolumn{10}{|l|}{\bf \textit{De novo} based QIIME}\\ \hline
-& pick\_otus & rep\_set & align & filt\_aln & make\_phyl & make\_otu & bdiv\_wu & bdiv\_bc & {\bf Peak (wu)} & {\bf Peak (bc)}  \\ \thickhline
-
-100 & 174Mb & 174Mb & 298Mb & 166Mb & 149Mb & 118Mb & 169Mb & 132Mb & 298Mb & 298Mb \\ \hline
-200 & 250Mb & 234Mb & 424Mb & 211Mb & 173Mb & 123Mb & 259Mb & 184Mb & 424Mb & 424Mb \\ \hline
-300 & 345Mb & 295Mb & 578Mb & 269Mb & 205Mb & 131Mb & 407Mb & 264Mb & 578Mb & 578Mb \\ \hline
-400 & 404Mb & 356Mb & 638Mb & 291Mb & 281Mb & 137Mb & 541Mb & 353Mb & 638Mb & 638Mb \\ \hline
-500 & 545Mb & 420Mb & 822Mb & 363Mb & 377Mb & 142Mb & 793Mb & 492Mb & 822Mb & 822Mb \\ \hline
-600 & 645Mb & 476Mb & 976Mb & 422Mb & 462Mb & 151Mb & 1Gb & 650Mb & 1Gb & 976Mb\\ \hline
-700 & 716Mb & 553Mb & 1.0Gb & 445Mb & 500Mb & 161Mb & 1.3Gb & 803Mb & 1.3Gb & 1.0Gb\\ \hline
-800 & 791Mb & 607Mb & 1.1Gb & 478Mb & 548Mb & 167Mb & 1.6Gb & 981Mb & 1.6Gb & 1.1Gb\\ \hline
-900 & 871Mb & 666Mb & 1.3Gb & 548Mb & 570Mb & 174Mb & 2.Gb & 1.1Gb & 2.Gb & 1.3Gb\\ \hline
-1000 & 903Mb & 726Mb & 1.4Gb & 568Mb & 676Mb & 179Mb & 2.2Gb & 1.3Gb & 2.2Gb & 1.4Gb \\ \hline
+\textit{size} & \multicolumn{7}{|l|}{\bf Weighted UniFrac (\textit{De novo} OTU picking)}\\ \hline
+& pick\_otus & rep\_set & align & filt\_aln & phylogeny & make\_otu & indexing \\ \thickhline
+100 & 175.0&174.85&298.34&166.19&149.79&118.53&307.29 \\ \hline
+300 & 345.01&295.83&578.48&269.64&205.91&131.7&695.07 \\ \hline
+500 & 545.04&420.78&822.51&363.04&377.89&142.97&1081.27 \\ \hline
+700 & 716.07&553.76&1044.49&445.63&500.34&161.01&1460.91 \\ \hline
+1000 & 903.23&726.48&1370.98&568.45&676.09&179.35&2028.71 \\ \hline
 
 \end{tabular}
 \begin{flushleft}
-Column namings correspond to the tables above.   
+The names of the columns correspond to the tables above.   
 \end{flushleft}
 \label{table4}
 \end{adjustwidth}
 \end{table}
 
 
-
 \subsection*{Similarity search effectiveness}
-To estimate relevance of similarity search, provided by Amquery, mean precision at k (MP@K), mean average precision at k (MAP@K), 
+To estimate relevance of similarity search provided by the FPP-RJSD distance metric, mean precision at k (MP@K), mean average precision at k (MAP@K), 
 and normalized cumulative discounted gain at k (NCDG@k) \cite{book, jarvelin2000ir, jarvelin2002cumulated}
-are evaluated, with the relevance function, declared as follows. 
-For every search query $q$, all the pairwise distances $D(q, x)$ provided by QIIME pipeline from $q$ to every sample $x$ 
-in the index, are normalized. 
-Thus, resulting relevance value $R(q, r)$ for search output result $r$ is the value $1 - \hat{D}(q, r)$, whree $\hat{D}$ 
-is the normalized value of $D(q, x)$ over all the $x$ in the index. Here we use the notation of $D(q, r)$ for weighted Unifrac 
-and Bray-Curtis similarity distances.
+against weighted UniFrac similarity are evaluated for every search query of every sample from the \texttt{main} part. 
+Here we briefly describe the meaning of these metrics (see \cite{book} for more detailed overview).
 
-All the metrics are evaluated among all the dataset splits, mentioned above, for search query size $k = {1, 3, 5, 7, 10, 15, 20}$ 
-and 100 random samples from the index. Since precision metrics as MP@k and MAP@k require binary relevance function,
-$R(q, r)$ values for these metrics are binarized as follows:
 
-\[ R_b(q, r)  =
+Let $D(q, x)$ and $D'(q, x)$ to be a weighted UniFrac and FFP-RJSD distance between $q$ and $x$ samples accordingly, and $S(q)$, $S'(q)$ to be a permutation of indexed samples corresponding 
+to the result of search query $q$ among the index, which orders all the indexed
+samples in proximity to $q$ according to the weighted UniFrac metric. 
+Here we denote by $S(q)_k$ the top-$k$ samples corresponding to this permutation.
+Similarly, let $S'(q)$ to be a permutation corresponding to the result of search query $q$ among the FFP-RJSD based index of these samples. 
+Then $R_b(q, x)$ is a binary relevance function, defined as follows:
+
+\[ R_b(q, x)  =
   \begin{cases}
-    1  & r \text{ in top-} k \text{ nearest samples of } q, \text{ according to } D(q, r)\\
+    1  & x \text{ in } S(q)_k \text{ nearest samples of } q, \text{ according to } D(q, x)\\
     0  &  otherwise \\
   \end{cases}
 \] 
 
-MP@k, MAP@k, NDCG@k evaluation results presented in the Fig~\ref{fig5}.
+We call the sample $x$ relevant if $R_b(q, x) > 0$. Then MP@k (mean precision at k) is the average number of relevant samples among the all searched samples with the search size of $k$. 
+The MAP@k (mean average precision at k) is the mean value of precision scores P@k for a set of queries of size $1, \dots, k$.
+
+Now we denote by $R(q, x)$ the real relevance function for search output result $x$ as follows:
+$R(q, x) = 1 - \hat{D'}(q, x)$, whree $\hat{D'}$ 
+is the normalized value of $D'$ over all the indexed samples: $\hat{D'}(q, x) = \frac{D'(q, x)} {\displaystyle\max_{y \in index} (D'(q, y)) }$.
+Using the relevance function $R$, normalized discounted cumulative gain at k (NDCG@k) can be defined as follows:
+
+$$\mathrm{NDCG@k} = \frac{DCG@k}{IDCG@k}$$
+$${\mathrm{DCG@k} = \sum_{i=1}^{k} \frac{2^{R_i} - 1} {\log_{2}(i + 1)} }$$
+
+Where $\displaystyle R_{i}$ is the graded relevance of the result at position $\displaystyle i$ according to the $R$ function,
+and $IDCG@k$ is the value of $DCG@k$ achieved for the ideal permutation $S(q, x)$ function.
+More informally, NDCG@k indicates how well the search result permutation $S'(q)$ matches the ideal permutation $S(q)$ in terms of
+relevance function $R$.
+
+All the metrics are evaluated among all the dataset splits, mentioned above, for search query size $k = {1, 3, 5, 7, 10, 15, 20}$ 
+and every sample from the index. 
+MP@k, MAP@k, NDCG@k evaluation results presented in the Fig~\ref{fig3}.
 
 
 \begin{figure}[!h]
-\caption{{\bf MP@k (A, D), MAP@k (B, E) and NDCG@k (C, F) for Amquery search queries and random sampling from the index as a baseline, according to relevance functions, based on the reference-based QIIME pipeline result.}
-A, B, C are calculated according to weighted Unifrac, while D, E, F are calculated according to Bray-Curtis similarity as a relevance function.}
+\caption{{\bf MP@k (A, D), MAP@k (B, E) and NDCG@k (C, F) for search queries against FFP-RJSD based index and random sampling from the index as a baseline, 
+according to relevance functions for the weighted UniFrac based on \textit{de novo} (A, B, C) and open-reference (D, E, F) OTU picking.}}
 \label{fig5}
 \end{figure}
 
 
 \subsection*{Conclusions}
-We presented a k-mer based approach for fast indexing and searching of 16S amplicon libraries, which designed to outperform clustering-based solutions for similarity search, in terms of speed and memory consumption.
-This approach allows for indexing thousands of samples in minutes, and lightning fast similarity search. We demonstrated that similarity search results, based on RJSD distance over estimated k-mer distributions, correspond to a certain extent to the weighted Unifrac based and Bray-Curtis similarity based search results.
+We presented a new tool for fast metric indexing and similarity search of amplicon libraries, 
+which designed to be metric-agnostic and supports the weighted UniFrac distance out of the box.
+Moreover, we implemented the k-mer based distance metric, which significally outperforms 
+OTU-picking based solutions, in terms of preprocessing and indexing speed and memory consumption.
+This approach allows for indexing thousands of samples in minutes, and lightning fast similarity search. 
+We demonstrated that similarity search results, based on FFP-RJSD distance over estimated k-mer distributions, 
+correspond to a certain extent to the weighted Unifrac based search results.
 
 
 \begin{thebibliography}{10}
