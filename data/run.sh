@@ -35,3 +35,14 @@ do
                 $ref_output/add_${add_size}_memory.txt \
                 $denovo_output/add_${add_size}_memory.txt > $output/add_${add_size}_memory.txt
 done
+
+
+# latex tables
+temp_file=$(mktemp)
+awk '{gsub(/ /,"\\&")}1' out/build_time.txt | cut -f1-4 -d'&' > $temp_file
+paste -d'&' $temp_file <(awk '{gsub(/ /,"+")}1' $ref_output/build_time.txt | bc) > table1.txt
+
+awk '{gsub(/ /,"\\&")}1' out/build_time.txt | cut -f5-11 -d'&' > $temp_file
+paste -d'&' $temp_file <(awk '{gsub(/ /,"+")}1' $denovo_output/build_time.txt | bc) > table2.txt
+
+rm $temp_file
