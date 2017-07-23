@@ -57,9 +57,8 @@ def precision(input_file, reference, k):
     reference_df = load(reference)
     index, config = Index.load()
 
-    p_at_k = []
-    ap_at_k = []
-    gain_at_k = []
+    p_at_k, ap_at_k, gain_at_k = [], [], []
+    bp_at_k, bap_at_k, bgain_at_k = [], [], []
 
     samples = [Sample(sample_file) for sample_file in split_fasta(input_file, get_sample_dir())]
 
@@ -74,6 +73,17 @@ def precision(input_file, reference, k):
         p_at_k.append(precision_at_k(best_by_amq, best_by_reference, k))
         ap_at_k.append(average_precision_at_k(best_by_amq, best_by_reference, k))
         gain_at_k.append(ndcg_at_k(best_by_amq, relevance_dict, k))
+
+        bp_at_k.append(precision_at_k(baseline, best_by_reference, k))
+        bap_at_k.append(average_precision_at_k(baseline, best_by_reference, k))
+        bgain_at_k.append(ndcg_at_k(baseline, relevance_dict, k))
+    
+        #print(spearmanr(best_by_amq, best_by_reference), spearmanr(baseline, best_by_reference))
+
+    m = len(input_files)
+    print(np.sum(p_at_k) / m, np.sum(ap_at_k) / m, np.sum(gain_at_k) / m, np.sum(spearman) / m,
+          np.sum(bp_at_k) / m, np.sum(bap_at_k) / m, np.sum(bgain_at_k) / m, np.sum(bspearman) / m)
+
 
 
     m = len(samples)

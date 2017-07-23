@@ -1,7 +1,7 @@
 
 function run_amq_test {
-    split_dir="${1}"
-    output_dir="${2}"
+    split_dir="`realpath ${1}`"
+    output_dir="`realpath ${2}`"
     build_size=$3
     bench_subdir=$4
     index_dir="${output_dir}/${build_size}"
