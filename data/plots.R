@@ -179,6 +179,7 @@ build.memory <- function(filename) {
     p
 }
 
+
 add.time <- function(filename, ymax) {
     df <- read.table(filename)
     df.jsd <- df[c("V1")]
@@ -205,19 +206,32 @@ add.time <- function(filename, ymax) {
     df.wu.ref <- melt(df.wu.ref, id.vars='size')
     df.wu.denovo <- melt(df.wu.denovo, id.vars='size')
 
-    p1 <- time.plot(df.wu.denovo, breaks=cols.wu.denovo) + labs(x="") + ylim(0, ymax)
-    p2 <- time.plot(df.wu.ref, breaks=cols.wu.ref) + labs(y="") + ylim(0, ymax)
-    p3 <- time.plot(df.jsd, breaks=cols.jsd) + labs(x="", y="") + ylim(0, ymax)
+    result <- list()
+    result$p1 <- time.plot(df.wu.denovo, breaks=cols.wu.denovo) + labs(x="") + ylim(0, ymax)
+    result$p2 <- time.plot(df.wu.ref, breaks=cols.wu.ref) + labs(y="") + ylim(0, ymax)
+    result$p3 <- time.plot(df.jsd, breaks=cols.jsd) + labs(x="", y="") + ylim(0, ymax)
+    result
+}
 
+add.time.combined <- function(filename1, filename2, ymax1, ymax2) {
+    plots1 <- add.time(filename1, ymax1)
+    plots2 <- add.time(filename2, ymax2)
     p <- plot_grid(
-        p1,
-        p2,
-        p3,
+        plots1$p1 + theme(legend.position="none") + labs(y=""),
+        plots1$p2 + theme(legend.position="none") + labs(x=""),
+        plots1$p3 + theme(legend.position="none"),
+        plots2$p1 + theme(legend.position="none"),
+        plots2$p2 + theme(legend.position="none"),
+        plots2$p3 + theme(legend.position="none"),
         align = 'vh',
-        labels = c("A", "B", "C"),
-        hjust = -1,
-        nrow = 1
+        labels = c("A", "B", "C", "D", "E", "F"),
+        hjust = -2.2,
+        vjust = 1.2,
+        nrow = 2
     )
+    
+    legend <- get_legend(plots1$p1)
+    p <- plot_grid(p, legend, ncol=1, rel_heights = c(1, .2))
     p
 }
 
@@ -274,27 +288,21 @@ draw.build <- function() {
 }
 
 draw.add <- function() {
-    p <- add.time('out/add_100_time.txt', 1300)
-    ggsave("out/add_100_time.tiff", p, width=18, height=9, units="cm")
-    p <- add.time('out/add_300_time.txt', 3100)
-    ggsave("out/add_300_time.tiff", p, width=18, height=9, units="cm")
-    p <- add.time('out/add_500_time.txt', 5000)
-    ggsave("out/add_500_time.tiff", p, width=18, height=9, units="cm")
-    p <- add.time('out/add_700_time.txt', 7000)
-    ggsave("out/add_700_time.tiff", p, width=18, height=9, units="cm")
-    p <- add.time('out/add_1000_time.txt', 9500)
-    ggsave("out/add_1000_time.tiff", p, width=18, height=9, units="cm")
+    p <- add.time.combined('out/add_100_time.txt', 'out/add_300_time.txt', 1500, 3000)
+    ggsave("out/add_100_300_time.tiff", p, width=18, height=16, units="cm")
+    p <- add.time.combined('out/add_500_time.txt', 'out/add_1000_time.txt', 5000, 10000)
+    ggsave("out/add_500_1000_time.tiff", p, width=18, height=16, units="cm")
 
-    p <- add.memory('out/add_100_memory.txt', 1000)
-    ggsave("out/add_100_memory.tiff", p, width=18, height=9, units="cm")
-    p <- add.memory('out/add_300_memory.txt', 1000)
-    ggsave("out/add_300_memory.tiff", p, width=18, height=9, units="cm")
-    p <- add.memory('out/add_500_memory.txt', 1000)
-    ggsave("out/add_500_memory.tiff", p, width=18, height=9, units="cm")
-    p <- add.memory('out/add_700_memory.txt', 1000)
-    ggsave("out/add_700_memory.tiff", p, width=18, height=9, units="cm")
-    p <- add.memory('out/add_1000_memory.txt', 1000)
-    ggsave("out/add_1000_memory.tiff", p, width=18, height=9, units="cm")
+    #p <- add.memory('out/add_100_memory.txt', 1000)
+    #ggsave("out/add_100_memory.tiff", p, width=18, height=9, units="cm")
+    #p <- add.memory('out/add_300_memory.txt', 1000)
+    #ggsave("out/add_300_memory.tiff", p, width=18, height=9, units="cm")
+    #p <- add.memory('out/add_500_memory.txt', 1000)
+    #ggsave("out/add_500_memory.tiff", p, width=18, height=9, units="cm")
+    #p <- add.memory('out/add_700_memory.txt', 1000)
+    #ggsave("out/add_700_memory.tiff", p, width=18, height=9, units="cm")
+    #p <- add.memory('out/add_1000_memory.txt', 1000)
+    #ggsave("out/add_1000_memory.tiff", p, width=18, height=9, units="cm")
 }
 
 precision <- function() {
@@ -304,5 +312,5 @@ precision <- function() {
 
 }
 
-draw.build()
-#draw.add()
+#draw.build()
+draw.add()
