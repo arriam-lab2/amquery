@@ -4,11 +4,10 @@ import functools
 import itertools
 import operator as op
 import joblib
-from typing import Sequence, Any, List
 from Bio import SeqIO
-from functools import total_ordering
-from amquery.utils.config import Config
 from amquery.utils.decorators import hide_field
+from amquery.utils.config import get_kmers_dir, get_sample_dir
+from amquery.utils.iof import make_sure_exists
 
 
 class SampleFile:
@@ -19,11 +18,11 @@ class SampleFile:
             self._format = 'fasta'
 
     @property
-    def path(self) -> str:
+    def path(self):
         return self._path
 
     @property
-    def file_format(self) -> str:
+    def file_format(self):
         return self._format
 
 
@@ -31,23 +30,31 @@ _alphabet = dict(zip([char for char in ('A', 'C', 'G', 'T')],
                      itertools.count()))
 
 
-def _isvalid(sequence: Sequence[Any]) -> bool:
+def _isvalid(sequence):
     return functools.reduce(op.and_, [char in _alphabet for char in sequence])
 
 
-def _validate(sequence: Sequence[Any]):
+def _validate(sequence):
     return sequence if _isvalid(sequence) else []
 
 
-def _transform(sequence: Sequence[Any]) -> List:
+def _transform(sequence):
     return np.array([_alphabet[char] for char in sequence], dtype=np.uint8)
 
 
-@total_ordering
+def _parse_sample_name(sample_file):
+    with open(sample_file, 'r') as f:
+        line = ' '
+        while line[0] != '>':
+            line = f.readline()
+        
+        return line.split('_')[0].split('>')[1].strip()
+        
+
 class Sample:
-    def __init__(self, source_file: str):
-        self._source_file = SampleFile(source_file)
-        self._name = self._parse_name()
+    def __init__(self, sample_file):
+        self._name = _parse_sample_name(sample_file)
+        self._source_file = SampleFile(sample_file)
         self._kmer_index = None
 
     def __eq__(self, other):
@@ -62,41 +69,49 @@ class Sample:
             return str(record.id).split("_")[0]
 
     @property
-    def name(self) -> str:
+    def name(self):
         return self._name
 
-    def make_sample_obj_filename(self, config: Config) -> str:
-        return os.path.join(config.sample_dir, self.name)
+    @property
+    def original_name(self):
+        return self._original_name
 
-    def make_kmer_index_obj_filename(self, config: Config) -> str:
-        return os.path.join(config.kmer_index_dir, self.name)
-        
     @staticmethod
-    def load(config: Config, object_file):
+    def make_sample_obj_filename(source_filename):
+        return os.path.join(get_sample_dir(), _parse_sample_name(source_filename))
+
+    @staticmethod
+    def make_kmer_index_obj_filename(source_filename):
+        return os.path.join(get_kmers_dir(), _parse_sample_name(source_filename))
+
+    @staticmethod
+    def load(object_file):
         sample = joblib.load(object_file)
         return sample
 
-    def load_kmer_index(self, config: Config) -> None:
-        self._kmer_index = joblib.load(self.make_kmer_index_obj_filename(config))
+    def load_kmer_index(self):
+        self._kmer_index = joblib.load(Sample.make_kmer_index_obj_filename(self.source_file.path))
 
     @hide_field("_kmer_index")
-    def _save(self, config: Config):
+    def _save(self):
         self._kmer_index = None
-        joblib.dump(self, self.make_sample_obj_filename(config))
-    
-    def save(self, config: Config) -> None:
-        self._save(config)
-        
+        joblib.dump(self, Sample.make_sample_obj_filename(self.source_file.path))
+
+    def save(self):
+        make_sure_exists(get_sample_dir())
+        self._save()
+
         if self._kmer_index:
-            joblib.dump(self._kmer_index, self.make_kmer_index_obj_filename(config))
+            joblib.dump(self._kmer_index, Sample.make_kmer_index_obj_filename(self.source_file.path))
 
     @property
-    def source_file(self) -> str:
+    def source_file(self):
         return self._source_file
 
-    def kmer_index(self, config):
+    @property
+    def kmer_index(self):
         if not self._kmer_index:
-            self.load_kmer_index(config)
+            self.load_kmer_index()
 
         return self._kmer_index
 

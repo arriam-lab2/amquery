@@ -1,4 +1,3 @@
-import os
 import click
 import pandas as pd
 import numpy as np
@@ -6,30 +5,19 @@ import random
 from scipy.stats import spearmanr
 from amquery.core.index import Index
 from amquery.core.sample import Sample
-from amquery.utils.config import Config, DEFAULT_WORKON, AMQ_VERBOSE_MODE
+from amquery.utils.multiprocess import Pool
+from amquery.utils.split_fasta import split_fasta
+from amquery.utils.config import get_sample_dir
 
-
-pass_config = click.make_pass_decorator(Config, ensure=True)
+CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
 
 @click.group()
-@click.option('--workon', default=DEFAULT_WORKON, type=click.Path(),
-              help='Index working directory')
-@click.option('--force', '-f', is_flag=True,
-              help='Force overwrite output directory')
+@click.option('--force', '-f', is_flag=True, help='Force overwrite output directory')
 @click.option('--quiet', '-q', is_flag=True, help='Be quiet')
-@click.option('--verbose', '-v', is_flag=True, help='Verbose output')
-@click.option('--jobs', '-j', type=int, default=1,
-              help='Number of jobs to start in parallel')
-@pass_config
-def cli(config: Config, workon: str, force: bool,
-        quiet: bool, verbose: bool, jobs: int):
-    config.load(workon)
-    config.workon = workon if workon != DEFAULT_WORKON else config.workon
-    config.temp.force = force
-    config.temp.jobs = jobs
-    config.temp.quiet = quiet
-    os.environ[AMQ_VERBOSE_MODE] = "True" if verbose else ""
+@click.option('--jobs', '-j', type=int, default=1, help='Number of jobs to start in parallel')
+def cli(force, quiet, jobs):
+    Pool.instance(jobs=jobs)
 
 
 # load pairwise distance matrix from file
@@ -62,35 +50,22 @@ def ndcg_at_k(result, relevance_dict, k):
                   for m in range(1, k + 1)])
     return dcg / np.sum(1.0 / np.log2(m+1) for m in range(1, k + 1))
 
+
 @cli.command()
-@click.argument('input_files', type=click.Path(exists=True), nargs=-1, required=True)
+@click.argument('input_file', type=click.Path(exists=True), required=True)
 @click.option('--reference', '-r', type=click.Path(exists=True), required=True)
 @click.option('-k', type=int, required=True, help='Count of nearest neighbors')
-@pass_config
-def precision(config, input_files, reference, k):
+def precision(input_file, reference, k):
     reference_df = load(reference)
-    index = Index.load(config)
+    index, config = Index.load()
 
-    p_at_k = []
-    ap_at_k = []
-    gain_at_k = []
-    spearman = []
+    p_at_k, ap_at_k, gain_at_k = [], [], []
+    bp_at_k, bap_at_k, bgain_at_k = [], [], []
 
-    # baseline
-    bp_at_k = []
-    bap_at_k = []
-    bgain_at_k = []
-    bspearman = []
+    samples = [Sample(sample_file) for sample_file in split_fasta(input_file, get_sample_dir())]
 
-    for input_file in input_files:
-        values, points = index.find(input_file, k)
-
-        if not points[0].name in reference_df:
-            continue
-
-        best_by_amq = [s.name for s in points]
-
-        sample = Sample(input_file)
+    for sample in samples:
+        values, best_by_amq = index.find(sample.name, k)
         best_by_reference = reference_df[sample.name].sort_values()
         baseline = random.sample(list(best_by_reference.index), k)
         reference_worst_result = best_by_reference[-1]
@@ -110,8 +85,44 @@ def precision(config, input_files, reference, k):
 
         print(spearmanr(best_by_amq, best_by_reference), spearmanr(baseline, best_by_reference))
 
-    m = len(input_files)
-    #print(np.sum(p_at_k) / m, np.sum(ap_at_k) / m, np.sum(gain_at_k) / m, np.sum(spearman) / m,
-    #      np.sum(bp_at_k) / m, np.sum(bap_at_k) / m, np.sum(bgain_at_k) / m, np.sum(bspearman) / m)
-    print(np.sum(spearman) / m, np.sum(bspearman) / m)
+        bp_at_k.append(precision_at_k(baseline, best_by_reference, k))
+        bap_at_k.append(average_precision_at_k(baseline, best_by_reference, k))
+        bgain_at_k.append(ndcg_at_k(baseline, relevance_dict, k))
+    
+        #print(spearmanr(best_by_amq, best_by_reference), spearmanr(baseline, best_by_reference))
 
+    m = len(input_files)
+    print(np.sum(p_at_k) / m, np.sum(ap_at_k) / m, np.sum(gain_at_k) / m, np.sum(spearman) / m,
+          np.sum(bp_at_k) / m, np.sum(bap_at_k) / m, np.sum(bgain_at_k) / m, np.sum(bspearman) / m)
+
+
+
+@cli.command()
+@click.argument('input_files', type=click.Path(exists=True), nargs=-1, required=True)
+@click.option('--reference', '-r', type=click.Path(exists=True), required=True)
+@click.option('-k', type=int, required=True, help='Count of nearest neighbors')
+def minprecision(input_files, reference, k):
+    reference_df = load(reference)
+    index = Index.load()
+
+    index_size = len(index.sample_map)
+
+    result = []
+    for input_file in input_files:
+        values, points = index.find(input_file, index_size)
+        best_by_amq = [s.name for s in points]
+        sample = Sample(input_file)
+        best_by_reference = reference_df[sample.name].sort_values()
+        best_by_reference = list(best_by_reference.index)[:k]
+
+        for i in range(index_size):
+            if best_by_amq[i] in best_by_reference:
+                best_by_reference.remove(best_by_amq[i])
+
+            if not best_by_reference:
+                break
+
+        result.append(i + 1)
+
+    #print(np.sum(result) / len(input_files))
+    print("\n".join(str(x) for x in result))

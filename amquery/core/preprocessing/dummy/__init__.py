@@ -1,4 +1,4 @@
-from ._vptree import VpTree, BaseVpTree, TreeDistance
+from ._dummy import DummyPreprocessor
 
 
 __license__ = "MIT"

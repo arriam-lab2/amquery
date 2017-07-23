@@ -1,44 +1,32 @@
-#!/usr/bin/env python3
-
 import os
 import json
-
 from amquery.utils.iof import make_sure_exists
-from amquery.utils.config import Config
-from amquery.utils.decorators import hide_field
+from amquery.utils.config import get_samplemap_path, get_sample_dir, get_kmers_dir
 from amquery.core.sample import Sample
 
 
 class SampleMap(dict):
-    def __init__(self, config: Config, *args, **kwargs):
-        self.config = config
+    def __init__(self, *args, **kwargs):
         super(SampleMap, self).__init__(*args, **kwargs)
 
     @staticmethod
-    def load(config: Config):
-        with open(config.sample_map_path) as json_data:
+    def load():
+        with open(get_samplemap_path()) as json_data:
             hash_list = json.load(json_data)
-            samples = { hash: Sample.load(config, os.path.join(config.sample_dir, hash)) \
-                        for hash in hash_list }
+            return SampleMap({id: Sample.load(os.path.join(get_sample_dir(), id)) for id in hash_list})
 
-            sample_map = SampleMap(config, samples)
-            sample_map.config = config
-            return sample_map
-
-    @hide_field("config")
-    def _save(self, config):
-        make_sure_exists(config.sample_dir)
-        make_sure_exists(config.kmer_index_dir)
+    def _save(self):
+        make_sure_exists(get_kmers_dir())
 
         for sample in self.samples:
-            sample.save(config)
+            sample.save()
 
         hash_list = [sample.name for sample in self.samples]
-        with open(config.sample_map_path, 'w') as outfile:
+        with open(get_samplemap_path(), 'w') as outfile:
             json.dump(hash_list, outfile)
 
     def save(self):
-        self._save(self.config)
+        self._save()
 
     @property
     def labels(self):
