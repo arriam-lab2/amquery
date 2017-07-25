@@ -40,12 +40,14 @@ done
 # latex tables
 temp_file=$(mktemp)
 awk '{gsub(/ /,"\\&")}1' out/build_time.txt | cut -f1-4 -d'&' > $temp_file
-paste -d'&' $temp_file <(awk '{gsub(/ /,"+")}1' $ref_output/build_time.txt | bc) > table_build_time1.txt
+paste -d'&' $temp_file <(awk '{gsub(/ /,"+")}1' $ref_output/build_time.txt | bc) > $output/table1.txt
 
 awk '{gsub(/ /,"\\&")}1' out/build_time.txt | cut -f5-11 -d'&' > $temp_file
-paste -d'&' $temp_file <(awk '{gsub(/ /,"+")}1' $denovo_output/build_time.txt | bc) > table_build_time2.txt
+paste -d'&' $temp_file <(awk '{gsub(/ /,"+")}1' $denovo_output/build_time.txt | bc) > $output/table2.txt
 
-awk '{gsub(/ /,"\\&")}1' out/build_memory.txt | cut -f1-4 -d'&' > table_build_memory1.txt
-awk '{gsub(/ /,"\\&")}1' out/build_memory.txt | cut -f5-11 -d'&' > table_build_memory2.txt
-
+awk '{gsub(/ /,"\\&")}1' out/build_memory.txt | cut -f1-4 -d'&' > $output/table3.txt
+awk '{gsub(/ /,"\\&")}1' out/build_memory.txt | cut -f5-11 -d'&' > $output/table4.txt
 rm $temp_file
+
+# plots
+Rscript plots.R

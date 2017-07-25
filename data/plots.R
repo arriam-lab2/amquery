@@ -288,7 +288,7 @@ draw.build <- function() {
 }
 
 draw.add <- function() {
-    p <- add.time.combined('out/add_100_time.txt', 'out/add_300_time.txt', 1500, 3000)
+    p <- add.time.combined('out/add_100_time.txt', 'out/add_300_time.txt', 1300, 3000)
     ggsave("out/add_100_300_time.tiff", p, width=18, height=16, units="cm")
     p <- add.time.combined('out/add_500_time.txt', 'out/add_1000_time.txt', 5000, 10000)
     ggsave("out/add_500_1000_time.tiff", p, width=18, height=16, units="cm")
@@ -307,10 +307,10 @@ draw.add <- function() {
 
 precision <- function() {
     p <- precision.combined(c('wu_mp_at_k.txt', 'wu_bmp_at_k.txt', 'wu_map_at_k.txt', 'wu_bmap_at_k.txt', 'wu_gain_at_k.txt', 'wu_bgain_at_k.txt',
-                           'bc_mp_at_k.txt', 'bc_bmp_at_k.txt', 'bc_map_at_k.txt', 'bc_bmap_at_k.txt', 'bc_gain_at_k.txt', 'bc_bgain_at_k.txt'))
+                              'bc_mp_at_k.txt', 'bc_bmp_at_k.txt', 'bc_map_at_k.txt', 'bc_bmap_at_k.txt', 'bc_gain_at_k.txt', 'bc_bgain_at_k.txt'))
     ggsave("ref_precision.tiff", p, width=18, height=16, units="cm")
 
 }
 
-#draw.build()
+draw.build()
 draw.add()
