@@ -224,79 +224,47 @@ Evgeny Andronov \textsuperscript{1},
 \end{flushleft}
 % Please keep the abstract below 300 words
 \section*{Abstract}
-Rapidly increasing amounts of 16S amplicon libraries require the development of efficient methods for similarity search. 
-Here we present Amquery, a new tool for fast indexing and similarity search of 16S rRNA amplicon libraries, 
-based on a metric-agnostic indexing data structure. In addition to weighted UniFrac distance, Amquery supports 
-a fast clustering-free dissimilarity metric based on a technique of k-mer abundance comparison.
-Experimental results on huge 16S dataset show that this approach can significantly reduce required preproccessing 
-time for index construction and update in comparison against clustering-based solutions, e.g. implemented in tools such as QIIME.
+Rapidly increasing amounts of amplicon libraries require the development of efficient methods for similarity search. 
+Here we present Amquery, a new generic tool for fast indexing and similarity search of amplicon libraries based on a metric-agnostic indexing data structure. 
+In addition to weighted UniFrac distance, Amquery supports a fast clustering-free dissimilarity metric based on a technique of k-mer abundance comparison.
+Experimental results on huge 16S rRNA datasets show that this approach can significantly reduce required preproccessing time for index construction and update in comparison against clustering-based solutions, e.g. implemented in tools such as QIIME.
 Amquery is freely available at https://github.com/nromashchenko/amquery.
 
 \linenumbers
 
 % Use "Eq" instead of "Equation" for equation citations.
 \section*{Introduction}
-Deep high-throughput amplicon sequencing has become the de-facto standard method for taxonomic community profiling in environmental, 
-medical and industrial microbiology, because it provides cheap high-resolution data in a snap \cite{}. Consequently, the 
-number of samples deposited in public databases, such as NCBI SRA and MG-RAST, keeps growing at a hyper-linear rate, 
-which resembles the period of rapid accumulation of individual sequences in the NCBI GenBank database. 
-And as much as rapid growth of the GenBank drove the development of fast and efficient tools for database-wide 
-sequence comparison (i.e. FASTA and, subsequently, BLAST) \cite{}, the ever-growing number of publicly available amplicon 
-libraries necessitates a mean to query the databases for similar samples without relying on available metadata, which is 
-often scarce, incomplete and hard to quantify. Yet, several factors make this task seem computationally intractable within 
-the conventional analytical framework and available software. A standard workflow (e.g. implemented in QIIME \cite{}) 
-for comparing amplicon libraries usually comprises several major steps: 
-1. library demultiplexing, 2. OTU-picking, 3. beta-diversity estimation. Library demultiplexing (mostly adapter and primer 
-trimming) is probably the least computationally intensive and straightforward to run on multiple processing units in parallel, 
-hence we are not going to get into details on that. 
+Deep high-throughput amplicon sequencing has become the de-facto standard method for taxonomic community profiling in environmental, medical and industrial microbiology, because it provides cheap high-resolution data in a snap \cite{Knight2012}. 
+Consequently, the number of samples deposited in public databases, such as NCBI SRA and MG-RAST, keeps growing at a hyper-linear rate, which resembles the period of rapid accumulation of individual sequences in the NCBI GenBank database. 
+And as much as rapid growth of the GenBank drove the development of fast and efficient tools for database-wide sequence comparison (i.e. FASTA and, subsequently, BLAST) \cite{Madden1996}, the ever-growing number of publicly available amplicon libraries necessitates a mean to query the databases for similar samples without relying on available metadata, which are often scarce, incomplete and hard to quantify. 
+Yet, several factors make this task seem computationally intractable within the conventional analytical framework and available software. A standard workflow (e.g. implemented in QIIME \cite{caporaso2010qiime}) for comparing amplicon libraries usually comprises several major steps: 1. library demultiplexing, 2. OTU-picking, 3. beta-diversity estimation. 
+Library demultiplexing (mostly adapter and primer trimming) is probably the least computationally intensive and straightforward to run on multiple processing units in parallel, hence we are not going to get into details on that. 
 
-On the other hand, OTU-picking is one of the most computationally intensive steps, coming in three major flavours: 
-de-novo, closed-reference and open-reference picking (the latter is a combination of the other). 
-Since amplicon sequencing is all about taxonomic screening of a community, OTU-picking algorithms group similar 
-sequences into clusters that can be regarded as formally defined quasi-taxonomic entities dubbed OTUs (Operational 
-Taxonomic Units). The clustering compensates for sequencing errors and, most importantly, makes standard downstream 
-analyses more biologically sound and computationally tractable. In de-novo OTU-picking clusters are created from scratch 
-without any prior information, which, if done accurately, becomes unfeasible for any realistically sized amplicon libraries, 
-giving way for efficient and heavily heuristic algorithms, such as UCLAST \cite{} and CD-HIT \cite{}. In closed-reference picking 
-no clusters are created from scratch – instead, a user provides a set of reference sequences to use as cluster seeds. 
-Any sequence, failing to hit a given similarity threshold to any reference, is discarded. In open-reference picking 
-these discarded sequences are subjected to de-novo clustering. Reference-based picking is easier to run on multiple 
-processing units and is less prone to artefacts, rooted in the aggressive heuristics of fast sequence alignment and 
-clustering tools. Anyway, after an algorithm/pipeline finishes the clustering, it picks a single representative sequence 
-out of each cluster (in closed-reference picking the references are the representatives). This representative set can be 
-used for downstream analyses, such as taxonomic identification and phylogenetics. The set also makes the results of 
-de-novo and open-reference picking reproducible and stable, because it can be supplied to a closed-reference OTU-picking 
-pipeline \cite{}.
+On the other hand, OTU-picking is one of the most computationally intensive steps, coming in three major flavours: de-novo, closed-reference and open-reference picking (the latter is a combination of the other two). 
+Since amplicon sequencing is mostly focused on taxonomic screening of communities, OTU-picking algorithms group similar sequences into clusters that can be regarded as formally defined quasi-taxonomic entities dubbed OTUs (Operational Taxonomic Units). 
+The clustering compensates for sequencing errors and, most importantly, makes standard downstream analyses more biologically sound and computationally tractable. 
+In de-novo OTU-picking clusters are created from scratch without any prior information, which, if done accurately, becomes unfeasible for any realistically sized amplicon libraries, giving way for efficient and heavily heuristic algorithms, such as UCLAST \cite{Edgar2010} and CD-HIT \cite{Fu2012}. 
+In closed-reference picking no clusters are created from scratch – instead, a user provides a set of reference sequences to use as cluster seeds. 
+Any sequence, failing to hit a given similarity threshold to any reference, is discarded. 
+In open-reference picking these discarded sequences are subjected to de-novo clustering. Reference-based picking is easier to run on multiple processing units and is less prone to artefacts, rooted in the aggressive heuristics of fast sequence alignment and clustering tools. 
+Either way, after an algorithm/pipeline finishes the clustering, it usually picks a single representative sequence out of each cluster (in closed-reference picking the references are the representatives). 
+This representative set can be used for downstream analyses, such as taxonomic identification and phylogenetics. 
+The set also makes the results of de-novo and open-reference picking reproducible and stable, because it can be supplied to a closed-reference OTU-picking pipeline.
+After picking is over, each amplicon library can be represented as a count-vector, giving the per-OTU number of observations/reads. 
+A matrix of such vectors (knows as the OTU-table) represents a set of microbial communities. 
+To compare them, common pipelines calculate a square pair-wise dissimilarity matrix (aka the beta-diversity matrix), using a beta-diversity measure, most notably one of the UniFrac family \cite{lozupone2011unifrac}. 
+These dissimilarity measures leverage phylogenetic information by projecting the communities onto a phylogenetic tree of its inhabitants, hence all variations of UniFrac require a tree of cluster representatives.
 
-After picking is over, each amplicon library can be represented as a count-vector, giving the per-OTU number of 
-observations/reads. A matrix of such vectors (knows as the OTU-table) represents a set of microbial communities. 
-To compare them, common pipelines calculate a square pair-wise dissimilarity matrix (aka the beta-diversity matrix), 
-using a beta-diversity measure, most notably one of the UniFrac family [7]. These dissimilarity measures leverage 
-phylogenetic information by projecting the communities onto a phylogenetic tree of its inhabitants, hence all variations 
-of UniFrac require a tree of cluster representatives.
-
-The preface immediately introduces two main issues a searchable database would need to address: OTU-picking and 
-similarity estimation. First, we must choose a viable OTU-picking strategy or find a way to around it altogether. 
-The hyper-linear complexity and, even more so, the clustering instability of de-novo and open-reference pipelines 
-strike them out of the options to consider, leaving a single method on the list – the closed-reference picking, 
-which requires a set of representatives. As self-obvious as it may seem, to make downstream beta-diversity estimations 
-unbiased, the set must be representative of the expected cumulative diversity of all samples that can be added to the 
-database. Additionally, since the overwhelming majority of amplicon libraries comprise short-reads targeting various 
-regions in a marker gene (e.g. V1-V9 hypervariable regions of the 16S rRNA gene), complete-gene references are especially 
-valuable, because they allow read-mapping-based picking, mitigating incompatibility of amplicon libraries generated 
-for different regions of the same gene. While extensive reference sets of full-length marker genes exist for some 
-major fields of microbiology (most notably, the HITdb 16S rRNA reference set designed for medical biology), in many 
-cases such a set is yet to be created (e.g. for aquatic or soil environmental microbiology). Nevertheless, an 
-exhaustive de-novo clustering based on hundreds or thousands of communities sampled from a specific environment (e.g. soil) 
-n produce a set of references to use in a database until better alternatives become available. It’s important to stress, 
-that the lack of full-length references makes it nearly impossible to create a unified searchable database of 
-short-read libraries targeting different regions of the same gene. Therefore, in the absence of full-length 
-references a searchable database would have to provide several subsections based on the commonly targeted regions. 
-To use UniFrac for downstream similarity estimations, a phylogenetic tree would have to be inferred for each set of 
-representatives, which can be computationally unachievable via accurate methods, because even a single set of 
-communities (sampled from the same environment) often harbour many thousands of clusters. Furthermore, fast sequence 
-clustering algorithms, such as UCLUST, tend to create spurious clusters, inflating representative sets, which not only 
-affects different beta-diversity indices, but makes it increasingly hard to create a phylogenetic tree.
+The preface immediately introduces two main issues a searchable database would need to address: OTU-picking and similarity estimation. 
+First, we must choose a viable OTU-picking strategy or find a way around it altogether. The hyper-linear complexity and, even more so, the clustering instability of de-novo and open-reference pipelines \cite{He2015} strike them out of the options to consider, leaving a single method on the list – the closed-reference picking, which requires a set of representatives. 
+We find it self-evident that the set must be representative of the expected cumulative diversity of all samples that can be added to the database to make downstream beta-diversity estimations unbiased.
+Additionally, since the overwhelming majority of amplicon libraries comprise short-reads targeting various regions in a marker gene (e.g. V1-V9 hypervariable regions of the 16S rRNA gene), complete-gene references are especially valuable, because they allow read-mapping-based picking, mitigating incompatibility of amplicon libraries generated for different regions of the same gene. 
+While extensive reference sets of full-length marker genes exist for some major fields of microbiology (most notably, the HITdb \cite{Ritari2015} 16S rRNA reference set designed for medical biology), in many cases such a set is yet to be created (e.g. for aquatic or soil environmental microbiology). 
+Nevertheless, an exhaustive de-novo clustering based on hundreds or thousands of communities sampled from a specific environment (e.g. soil) can produce a set of references to use in a database until better alternatives become available.
+It’s important to stress, that the lack of full-length references makes it nearly impossible to create a unified searchable database of short-read libraries targeting different regions of the same gene. 
+Therefore, in the absence of full-length references a searchable database would have to provide several subsections based on commonly targeted regions. 
+To use UniFrac for downstream similarity estimations, a phylogenetic tree would have to be inferred for each set of representatives, which can be computationally unachievable via accurate methods, because even a single set of communities (sampled from the same environment) often harbours many thousands of clusters. 
+Furthermore, fast sequence clustering algorithms, such as UCLUST, tend to create spurious clusters \cite{Huse2010}, inflating representative sets, which not only affects different beta-diversity indices, but makes it increasingly hard to create a phylogenetic tree.
 
 
 \section*{Methods}
@@ -305,45 +273,29 @@ providing support for user-defined dissimilarity metrics. Such definitions consi
 1. a sample representation routine
 2. a metric community dissimilarity measure.
 
-
 \subsection*{Metric indexing storage}
-In order to provide efficient distance metric based retrieval of amplicon library samples, 
-Amquery implements a heavily researched concept of metric indexing. Generally speaking, metric indexing 
-is a preprocessing of data designed to provide efficient metric based similarity search 
-(see \cite{hetland2009basic} for the more detailed overview).
+In order to provide efficient distance metric based retrieval of amplicon library samples, Amquery implements a heavily researched concept of metric indexing. 
+Generally speaking, metric indexing is a preprocessing of data designed to provide efficient metric based similarity search (see \cite{hetland2009basic} for the more detailed overview).
 
-Amquery utilises vantage-point tree (vp-tree) \cite{yianilos1993data, chavez2001searching} as an indexing 
-data structure, which refers to so-called pivot-based metric indexing.
-In short, pivot-based metric indexing exploits the idea of sequential partitioning of origin metric 
-space, reducing the cost of traversing across the metric space during similarity search query. 
-To index a set of input samples $S$, one creates a tree node and randomly picks a 'pivot' sample $p \in S$, calculating dissimilarity 
-values between all pairs of the form $(p, x), x \in S \setminus \{ p \}$. 0
-A median of the list of all of these values is a vantage-point for current tree node, which splits the list into two parts. Samples according to left and right part are indexed recursively in left and right subtree of current tree node, respectively.
-To search for most similar samples of input sample $s$, one traverses throw the tree in the following way. Let $p$ to be a pivot sample of current tree node, $f$ to be a dissimilarity function and $k$ to be a number of most similar samples to search.
-Then $f(s, p)$ is compared to corresponding median value, stored in current tree node, in order to choose a subtree for further traversing. If this subtree stores less than $k$ samples (and in some other cases), samples from alternative subtree are also processed in the same way. It is convenient to implement search routine using a queue to track candidate samples and returning first $k$ elements of the queue as a result list.
+Amquery utilises vantage-point tree (vp-tree) \cite{yianilos1993data, chavez2001searching} as an indexing data structure, implementing the so-called pivot-based metric indexing.
+In short, pivot-based metric indexing exploits the idea of sequential partitioning of origin metric space, reducing the cost of traversing across the metric space during similarity search query. To index a set of input samples $S$, one creates a tree node and randomly picks a 'pivot' sample $p \in S$, calculating dissimilarity values between all pairs of the form $(p, x), x \in S \setminus \{ p \}$.
+The median of all these values is a vantage-point for the current tree node splitting the list into two parts. Samples in both parts are indexed recursively in the left and right subtrees of the current tree node, respectively.
+To search for samples most similar to an input sample $s$, one traverses through the tree in the following way. Let $p$ be the pivot sample of the current tree node, $f$ be a dissimilarity function and $k$ -- the number of most similar samples to search.
+Then $f(s, p)$ is compared to the corresponding median value, stored in the current tree node, in order to choose a subtree to traverse. If this subtree stores less than $k$ samples (and in some other cases), samples from the other subtree are also processed in the same way. It is convenient to implement this search routine using a queue to track candidate samples, returning the first $k$ elements of the queue as an output.
 
-Since vantage-point tree is designed to be independent of the space dimensionality \cite{yianilos1993data}, this allows to store high-dimensional data with virtually no loss of indexing and search performance: it takes $\mathcal{O}(n)$ space and $\mathcal{O}(n \log n)$ time in the worst case to be built (for an input set of $n$ samples), and a search query is argued to require $\mathcal{O}(\log n)$ of time with some reservations. For more detailed analysis of vp-tree performance, see \cite{yianilos1993data}.
+Since vantage-point tree is designed to be independent of the space dimensionality \cite{yianilos1993data}, this allows to store high-dimensional data with virtually no loss of indexing and search performance: in the worst case it takes $\mathcal{O}(n)$ space and $\mathcal{O}(n \log n)$ time to build a tree for an input set of $n$ samples, while a search query is argued to require $\mathcal{O}(\log n)$ of time with some reservations. 
+For a more detailed analysis of vp-tree performance see \cite{yianilos1993data}.
 
 
 \subsection*{Dissimilarity metrics}
-Amquery supports weighted UniFrac \cite{lozupone2011unifrac} as a community dissimilarity metric,
- which requires OTU-picking and phylogenetic tree construction on a precalculation stage. In this case, 
- samples are represented as vectors of OTU abundances (i.e. rows of OTU-table), which are directly used 
- in the calculation of pairwise distance values.
-
-
-Since it can be computationally expensive to use OTU-based dissimilarity metrics, such as weighted UniFrac, Amquery 
-implements an OTU-picking free dissimilarity metric over samples k-mer frequency distributions. Vectors of such distributions
-are known as feature frequency profiles (FFP) and has been used in whole-genome comparison \cite{sims2009alignment}. 
-Amquery utilises the square root of \textit{Jensen-Shannon divergence} (RJSD) \cite{lin1991divergence} which 
-satisfies many statistical properties and fits many cases of high-dimensional spaces in $\mathbb{R^\star}$ as a distance 
-metric \cite{fuglede2004jensen, endres2003new}. We make use of the specific form of RJSD, introduced 
-by Connor et al. \cite{connor2013evaluation}, to speed up distance evaluation over sparse $k$-mer distributions (i.e. sparse FFP).
-
+Out of the box, Amquery supports several community metrics, Most importantly, it uses weighted UniFrac \cite{lozupone2011unifrac}, though OTU-picking and tree construction are not performed by Amquery itself. 
+In this case, samples are represented as vectors of OTU abundances (i.e. rows of OTU-table), which are directly used in the calculation of pairwise distance values.
+Since it can be computationally expensive to use OTU-based dissimilarity metrics, such as weighted UniFrac, Amquery also implements an OTU-picking free dissimilarity metric over samples' k-mer frequency distributions
+Vectors of such distributions are known as feature frequency profiles (FFP) and k-mer spectra and has been used in genomics \cite{sims2009alignment} and shotgun metagenomics \cite{Dubinkina2016}. 
+Amquery utilises the square root of \textit{Jensen-Shannon divergence} (RJSD) \cite{lin1991divergence}, which satisfies many statistical properties and fits many cases of high-dimensional spaces in $\mathbb{R^\star}$ as a distance metric \cite{fuglede2004jensen, endres2003new}. We make use of the specific form of RJSD, introduced by Connor et al. \cite{connor2013evaluation}, to speed up distance evaluation over sparse $k$-mer distributions (i.e. sparse FFP).
 
 \subsubsection*{k-mer counting}
-In the case of using RJSD as dissimilarity metric, Amquery represents an arbitrary amplicon library as a discrete 
-probability distribution over the corresponding $k$-mer space (for a word-length $k$). 
+When using RJSD as a dissimilarity metric, Amquery represents an arbitrary amplicon library as a discrete probability distribution over the corresponding $k$-mer space (for a word-length $k$). 
 To reduce memory consumption, the $k$-mers are encoded as quaternary values. 
 More formally, each $k$-mer in a sequence $s = s_0,\dots,s_{n-1}$ is represented as its \textit{lexicographic rank} $\mathrm{lxr}_k(s)$, corresponding to the $k$-mer's position in the lexicographically sorted list of all possible $k$-mers.
 
@@ -351,7 +303,7 @@ More formally, each $k$-mer in a sequence $s = s_0,\dots,s_{n-1}$ is represented
 \label{eq:schemeP}
     \mathrm{lxr}_k(s) = \sum_{i=0}^{k−1} \mathrm{ord}(s_i) \cdot |{\mathcal{L}}|^{k−i−1}
 \end{eqnarray}
-Here $\mathrm{ord}(s_i)$ is a value of ordering function at $s_i$ over the alphabet ${\mathcal{L}} = \{A, C, G, T \}$. The most important advantage of this representation is that $\mathrm{lxr}_k$ is a special case of the Karp-Rabin hash fingerprint \cite{karp1987efficient}, making it possible to map $k$-mer $s_{i:i+k-1}$ to quaternary value $\mathrm{lxr}_k(s_{i:i+k-1})$, given the previous $k$-mer $s_{i−1:i+k-2}$ and its quaternary $\mathrm{lxr}_k(s_{i−1:i+k-2})$, in constant time:
+Here $\mathrm{ord}(s_i)$ is the value of the ordering function at $s_i$ over the alphabet ${\mathcal{L}} = \{A, C, G, T \}$. The most important advantage of this representation is that $\mathrm{lxr}_k$ is a special case of the Karp-Rabin hash fingerprint \cite{karp1987efficient}, making it possible to map $k$-mer $s_{i:i+k-1}$ to quaternary value $\mathrm{lxr}_k(s_{i:i+k-1})$, given the previous $k$-mer $s_{i−1:i+k-2}$ and its quaternary $\mathrm{lxr}_k(s_{i−1:i+k-2})$, in constant time:
 
 \begin{eqnarray}
 \label{eq:schemeP}
@@ -359,57 +311,48 @@ Here $\mathrm{ord}(s_i)$ is a value of ordering function at $s_i$ over the alpha
 									 |{\mathcal{L}}|^{k−1}) + ord(s_{i+k−1})
 \end{eqnarray}
 This advantage, however, imposes an upper-bound on the word-length $k$, since the number of possible $k$-mers grows exponentially with increasing word-length. That is, for a $k$-mer value to fit in a single machine word, we assume $k \leq 32$ for x64 architectures.
-Since realistic sample ${k}$-mer distribution vectors are extremely high-dimensional and sparse, Amquery represents them as rank-sorted sparse arrays. In our implementation, a sparse array is a key-value storage in which the keys are the lexicographic ranks and the values are the empirical probabilities (i.e. relative abundances of the corresponding k-mers).
-
-
+Since realistic ${k}$-mer spectra are extremely high-dimensional and sparse, Amquery represents them as rank-sorted sparse arrays. In our implementation, a sparse array is a key-value storage in which the keys are the lexicographic ranks and the values are the empirical probabilities (i.e. relative abundances of the corresponding k-mers).
 
 \section*{Results}
 
 The weighted UniFrac based implementation of Amquery was compared against the RJSD based one in the following fashion.
-We used the classic microbiome analysis QIIME \cite{caporaso2010qiime} pipeline to perform both a reference-based and \textit{de novo} OTU picking, 
-and phylogenetic tree construction for a huge 16S metagenomic dataset.
+We used the QIIME \cite{caporaso2010qiime} pipeline to perform both the reference-based and \textit{de novo} OTU picking, and phylogenetic tree construction for a huge 16S metagenomic dataset.
 Resulting data were used for evaluation of weighted UniFrac distances during an index construction. 
-Nearest neighbor search results for weighted UniFrac based implementation were used as a reference to estimate 
-search relevance of the RJSD based one.
+The nearest neighbour search results for the weighted UniFrac based implementation were used as a reference to estimate search relevance of the RJSD based one.
 
 We also compared speed and memory efficiency of index construction between these two implementations.
-All of the experiments were run on a machine equipped with an Intel Xeon CPU E5-2650 v3 (2.30 GHz)
- and a Seagate Constellation ES.3 ST3000NM0033 hard drive.
+All of the experiments were run on a machine equipped with an Intel Xeon CPU E5-2650 v3 (2.30 GHz) and a Seagate Constellation ES.3 ST3000NM0033 hard drive.
 
 \subsection*{Data}
-We analyzed a human gut 16S metagenomic dataset, which consists of 1978 samples, obtained from the Sequence Read Archive \cite{leinonen2010sequence}. 
-For each sample, the reads were filtered by the length with 250 base pairs threshold and rarefied by choosing 1000 sequences per sample randomly.
-Resulting samples are split into two parts: referred below to as \texttt{main} of size 100, 300, 500, 700, 1000, and referred below to as \texttt{additional}, 
-consist of all the rest samples, accordingly.
-Resulting pairs of (\texttt{main}, \texttt{additional}) sample subsets were used in further processing.
+We analysed a human gut 16S metagenomic dataset, downloaded from the NCBI Sequence Read Archive \cite{leinonen2010sequence}. 
+In each sample we trimmed sequences at 250 base pairs and removed those with insufficient length. 
+We then rarefied samples by randomly picking 1000 sequences without replacement. Samples lacking enough reads were discarded, leaving us with a dataset of $\sim$2k preprocessed amplicon libraries. These were split into two groups of 1000 samples each: 
+1) the \texttt{main} group, and 
+2) the \texttt{additional} group.
+Both groups were partitioned into random subsets of 100, 300, 500, 700 and 1000 samples, which were used in our analyses.
 
 \subsection*{Data processing}
 
 \subsubsection*{By QIIME}
 We used QIIME versions 1.9.1 to perform OTU picking and phylogenetic tree construction for the \texttt{main} part of every dataset split.
-Reference-based and \textit{de novo} OTU picking were carried out using the default options as implemented in QIIME at the 95\% sequence similarity threshold, 
-except for \texttt{uclust\_ref} OTU picking method for the reference-based case.
+Reference-based and \textit{de novo} OTU picking were carried out using the default options as implemented in QIIME at the 95\% sequence similarity threshold.
 
 \subsubsection*{By Amquery}
-For every split of the dataset, Amquery index was built for the \texttt{main} part, using weighted UniFrac and RJSD over FFPs ($k=15$ as k-mer size) as dissimilarity metrics.
-Then, all the samples from \texttt{main} part were searched in resulting index, and a random subset of the \texttt{additional} sample set of size (100, 200, $\dots$, 1000) was added to the index separately. 
-At every stage of processing, peak RAM usage and computational time were measured. For nearest neighbor search queries, certain metrics of search quality were measured, which will be described below. 
+For every \texttt{main} split of the dataset, an Amquery index was constructed for the weighted UniFrac and RJSD over FFPs ($k=15$ as k-mer size) metrics.
+Then, all samples from the \texttt{main} splits were searched in the corresponding indices, and a random \texttt{additional} split was added to each index separately. 
+At every stage of processing, peak RAM usage and computational time were measured. 
+For the nearest neighbour search queries, several metrics of search quality were measured, which will be described below. 
 
 \subsection*{Speed and memory efficiency}
-Elapsed time measurements at each stage of preprocessing and index construction 
-both for weighted UniFrac based on open-reference and \textit{de novo} OTU picking (reffered below as \texttt{refWU} and \texttt{denovoWU} accordingly) against RJSD based solution 
-are presented in Fig~\ref{fig1}.
-More detailed view of these measurements is presented Table~\ref{table1} and Table~\ref{table2},
-where rows present measurements, made for each of the dataset splits, and the columns present elapsed time at each stage of processing. 
-Similarly, peak RAM usage presented in Fig~\ref{fig2} graphically and in Table~\ref{table3}, Table~\ref{table4} in numbers accordingly.
+The elapsed time measurements at each preprocessing step and index construction for weighted UniFrac, for both closed-reference and \textit{de novo} OTU picking (hereafter referred to as \texttt{refWU} and \texttt{denovoWU} respectively), compared to the RJSD-based solution are presented in Fig~\ref{fig1}.
+A more detailed view of these measurements is given in Table~\ref{table1} and Table~\ref{table2}, where rows present measurements made for each of the dataset splits, and the columns present elapsed time at each stage of processing. 
+Similarly, peak RAM usage is presented in Fig~\ref{fig2} graphically and in Table~\ref{table3}, Table~\ref{table4} in numbers respectively.
 
-These measurements demonstrate that RJSD based indexing is mush more effective than indexing using weighted UniFrac based on \textit{de novo} OTU-picking,
-and slightly more effective than indexing using weighted UniFrac based on open-reference OTU-picking, in terms of the speed of index construction.
-
+Unsurprisingly, these measurements demonstrate that RJSD indexing is much more efficient than the weighted UniFrac coupled with \textit{de novo} OTU-picking in terms of index construction time, though less so when the UniFrac is coupled with closed-reference picking.
 
 \begin{figure}[!h]
-\caption{{\bf Elapsed time for \texttt{denovoWU}, \texttt{refWU} and \texttt{RJSD} based preprocessing and index construction for sets of samples of different size.}
-A, B: Measurements of elapsed time, spent on preprocessing and index construction using \textit{de novo} (A) and open-reference (B) OTU picking based weighted UniFrac as distance metric. 
+\caption{{\bf Elapsed time for \texttt{denovoWU}, \texttt{refWU} and \texttt{RJSD} based preprocessing and index construction for sample subsets of different size.}
+A, B: Measurements of time required for preprocessing and index construction using \textit{de novo} (A) and closed-reference (B) OTU picking coupled with the weighted UniFrac metric.
 C: Measurements of elapsed time, spent on preprocessing and index construction using RJSD over FFP as distance metric.}
 \label{fig1}
 \end{figure}
@@ -418,10 +361,10 @@ C: Measurements of elapsed time, spent on preprocessing and index construction u
 \begin{table}[!ht]
 \begin{adjustwidth}{-2.25in}{0in} % Comment out/remove adjustwidth environment if table fits in text column.
 \centering
-\caption{\bf Measurements of elapsed time (in seconds) for \texttt{refWU} and \texttt{RJSD} based preprocessing and index construction for sets of samples of different size.}
+\caption{\bf Measurements of elapsed time (in seconds) for \texttt{refWU} and \texttt{RJSD} based preprocessing and index construction for sample subsets of different size.}
 \begin{tabular}{|l|l+l|l|l|l|l|}
 \hline
-\textit{size} & {\bf FFP-RJSD} & \multicolumn{4}{|l|}{\bf Weighted UniFrac (open-referenced OTU picking)}\\ \hline
+\textit{size} & {\bf FFP-RJSD} & \multicolumn{4}{|l|}{\bf Weighted UniFrac (closed-referenced OTU picking)}\\ \hline
 &  {\bf Total } & pick\_otus & make\_otu & indexing  & {\bf Total} \\ \thickhline
 100 & 53.93&56.55&1.33&7.18&65.06 \\ \hline
 300 & 162.18&173.94&1.59&16.34&191.87 \\ \hline
@@ -431,9 +374,10 @@ C: Measurements of elapsed time, spent on preprocessing and index construction u
 
 \end{tabular}
 \begin{flushleft}
-Interpretation of headings: \textit{size} is the number of samples used for index construction. 
-\textit{indexing} is the time spent on vp-tree construction, including the calculation of necessary distance values. This inludes time spent on k-mer counting in the case of RJSD indexing.
-\textit{pick\_otus} and \textit{make\_otu} are the total time spent by the \texttt{pick\_otus.py} and the \texttt{make\_otu\_table.py} scripts accordingly.
+Definitions: 
+\textit{size} is the number of samples used for index construction; 
+\textit{indexing} is the time spent on vp-tree construction, including the calculation of necessary distance values (this includes the time spent on k-mer counting in the case of RJSD indexing);
+\textit{pick\_otus} and \textit{make\_otu} are the total time spent by the \texttt{pick\_otus.py} and the \texttt{make\_otu\_table.py} scripts respectively.
 \end{flushleft}
 \label{table1}
 \end{adjustwidth}
@@ -443,7 +387,7 @@ Interpretation of headings: \textit{size} is the number of samples used for inde
 \begin{table}[!ht]
 \begin{adjustwidth}{-2.25in}{0in} % Comment out/remove adjustwidth environment if table fits in text column.
 \centering
-\caption{\bf Measurements of elapsed time (in seconds) for \texttt{denovoWU} based preprocessing and index construction for sets of samples of different size.}
+\caption{\bf Measurements of elapsed time (in seconds) for \texttt{denovoWU} based preprocessing and index construction for sample subsets of different size.}
 \begin{tabular}{|l+l|l|l|l|l|l|l|l|l|}
 \hline
 \textit{size} & \multicolumn{8}{|l|}{\bf Weighted UniFrac (\textit{De novo} OTU picking)}\\ \hline
@@ -456,9 +400,9 @@ Interpretation of headings: \textit{size} is the number of samples used for inde
 \end{tabular}
 \begin{flushleft}
 
-\textit{indexing}, \textit{pick\_otus} and \textit{make\_otu} columns have the same meanings as in the Table~\ref{table1}.
-\textit{rep\_set}, \textit{align}, \textit{filt\_aln} and \textit{make\_phyl} contain the total time spent by the
-\texttt{pick\_rep\_set.py}, \texttt{align\_seqs.py}, \texttt{filter\_alignment.py} and \texttt{make\_phylogeny.py} scripts accordingly.
+Here columns \textit{indexing}, \textit{pick\_otus} and \textit{make\_otu} have the same meanings as in the Table~\ref{table1}.
+Columns \textit{rep\_set}, \textit{align}, \textit{filt\_aln} and \textit{make\_phyl} contain the total time spent by the
+\texttt{pick\_rep\_set.py}, \texttt{align\_seqs.py}, \texttt{filter\_alignment.py} and \texttt{make\_phylogeny.py} scripts respectively.
 
 \end{flushleft}
 \label{table2}
@@ -480,7 +424,7 @@ C: Peak RAM consumption during preprocessing and index construction using RJSD o
 \begin{table}[!ht]
 \begin{adjustwidth}{-2.25in}{0in} % Comment out/remove adjustwidth environment if table fits in text column.
 \centering
-\caption{{\bf Peak RAM usage (in Mb) of \texttt{refWU} and \texttt{RJSD} based preprocessing and index construction for sets of samples of different size.}}
+\caption{{\bf Peak RAM usage (in Mb) of \texttt{refWU} and \texttt{RJSD} based preprocessing and index construction for sample subsets of different size.}}
 \begin{tabular}{|l+l|l|l|l|l|l|}
 \hline
 \textit{size} & {\bf FFP-RJSD} & \multicolumn{3}{|l|}{\bf Weighted UniFrac (open-referenced OTU picking)}\\ \hline
@@ -493,7 +437,7 @@ C: Peak RAM consumption during preprocessing and index construction using RJSD o
 
 \end{tabular}
 \begin{flushleft}
-The column name notation corresponds to the Table~\ref{table1}.
+The column name notation corresponds to that of Table~\ref{table1}.
 \end{flushleft}
 \label{table3}
 \end{adjustwidth}
@@ -504,7 +448,7 @@ The column name notation corresponds to the Table~\ref{table1}.
 \begin{table}[!ht]
 \begin{adjustwidth}{-2.25in}{0in} % Comment out/remove adjustwidth environment if table fits in text column.
 \centering
-\caption{{\bf Peak RAM usage (in Mb) of \texttt{denovoWU} based preprocessing and index construction for sets of samples of different size.}}
+\caption{{\bf Peak RAM usage (in Mb) of \texttt{denovoWU} based preprocessing and index construction for sample subsets of different size.}}
 \begin{tabular}{|l+l|l|l|l|l|l|l|l|}
 \hline
 \textit{size} & \multicolumn{7}{|l|}{\bf Weighted UniFrac (\textit{De novo} OTU picking)}\\ \hline
@@ -517,16 +461,13 @@ The column name notation corresponds to the Table~\ref{table1}.
 
 \end{tabular}
 \begin{flushleft}
-The names of the columns correspond to the tables above.   
+The column name notation corresponds to that of Table~\ref{table2}. 
 \end{flushleft}
 \label{table4}
 \end{adjustwidth}
 \end{table}
 
-We measured the processing time spent on inserting a subset of samples from \texttt{additional} part of size
-$100, 300, 500, 700, 1000$ for constructed indexies of different size. Fig~\ref{fig3} and Fig~\ref{fig4} present results of
-these measurements for $100$, $300$, $500$ and $1000$ samples accordingly. 
-
+We measured the processing time spent on inserting different \texttt{additional} sample subsets into indices of different size. Fig~\ref{fig3} and Fig~\ref{fig4} present results of these measurements for $100$, $300$, $500$ and $1000$ subsamples. 
 
 \begin{figure}[!h]
 \caption{{\bf Elapsed time spent on bulk inserting of subsets of different size into the \texttt{denovoWU} (A, D), \texttt{refWU} (B, E) and \texttt{FFP-RJSD} (C, F) based index accordingly.}
@@ -545,16 +486,12 @@ A, B, C correspond to the size of 500; D, E, F correspond to the size of 1000.}
 \subsection*{Similarity search effectiveness}
 To estimate relevance of similarity search provided by the FPP-RJSD distance metric, mean precision at k (MP@K), mean average precision at k (MAP@K), 
 and normalized cumulative discounted gain at k (NCDG@k) \cite{informationretrieval2008, jarvelin2000ir, jarvelin2002cumulated}
-are evaluated against weighted UniFrac based similarity search for every search query of every sample from the \texttt{main} part. 
+are evaluated against weighted UniFrac-based similarity search for every search query of every sample from the \texttt{main} group. 
 Here we briefly describe the meaning of these metrics (see \cite{informationretrieval2008} for more detailed overview).
 
-
-Let $D(q, x)$ and to be a weighted UniFrac distance value between $q$ and $x$ samples, 
-and $S(q)$ to be a permutation of indexed samples corresponding to the result of search query $q$ among the index, 
-which orders all the indexed samples in proximity to the $q$ according to the weighted UniFrac metric. 
-Here we denote by $S(q)_k$ the top-$k$ samples corresponding to this permutation.
-Similarly, let $D'(q, x)$ to be a FFP-RJSD distance value and $S'(q)$ to be a permutation corresponding to the 
-result of search query $q$ among the FFP-RJSD based index of these samples. 
+Let $D(q, x)$ be the weighted UniFrac value between samples $q$ and $x$, and $S(q)$ be a permutation of all samples in a UniFrac-based index corresponding to the search output for $q$, ordering the samples in proximity to $q$ according to the weighted UniFrac metric. 
+Here by $S(q)_k$ we denote the top-$k$ entries in this permutation.
+Similarly, let $D'(q, x)$ be the FFP-RJSD distance value and $S'(q)$ be a permutation corresponding to the result of a search query for $q$ in an FFP-RJSD-based index of the same set of samples.
 Then $R_b(q, x)$ is a binary relevance function, defined as follows:
 
 \[ R_b(q, x)  =
@@ -564,24 +501,22 @@ Then $R_b(q, x)$ is a binary relevance function, defined as follows:
   \end{cases}
 \] 
 
-We call the sample $x$ relevant if $R_b(q, x) > 0$. Then MP@k (mean precision at k) is the average number of relevant samples among the all searched samples with the search size of $k$. 
+We call sample $x$ relevant if $R_b(q, x) > 0$. Then MP@k (mean precision at k) is the average number of relevant samples among all searched samples with the query size of $k$. 
 The MAP@k (mean average precision at k) is the mean value of precision scores P@k for a set of queries of size $1, \dots, k$.
 
-Now we denote by $R(q, x)$ the real relevance function for search output result $x$ as follows:
-$R(q, x) = 1 - \hat{D'}(q, x)$, whree $\hat{D'}$ 
-is the normalized value of $D'$ over all the indexed samples: $\hat{D'}(q, x) = \frac{D'(q, x)} {\displaystyle\max_{y \in index} (D'(q, y)) }$.
-Using the relevance function $R$, normalized discounted cumulative gain at k (NDCG@k) can be defined as follows:
+Now, let $R(q, x)$ be the real relevance function for search output result $x$ as follows:
+$R(q, x) = 1 - \hat{D'}(q, x)$, where $\hat{D'}$ 
+is the normalised value of $D'$ over all indexed samples: $\hat{D'}(q, x) = \frac{D'(q, x)} {\displaystyle\max_{y \in index} (D'(q, y)) }$.
+Using the relevance function $R$, normalised discounted cumulative gain at k (NDCG@k) can be defined as follows:
 
 $$\mathrm{NDCG@k} = \frac{DCG@k}{IDCG@k}$$
 $${\mathrm{DCG@k} = \sum_{i=1}^{k} \frac{2^{R_i} - 1} {\log_{2}(i + 1)} }$$
 
 Where $\displaystyle R_{i}$ is the graded relevance of the result at position $\displaystyle i$ according to the $R$ function,
-and $IDCG@k$ is the value of $DCG@k$ achieved for the ideal permutation $S(q, x)$ function.
-More informally, NDCG@k indicates how well the search result permutation $S'(q)$ matches the ideal permutation $S(q)$ in terms of
-relevance function $R$.
+and $IDCG@k$ is the value of $DCG@k$ achieved for the ideal permutation function $S(q, x)$.
+More informally, NDCG@k indicates how well the search result permutation $S'(q)$ matches the ideal permutation $S(q)$ in terms of the relevance function $R$.
 
-All the metrics are evaluated among all the dataset splits, mentioned above, for search query size $k = {1, 3, 5, 7, 10, 15, 20}$ 
-and every sample from the index. Averaged values of MP@k, MAP@k, NDCG@k presented in the Fig~\ref{fig5}.
+All the metrics are evaluated for all aforementioned sample splits for search query size $k = {1, 3, 5, 7, 10, 15, 20}$ and every sample from the index. Averaged values of MP@k, MAP@k, NDCG@k presented in the Fig~\ref{fig5}.
 
 
 \begin{figure}[!h]
@@ -592,14 +527,10 @@ according to relevance functions for the weighted UniFrac based on \textit{de no
 
 
 \subsection*{Conclusions}
-We presented a new tool for fast metric indexing and similarity search of amplicon libraries, 
-which designed to be metric-agnostic and supports the weighted UniFrac distance out of the box.
-Moreover, we implemented the k-mer based distance metric, which significally outperforms 
-OTU-picking based solutions, in terms of preprocessing and indexing speed and memory consumption.
+We present a new tool for fast metric indexing and similarity search of amplicon libraries, designed to be metric-agnostic and support the weighted UniFrac distance out of the box.
+Moreover, we implemented a k-mer based distance metric, which significantly outperforms OTU-picking based solutions in terms of preprocessing and indexing speed and memory consumption.
 This approach allows for indexing thousands of samples in minutes, and lightning fast similarity search. 
-We demonstrated that similarity search results, based on FFP-RJSD distance over estimated k-mer distributions, 
-correspond to the weighted Unifrac based search results with precision about 0.5 and overall 
-relevance about 0.7 in average for small query size.
+We demonstrate that similarity search results, based on FFP-RJSD distance over estimated k-mer distributions, correspond to the weighted Unifrac-based search results with precision about 0.5 and overall relevance about 0.7 in average for small query size.
 
 \bibliography{refs}
 
