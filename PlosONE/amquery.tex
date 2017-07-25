@@ -186,13 +186,19 @@
 
 
 Nikolay Romashchenko \textsuperscript{1 $\ast$},
-Ilia Korvigo \textsuperscript{1, 2},
-Evgeny Andronov \textsuperscript{1},
+Ilia Korvigo \textsuperscript{1, 2, 3},
+Evgeny Andronov \textsuperscript{1, 4, 5}
 
 \bigskip
 \textbf{1} Laboratory of Microbiological Monitoring and Bioremediation of Soils, All-Russia Research Institute for Agricultural Microbiology, St. Petersburg, Russia
 \\
 \textbf{2} Laboratory of Functional Genomics, Moscow Institute of Physics and Technology, Moscow, Russia
+\\
+\textbf{3} ITMO University, St. Petersburg, Russia
+\\
+\textbf{4} Laboratory of biology and biochemistry of soils, V.V. Dokuchaev Soil Science Institute, Moscow, Russia
+\\
+\textbf{5} Department of microbiology and genetics of Saint-Petersburg State University, St. Petersburg, Russia
 \\
 \bigskip
 
@@ -366,11 +372,12 @@ C: Measurements of elapsed time, spent on preprocessing and index construction u
 \hline
 \textit{size} & {\bf FFP-RJSD} & \multicolumn{4}{|l|}{\bf Weighted UniFrac (closed-referenced OTU picking)}\\ \hline
 &  {\bf Total } & pick\_otus & make\_otu & indexing  & {\bf Total} \\ \thickhline
-100 & 53.93&56.55&1.33&7.18&65.06 \\ \hline
-300 & 162.18&173.94&1.59&16.34&191.87 \\ \hline
-500 & 261.55&333.65&1.77&30.5&365.92 \\ \hline
-700 & 353.32&472.58&2.15&36.78&511.51 \\ \hline
-1000 & 523.3&714.37&2.54&59.53&776.44 \\ \hline
+100 & 53.93&152.01&1.27&7.18&160.46 \\ \hline
+300 & 162.18&349.04&1.22&16.34&366.60 \\ \hline
+500 & 261.55&717.52&1.39&30.5&749.41 \\ \hline
+700 & 353.32&914.74&1.57&36.78&953.09 \\ \hline
+1000 & 523.3&1102.83&1.78&59.53&1164.14 \\ \hline
+
 
 \end{tabular}
 \begin{flushleft}
@@ -397,6 +404,8 @@ Definitions:
 500 & 213.26&8.66&2205.55&121.01&1032.79&1.82&70.79&3653.88 \\ \hline
 700 & 335.56&11.72&2918.01&157.39&1456.03&1.9&132.87&5013.48 \\ \hline
 1000 & 548.44&16.1&3681.0&222.98&2199.14&2.41&247.68&6917.75 \\ \hline
+
+
 \end{tabular}
 \begin{flushleft}
 
@@ -414,7 +423,7 @@ Columns \textit{rep\_set}, \textit{align}, \textit{filt\_aln} and \textit{make\_
 
 \begin{figure}[!h]
 \caption{{\bf Peak RAM usage for \texttt{denovoWU}, \texttt{refWU} and \texttt{RJSD} based preprocessing and index construction for sets of samples of different size.}
-A, B: Peak RAM consumption during preprocessing and index construction using \textit{de novo} (A) and open-reference (B) OTU picking based weighted UniFrac as distance metric. 
+A, B: Peak RAM consumption during preprocessing and index construction using \textit{de novo} (A) and closed-reference (B) OTU picking based weighted UniFrac as distance metric. 
 C: Peak RAM consumption during preprocessing and index construction using RJSD over FFP as distance metric.}
 \label{fig2}
 \end{figure}
@@ -427,13 +436,13 @@ C: Peak RAM consumption during preprocessing and index construction using RJSD o
 \caption{{\bf Peak RAM usage (in Mb) of \texttt{refWU} and \texttt{RJSD} based preprocessing and index construction for sample subsets of different size.}}
 \begin{tabular}{|l+l|l|l|l|l|l|}
 \hline
-\textit{size} & {\bf FFP-RJSD} & \multicolumn{3}{|l|}{\bf Weighted UniFrac (open-referenced OTU picking)}\\ \hline
+\textit{size} & {\bf FFP-RJSD} & \multicolumn{3}{|l|}{\bf Weighted UniFrac (closed-referenced OTU picking)}\\ \hline
 &  {\bf Total } & pick\_otus & make\_otu & indexing \\ \thickhline
-100 & 286.85&241.96&119.67&295.18 \\ \hline
-300 & 641.71&437.43&134.54&653.08 \\ \hline
-500 & 996.98&649.14&146.12&1013.72 \\ \hline
-700 & 1349.62&832.76&162.74&1369.97 \\ \hline
-1000 & 1876.98&1026.71&182.5&1901.8 \\ \hline
+100 & 286.85&174.44&113.36&295.18 \\ \hline
+300 & 641.71&311.77&116.9&653.08 \\ \hline
+500 & 996.98&471.36&120.03&1013.72 \\ \hline
+700 & 1349.62&559.23&123.4&1369.97 \\ \hline
+1000 & 1876.98&820.6&126.32&1901.8 \\ \hline
 
 \end{tabular}
 \begin{flushleft}
@@ -458,6 +467,7 @@ The column name notation corresponds to that of Table~\ref{table1}.
 500 & 545.04&420.78&822.51&363.04&377.89&142.97&1081.27 \\ \hline
 700 & 716.07&553.76&1044.49&445.63&500.34&161.01&1460.91 \\ \hline
 1000 & 903.23&726.48&1370.98&568.45&676.09&179.35&2028.71 \\ \hline
+
 
 \end{tabular}
 \begin{flushleft}
@@ -520,8 +530,8 @@ All the metrics are evaluated for all aforementioned sample splits for search qu
 
 
 \begin{figure}[!h]
-\caption{{\bf MP@k (A, D), MAP@k (B, E) and NDCG@k (C, F) for search queries against FFP-RJSD based index and random sampling from the index as a baseline, 
-according to relevance functions for the weighted UniFrac based on \textit{de novo} (A, B, C) and open-reference (D, E, F) OTU picking.}}
+\caption{{\bf MP@k (A), MAP@k (B) and NDCG@k (C) for search queries against FFP-RJSD based index and random sampling from the index as a baseline, 
+according to relevance functions for the weighted UniFrac based on \textit{de novo} OTU picking.}}
 \label{fig5}
 \end{figure}
 
@@ -531,6 +541,9 @@ We present a new tool for fast metric indexing and similarity search of amplicon
 Moreover, we implemented a k-mer based distance metric, which significantly outperforms OTU-picking based solutions in terms of preprocessing and indexing speed and memory consumption.
 This approach allows for indexing thousands of samples in minutes, and lightning fast similarity search. 
 We demonstrate that similarity search results, based on FFP-RJSD distance over estimated k-mer distributions, correspond to the weighted Unifrac-based search results with precision about 0.5 and overall relevance about 0.7 in average for small query size.
+
+%\subsection*{Acknowledgments}
+%The study was funded by the Russian Science Foundation grant 14-26-00094.
 
 \bibliography{refs}
 

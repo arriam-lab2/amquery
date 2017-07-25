@@ -6,6 +6,7 @@ function copy_jsd {
     do
         mkdir -p ${output}/${split_no}
         scp nick@arriam-cpu:"${bench_root}/${bench_dir}/${split_no}/*.log" ${output}/${split_no}
+        scp nick@arriam-cpu:"${bench_root}/${bench_dir}/${split_no}/p*.txt" ${output}/${split_no}
     done;
 }
 
