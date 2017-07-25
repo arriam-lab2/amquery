@@ -13,7 +13,7 @@ function run_amq_test {
         amq-test -q precision \
             ${split_dir}/$build_size/main.fna \
             -r ${bench_dir}/$bench_subdir/${build_size}/wu/weighted_unifrac_otu_table.txt \
-            -k $k > "${index_dir}/minp_${bench_subdir}_$k.txt" 2> "${index_dir}/p_${bench_subdir}.log"
+            -k $k > "${index_dir}/p_${bench_subdir}_$k.txt" 2> "${index_dir}/p_${bench_subdir}.log"
     done;
 
     popd
