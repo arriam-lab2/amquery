@@ -6,7 +6,7 @@ import string
 import random
 from sklearn.neighbors import NearestNeighbors
 
-from amquery.core.tree.vptree import VpTree
+from amquery.core.storage.vptree import VpTree
 
 
 class ConfigMock:
@@ -29,6 +29,8 @@ class SampleDistanceMock:
         self.sample_map = sample_map
 
     def __call__(self, a: SampleMock, b: SampleMock):
+        a = self.sample_map[a]
+        b = self.sample_map[b]
         return self.f(a.values, b.values)
 
     @property
@@ -61,8 +63,8 @@ class TestVptree(unittest.TestCase):
         self.sample_map = SampleMapMock({x.name: x for x in self.samples})
         self.config = ConfigMock()
         self.distance = SampleDistanceMock(euclidean, self.sample_map)
-        self.tree = VpTree(self.config)
-        self.tree.build(self.distance)
+        self.tree = VpTree()
+        self.tree.build(self.distance, self.samples)
 
         vptree_file = tempfile.NamedTemporaryFile(delete=False)
         self.config.vptree_path = vptree_file.name
@@ -75,14 +77,14 @@ class TestVptree(unittest.TestCase):
                                 algorithm='ball_tree').fit(self.points)
 
         for name, sample in self.sample_map.items():
-            y1, _ = vptree_obj.search(sample, self.k, self.distance)
+            y1, _ = vptree_obj.find(self.distance, sample.name, self.k)
             y2, _ = nbrs.kneighbors(sample.values)
             y2 = y2[0]
             self.assertTrue(np.array_equal(y1, y2))
 
     def test_save_load(self):
         self.tree.save()
-        tree = VpTree.load(self.config, self.sample_map)
+        tree = VpTree.load()
 
         self._test_search(tree)
         self.assertTrue(self.tree.tree.to_dict() == tree.tree.to_dict())
@@ -90,7 +92,7 @@ class TestVptree(unittest.TestCase):
     def test_insert(self):
         # backup the tree
         self.tree.save()
-        tree = VpTree.load(self.config, self.sample_map)
+        tree = VpTree.load()
 
         # add new samples to the tree
         new_samples = [SampleMock(random_name(), np.random.uniform(0, 1, self.m)) for _ in range(self.n)]

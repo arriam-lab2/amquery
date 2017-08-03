@@ -13,7 +13,7 @@ AmQuery is a tool that allows users to compare hundreds of samples in a matter o
 
 
 ## Setup
-Clone this repo to some directory and run `pip install .` inside.
+Clone this repo to some directory and run `pip install --process-dependency-links .` inside.
 
 ## Usage
 
