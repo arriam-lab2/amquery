@@ -1,8 +1,4 @@
 import os
-import numpy as np
-import functools
-import itertools
-import operator as op
 import joblib
 from Bio import SeqIO
 from amquery.utils.decorators import hide_field
@@ -24,22 +20,6 @@ class SampleFile:
     @property
     def file_format(self):
         return self._format
-
-
-_alphabet = dict(zip([char for char in ('A', 'C', 'G', 'T')],
-                     itertools.count()))
-
-
-def _isvalid(sequence):
-    return functools.reduce(op.and_, [char in _alphabet for char in sequence])
-
-
-def _validate(sequence):
-    return sequence if _isvalid(sequence) else []
-
-
-def _transform(sequence):
-    return np.array([_alphabet[char] for char in sequence], dtype=np.uint8)
 
 
 def _parse_sample_name(sample_file):
@@ -107,8 +87,7 @@ class Sample:
     def set_kmer_index(self, index):
         self._kmer_index = index
 
-    def iter_seqs(self):
-        seqs_records = SeqIO.parse(open(self.source_file.path),
-                                   self.source_file.file_format)
-        for seq_rec in seqs_records:
-            yield _transform(_validate(seq_rec.seq))
+    def sequences(self):
+        return [str(record.seq) for record in SeqIO.parse(
+            self.source_file.path, self.source_file.file_format)
+        ]

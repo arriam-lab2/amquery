@@ -28,18 +28,15 @@ setup(
         'codeclimate-test-reporter>=0.1.2',
         'colorama==0.3.7',
         'biom-format==2.1.6',
-        'h5py'
+        'h5py',
+        'yack==0.1.2'
     ],
     entry_points='''
         [console_scripts]
         amq=amquery.cli:cli
         amquery=amquery.cli:cli
     ''',
-    ext_modules=[Extension('amquery.core.preprocessing.kmer_counter.lexrank.lexrank',
-                           sources=['amquery/core/preprocessing/kmer_counter/lexrank/lexrank.cpp'],
-                           extra_compile_args=['-std=c++11'],
-                           ),
-                 Extension('amquery.core.distance.metrics.jsd',
+    ext_modules=[Extension('amquery.core.distance.metrics.jsd',
                            sources=['amquery/core/distance/metrics/jsd.cpp'],
                            extra_compile_args=['-std=c++11'],
                            )

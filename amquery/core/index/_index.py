@@ -1,33 +1,12 @@
-import os
-import abc
 from amquery.core.distance.factory import Factory as DistanceFactory
 from amquery.core.preprocessing.factory import Factory as PreprocessorFactory
 from amquery.core.biom import merge_biom_tables
 from amquery.core.storage.factory import Factory as StorageFactory
 from amquery.utils.config import read_config
+from amquery.utils.benchmarking import measure_time
 from amquery.core.sample import Sample
 from amquery.utils.split_fasta import split_fasta
 from amquery.utils.config import get_sample_dir
-
-
-class SampleReference:
-    @abc.abstractmethod
-    def name(self):
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def content(self):
-        raise NotImplementedError()
-
-
-class SampleCollection:
-    @abc.abstractmethod
-    def __getitem__(self, item):
-        """
-        :param item: SampleReference 
-        :return: Sample
-        """
-        raise NotImplementedError()
 
 
 class Index:
@@ -71,6 +50,7 @@ class Index:
         return distance, preprocessor, storage, config
 
     @staticmethod
+    @measure_time(enabled=True)
     def load():
         distance, preprocessor, storage, config = Index._load()
         return Index(distance, preprocessor, storage), config
@@ -81,6 +61,7 @@ class Index:
         self._preprocessor = preprocessor
         self._storage = storage
 
+    @measure_time(enabled=True)
     def build(self, config, input_files):
         """
         :param config: configparser.ConfigParser
@@ -98,6 +79,7 @@ class Index:
     def refine(self):
         raise NotImplementedError
 
+    @measure_time(enabled=True)
     def add(self, config, input_files):
         """
         :param config: configparser.ConfigParser
@@ -121,7 +103,7 @@ class Index:
         self.distance.add_samples(processed_samples)
         self.storage.add_samples(processed_samples, self.distance)
 
-
+    @measure_time(enabled=True)
     def find(self, sample_name, k):
         """
         :param sample_name: str 
