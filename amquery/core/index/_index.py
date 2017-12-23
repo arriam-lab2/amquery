@@ -1,7 +1,12 @@
+"""
+Main class of a metric index
+"""
+
 from amquery.core.distance.factory import Factory as DistanceFactory
 from amquery.core.preprocessing.factory import Factory as PreprocessorFactory
 from amquery.core.biom import merge_biom_tables
 from amquery.core.storage.factory import Factory as StorageFactory
+from amquery.core.refindex import ReferenceTree
 from amquery.core.sample import Sample
 from amquery.utils.benchmarking import measure_time
 from amquery.utils.split_fasta import split_fasta
@@ -26,16 +31,20 @@ class Index:
         return len(self._storage) if self._storage else 0
 
     @staticmethod
-    def create(config):
+    def create(database_config):
         """
         :return: Index
         """
-        distance = DistanceFactory.create(config)
-        preprocessor = PreprocessorFactory.create(config)
-        storage = StorageFactory.create(config)
-        return Index(distance, preprocessor, storage)
+        distance = DistanceFactory.create(database_config)
+        preprocessor = PreprocessorFactory.create(database_config)
+        storage = StorageFactory.create(database_config)
 
-    #@measure_time(enabled=True)
+        rep_tree = None
+        #if 'rep_tree' in database_config:
+        #    rep_tree = ReferenceTree.create(database_config)
+
+        return Index(distance, preprocessor, storage, rep_tree)
+
     def save(self):
         self.distance.save()
         self.storage.save()
@@ -61,10 +70,9 @@ class Index:
         self._storage = storage
 
     @measure_time(enabled=True)
-    def build(self, config, input_files):
+    def build(self, input_files):
         """
-        :param config: configparser.ConfigParser
-        :param input_file: Sequence[str]
+        :param input_files: Sequence[str]
         :return:
         """
         assert (len(input_files) == 1)

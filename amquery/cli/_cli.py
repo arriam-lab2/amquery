@@ -12,16 +12,17 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
 
 @click.group()
-@click.option('--force', '-f', is_flag=True, help='Force overwrite output directory')
-@click.option('--quiet', '-q', is_flag=True, help='Be quiet')
 @click.option('--jobs', '-j', type=int, default=1, help='Number of jobs to start in parallel')
-def cli(force, quiet, jobs):
+def cli(jobs):
     Pool.instance(jobs=jobs)
 
 
 @cli.command()
 @click.option("--edit", is_flag=True)
 def config(edit):
+    """
+    Print or edit a config file
+    """
     if edit:
         click.edit(filename=CONFIG_PATH)
     else:
@@ -30,6 +31,9 @@ def config(edit):
 
 @cli.group()
 def db():
+    """
+    Database-specific commands
+    """
     pass
 
 
@@ -59,7 +63,7 @@ def create(name, distance, rep_tree, rep_set, biom_table, kmer_size):
     """
 
     config = create_database(name)
-    database_config = config["databases"][name]
+    database_config = config['databases'][name]
     database_config['distance'] = distance
 
     if rep_tree:
@@ -89,16 +93,9 @@ def build(db, input_files):
     databases = [db] if db else _get_databases_list(config)
 
     for database_name in databases:
-        index, database_config = Index.load(database_name)
-        index.build(database_config, input_files)
+        index, _ = Index.load(database_name)
+        index.build(input_files)
         index.save()
-
-
-@cli.command()
-@click.option('--kmer_size', '-k', type=int, help='K-mer size', default=15)
-@click.option('--distance', '-d', type=click.Choice(distances.keys()), default='jsd', help='A distance metric')
-def refine(kmer_size, distance):
-    raise NotImplementedError
 
 
 @cli.command()
@@ -140,7 +137,7 @@ def stats(database_name):
 
 @cli.command()
 @click.argument('database_name', type=str, required=True)
-def ls(database_name):
+def list(database_name):
     """
     Show a list of indexed samples
     """
@@ -171,7 +168,7 @@ def find(db, sample_name, k):
         click.secho('\t\t\t'.join(x for x in ['Sample', 'Distance']), bold=True)
 
         for value, sample_id in zip(values, points):
-            tabs = 3 - int(len(sample_id) / 6 - 1)
+            tabs = 3 - int(len(sample_id) / 5 - 1)
             click.secho(("%s" + '\t' * tabs) % sample_id, fg='blue', nl=False)
             click.echo("%f\t" % value)
 
