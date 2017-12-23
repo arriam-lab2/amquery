@@ -4,14 +4,15 @@ from amquery.core.preprocessing import KmerCounter, DummyPreprocessor
 
 class Factory:
     @staticmethod
-    def create(config):
+    def create(database_config):
         """
-        :param config: Config
+        :param database_config: dict
         :return: Preprocessor 
         """
-        method = config.get('distance', 'method')
+        method = database_config['distance']
+
         if method == FFP_JSD:
-            kmer_size = int(config.get('distance', 'kmer_size'))
+            kmer_size = int(database_config['kmer_size'])
             return KmerCounter(kmer_size)
         elif method == WEIGHTED_UNIFRAC:
             return DummyPreprocessor()

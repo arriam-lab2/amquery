@@ -30,9 +30,9 @@ class SamplePairwiseDistance(PairwiseDistance):
         self._sample_map = sample_map
 
     @staticmethod
-    def load(config):
+    def load(database_config):
         """
-        :param config: Config 
+        :param database_config: dict
         :return: SamplePairwiseDistance
         """
         if os.path.exists(get_distance_path()):
@@ -46,8 +46,10 @@ class SamplePairwiseDistance(PairwiseDistance):
             dataframe = pd.DataFrame()
 
         sample_map = SampleMap.load()
-        method = config.get('distance', 'method')
-        return SamplePairwiseDistance(distances[method](config), dataframe=dataframe, sample_map=sample_map)
+        method = database_config['distance']
+        return SamplePairwiseDistance(distances[method](database_config),
+                                      dataframe=dataframe,
+                                      sample_map=sample_map)
 
     def save(self):
         self._dataframe.to_csv(get_distance_path(), sep='\t', na_rep="N/A", index=False)
@@ -59,7 +61,7 @@ class SamplePairwiseDistance(PairwiseDistance):
         :return: None
         """
         if sample.name not in self.labels:
-            init_values = [np.nan for x in range(len(self._dataframe))]
+            init_values = [np.nan for _ in range(len(self._dataframe))]
             self._dataframe[sample.name] = pd.Series(init_values, index=self.dataframe.index)
             self._dataframe.loc[sample.name] = init_values + [np.nan]
             self._sample_map[sample.name] = sample
@@ -99,7 +101,6 @@ class SamplePairwiseDistance(PairwiseDistance):
         :return: float
         """
         return self[(a, b)]
-
 
     @property
     def labels(self):

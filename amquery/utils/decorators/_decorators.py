@@ -1,7 +1,6 @@
 def singleton(cls):
     instances = {}
 
-    @staticmethod
     def instance(*args, **kwargs):
         if cls not in instances:
             instances[cls] = cls(*args, **kwargs)
@@ -28,4 +27,3 @@ def hide_field(*fields):
             return result
         return wrapped
     return decorator
- 
