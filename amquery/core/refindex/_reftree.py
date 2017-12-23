@@ -3,12 +3,12 @@ Metric index of reference database
 """
 
 
-from amquery.core.sample import Sample
-from amquery.core.preprocessing.kmer_counter import KmerCounter
 from amquery.core.distance import distances, FFP_JSD
+from amquery.core.preprocessing.kmer_counter import KmerCounter
+from amquery.core.sample import Sample
 from amquery.core.storage import VpTree
 from amquery.utils.config import get_sample_dir
-from amquery.utils.split_fasta import split_fasta
+from scripts.split_fasta import split_fasta
 
 
 class ReferenceTree:
@@ -47,7 +47,7 @@ class ReferenceTree:
         :param database_config: dict
         :return: ReferenceTree
         """
-        raise NotImplementedError()
+        return None
 
     def build(self):
         """

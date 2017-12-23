@@ -35,6 +35,8 @@ setup(
         [console_scripts]
         amq=amquery.cli:cli
         amquery=amquery.cli:cli
+        split_fasta.py=scripts.split_fasta:cli
+        merge_fasta.py=scripts.merge_fasta:cli
     ''',
     ext_modules=[Extension('amquery.core.distance.metrics.jsd',
                            sources=['amquery/core/distance/metrics/jsd.cpp'],

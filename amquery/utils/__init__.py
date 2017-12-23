@@ -4,8 +4,6 @@ from .decorators import *
 from .iof import *
 from .multiprocess import *
 from .ui import *
-from .split_fasta import split_fasta
-
 
 __license__ = "MIT"
 __version__ = "0.2.1"
