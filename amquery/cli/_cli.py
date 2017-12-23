@@ -1,12 +1,11 @@
 import click
-import os
-import amquery.utils.iof as iof
-from amquery.utils.config import get_default_config
-from amquery.utils.multiprocess import Pool
-from amquery.utils.config import save_config, get_biom_path
-from amquery.core.distance import distances, DEFAULT_DISTANCE
-from amquery.core import Index
+import json
 from shutil import copyfile
+from amquery.core import Index
+from amquery.core.distance import distances, DEFAULT_DISTANCE
+from amquery.utils.multiprocess import Pool
+from amquery.utils.config import CONFIG_PATH, read_config, save_config, \
+                                 create_database, get_biom_path
 
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
@@ -21,40 +20,78 @@ def cli(force, quiet, jobs):
 
 
 @cli.command()
-@click.option("--method", type=click.Choice(distances.keys()), default=DEFAULT_DISTANCE)
+@click.option("--edit", is_flag=True)
+def config(edit):
+    if edit:
+        click.edit(filename=CONFIG_PATH)
+    else:
+        print(json.dumps(read_config(), indent=4, sort_keys=True))
+
+
+@cli.group()
+def db():
+    pass
+
+
+def _get_databases_list(config):
+    return [db for db in config["databases"]]
+
+
+@db.command()
+def list():
+    """
+    List registered databases
+    """
+    config = read_config()
+    print("\n".join(x for x in _get_databases_list(config)))
+
+
+@db.command()
+@click.argument('name', type=str, required=True)
+@click.option("--distance", type=click.Choice(distances.keys()), default=DEFAULT_DISTANCE)
 @click.option("--rep_tree", type=click.Path())
 @click.option("--rep_set", type=click.Path())
 @click.option("--biom_table", type=click.Path())
 @click.option("--kmer_size", "-k", type=int, default=15)
-def init(method, rep_tree, rep_set, biom_table, kmer_size):
-    index_dir = os.path.join(os.getcwd(), '.amq')
-    iof.make_sure_exists(index_dir)
-    index_path = os.path.join(index_dir, 'config')
+def create(name, distance, rep_tree, rep_set, biom_table, kmer_size):
+    """
+    Create new database
+    """
 
-    config = get_default_config()
-    config.set('config', 'path', index_path)
-    config.set('distance', 'method', method)
+    config = create_database(name)
+    database_config = config["databases"][name]
+    database_config['distance'] = distance
 
     if rep_tree:
-        config.set('distance', 'rep_tree', str(rep_tree))
+        database_config['rep_tree'] = str(rep_tree)
     if rep_set:
-        config.set('distance', 'rep_set', str(rep_set))
+        database_config['rep_set'] = str(rep_set)
     if biom_table:
+        database_config['biom_table'] = get_biom_path()
         copyfile(str(biom_table), get_biom_path())
-        config.set('distance', 'biom_table', get_biom_path())
     if kmer_size:
-        config.set('distance', 'kmer_size', str(kmer_size))
+        database_config['kmer_size'] = str(kmer_size)
 
-    index = Index.init(config)
-    index.save()
     save_config(config)
 
-@cli.command()
-@click.argument('input_files', type=click.Path(exists=True), nargs=-1, required=True)
-def build(input_files):
-    index, config = Index.load()
-    index.build(config, input_files)
+    index = Index.create(database_config)
     index.save()
+
+
+@cli.command()
+@click.option('--db', type=str, required=False)
+@click.argument('input_files', type=click.Path(exists=True), nargs=-1, required=True)
+def build(db, input_files):
+    """
+    Build databases by indexing samples
+    """
+    config = read_config()
+    databases = [db] if db else _get_databases_list(config)
+
+    for database_name in databases:
+        index, database_config = Index.load(database_name)
+        index.build(database_config, input_files)
+        index.save()
 
 
 @cli.command()
@@ -65,48 +102,77 @@ def refine(kmer_size, distance):
 
 
 @cli.command()
+@click.option('--db', type=str, required=False)
 @click.argument('input_files', type=click.Path(exists=True), nargs=-1, required=True)
 @click.option("--biom_table", type=click.Path())
-def add(input_files, biom_table):
+def add(db, input_files, biom_table):
+    """
+    Add samples to databases
+    """
+    config = read_config()
+    databases = [db] if db else _get_databases_list(config)
 
-    index, config = Index.load()
+    for database_name in databases:
+        index, database_config = Index.load(database_name)
+        if biom_table:
+            database_config['biom_table'] = str(biom_table)
+            index.add(database_config, input_files)
+            index.save()
 
-    if biom_table:
-        config.set('additional', 'biom_table', str(biom_table))
-
-    index.add(config, input_files)
-    index.save()
     save_config(config)
 
 
 @cli.command()
-def stats():
-    index, config = Index.load()
+@click.argument('database_name', type=str, required=True)
+def stats(database_name):
+    """
+    Show a general information about databases
+    """
+
+    index, database_config = Index.load(database_name)
     indexed = len(index)
 
+    click.secho("Database: ", bold=True, nl=False)
+    click.secho(database_name)
     click.secho("Indexed: ", bold=True, nl=False)
     click.secho("%s samples" % indexed)
 
 
 @cli.command()
-def ls():
-    index, config = Index.load()
+@click.argument('database_name', type=str, required=True)
+def ls(database_name):
+    """
+    Show a list of indexed samples
+    """
+    index, database_config = Index.load(database_name)
 
     click.secho("Indexed", bold=True)
-    sample_names = sorted(list(sample.name for sample in index.samples))
+    sample_names = sorted(sample.name for sample in index.samples)
     for name in sample_names:
         click.secho("%s" % name, fg='blue')
 
 
 @cli.command()
+@click.option('--db', type=str, required=False)
 @click.argument('sample_name', type=str, required=True)
 @click.option('-k', type=int, required=True, help='Count of nearest neighbors')
-def find(sample_name, k):
-    index, config = Index.load();
-    values, points = index.find(sample_name, k)
-    click.secho("%s nearest neighbors:" % k, bold=True)
-    click.secho('\t'.join(x for x in ['Hash', 'Sample', 'Similarity']), bold=True)
+def find(db, sample_name, k):
+    """
+    Nearest neighbors search against databases
+    """
+    config = read_config()
+    databases = [db] if db else _get_databases_list(config)
 
-    for value, sample_id in zip(values, points):
-        click.secho("%s\t" % sample_id[:7], fg='blue', nl=False)
-        click.echo("\t%f\t" % value)
+    for database_name in databases:
+        index, database_config = Index.load(database_name)
+
+        values, points = index.find(sample_name, k)
+        click.secho("{} nearest neighbors against {}:".format(str(k), str(database_name)), bold=True)
+        click.secho('\t\t\t'.join(x for x in ['Sample', 'Distance']), bold=True)
+
+        for value, sample_id in zip(values, points):
+            tabs = 3 - int(len(sample_id) / 6 - 1)
+            click.secho(("%s" + '\t' * tabs) % sample_id, fg='blue', nl=False)
+            click.echo("%f\t" % value)
+
+        click.echo()

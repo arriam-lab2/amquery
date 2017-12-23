@@ -2,8 +2,8 @@ import os
 import joblib
 from Bio import SeqIO
 from amquery.utils.decorators import hide_field
-from amquery.utils.config import get_kmers_dir, get_sample_dir
 from amquery.utils.iof import make_sure_exists
+from amquery.utils.config import get_kmers_dir, get_sample_dir
 
 
 class SampleFile:

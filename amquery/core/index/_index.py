@@ -2,11 +2,10 @@ from amquery.core.distance.factory import Factory as DistanceFactory
 from amquery.core.preprocessing.factory import Factory as PreprocessorFactory
 from amquery.core.biom import merge_biom_tables
 from amquery.core.storage.factory import Factory as StorageFactory
-from amquery.utils.config import read_config
-from amquery.utils.benchmarking import measure_time
 from amquery.core.sample import Sample
+from amquery.utils.benchmarking import measure_time
 from amquery.utils.split_fasta import split_fasta
-from amquery.utils.config import get_sample_dir
+from amquery.utils.config import read_config, get_sample_dir
 
 
 class Index:
@@ -27,7 +26,7 @@ class Index:
         return len(self._storage) if self._storage else 0
 
     @staticmethod
-    def init(config):
+    def create(config):
         """
         :return: Index
         """
@@ -42,18 +41,18 @@ class Index:
         self.storage.save()
 
     @staticmethod
-    def _load():
-        config = read_config()
-        distance = DistanceFactory.load(config)
-        preprocessor = PreprocessorFactory.create(config)
-        storage = StorageFactory.load(config)
-        return distance, preprocessor, storage, config
+    def _load(database_name):
+        database_config = read_config()["databases"][database_name]
+        distance = DistanceFactory.load(database_config)
+        preprocessor = PreprocessorFactory.create(database_config)
+        storage = StorageFactory.load(database_config)
+        return distance, preprocessor, storage, database_config
 
     @staticmethod
     @measure_time(enabled=True)
-    def load():
-        distance, preprocessor, storage, config = Index._load()
-        return Index(distance, preprocessor, storage), config
+    def load(database_name):
+        distance, preprocessor, storage, database_config = Index._load(database_name)
+        return Index(distance, preprocessor, storage), database_config
 
     def _reload(self):
         distance, preprocessor, storage, config = Index._load()

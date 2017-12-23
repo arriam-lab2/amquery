@@ -1,8 +1,8 @@
 import os
 import json
-from amquery.utils.iof import make_sure_exists
-from amquery.utils.config import get_samplemap_path, get_sample_dir, get_kmers_dir
 from amquery.core.sample import Sample
+from amquery.utils.iof import make_sure_exists
+from amquery.utils.config import get_kmers_dir, get_samplemap_path, get_sample_dir
 
 
 class SampleMap(dict):

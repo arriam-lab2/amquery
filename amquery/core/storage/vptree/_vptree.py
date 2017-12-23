@@ -1,17 +1,17 @@
-#!/usr/bin/env python3
-
 import numpy as np
 import itertools
 import json
 import random
 from amquery.core.storage.vptree.search import neighbors
-from amquery.utils.benchmarking import measure_time
-from amquery.utils.config import get_storage_path
 from amquery.core.storage import Storage
+from amquery.utils.config import get_storage_path
 
 
-# Vantage-point tree
 class BaseVpTree:
+    """
+    Vantage point tree data structure
+    """
+
     def __init__(self, vp, size, median, left, right):
         self.vp = vp
         self.size = size
@@ -109,6 +109,9 @@ class BaseVpTree:
 
 
 class VpTree(Storage):
+    """
+    A wrapper for a vp-tree
+    """
     def __init__(self, vptree = None):
         self.tree = vptree if vptree else BaseVpTree.empty()
 
@@ -122,7 +125,6 @@ class VpTree(Storage):
             json_dict = json.loads(infile.read())
             return cls(BaseVpTree.from_dict(json_dict))
 
-    #@measure_time(enabled=True)
     def build(self, distance, samples):
         """
         :param distance: PairwiseDistance
@@ -138,7 +140,6 @@ class VpTree(Storage):
         """
         return self.tree.size if self.tree else 0
 
-    @measure_time(enabled=True)
     def add_samples(self, samples, tree_distance):
         for sample in samples:
             self.tree.insert(sample.name, tree_distance)
