@@ -63,6 +63,8 @@ def create_database(database_name):
 
     config = _get_global_config()
     config["databases"][database_name] = get_default_database_config(database_name)
+    database_dir = os.path.join(AMQ_STORAGE_DIR, database_name)
+    _create_if_not_exists(database_dir)
     return config
 
 
