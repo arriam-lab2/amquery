@@ -1,3 +1,7 @@
+"""
+Setuptools integration script
+"""
+
 from setuptools import setup, find_packages
 from distutils.core import Extension
 import os
@@ -11,10 +15,10 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     dependency_links=[
-        "git+git://github.com/grayfall/scikit-bio@fastunifrac#egg=scikit-bio-0.5.1.dev0"
+        "git+git://github.com/nromashchenko/scikit-bio@fastunifrac#egg=scikit-bio-0.5.1.dev0"
     ],
     install_requires=[
-        'numpy>=1.11.0',
+        'numpy==1.13.3',
         'scipy>=0.17.0',
         'scikit-bio==0.5.1.dev0',
         'click>=6.6',

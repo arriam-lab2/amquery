@@ -2,7 +2,6 @@
 
 import click
 import os
-import os.path
 import collections
 import Bio
 
@@ -19,7 +18,7 @@ def split_fasta(input_file, output_dir):
     Split a fasta by sample names
     :param input_file: str
     :param output_dir: str
-    :return: 
+    :return: Sequence[str]
     """
     read_mapping = collections.defaultdict(list)
     with open(input_file, 'r') as infile:
