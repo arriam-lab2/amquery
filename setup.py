@@ -18,6 +18,7 @@ setup(
         "git+git://github.com/nromashchenko/scikit-bio@fastunifrac#egg=scikit-bio-0.5.1.dev0"
     ],
     install_requires=[
+        'lazy_import==0.2.2',
         'numpy==1.13.3',
         'scipy>=0.17.0',
         'scikit-bio==0.5.1.dev0',
@@ -37,13 +38,13 @@ setup(
     ],
     entry_points='''
         [console_scripts]
-        amq=amquery.cli:cli
-        amquery=amquery.cli:cli
+        amq=cli.cli:cli
+        amquery=cli.cli:cli
         split_fasta.py=scripts.split_fasta:cli
         merge_fasta.py=scripts.merge_fasta:cli
     ''',
-    ext_modules=[Extension('amquery.core.distance.metrics.jsd',
-                           sources=['amquery/core/distance/metrics/jsd.cpp'],
+    ext_modules=[Extension('api.core.distance.metrics.jsd',
+                           sources=['api/core/distance/metrics/jsd.cpp'],
                            extra_compile_args=['-std=c++11'],
                            )
                  ],
