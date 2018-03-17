@@ -50,10 +50,14 @@ def list():
 def _validate_distance(ctx, param, value):
     from amquery.core.distance import distances, DEFAULT_DISTANCE
 
-    try:
-        return distances[value] if value else DEFAULT_DISTANCE
-    except ValueError:
-        raise click.BadParameter('Distance must be one of {}'.format(",".join(s for s in distances.keys)))
+    if value:
+        try:
+            distances[value]
+            return value
+        except KeyError:
+            raise click.BadParameter('Distance must be one of {}'.format(", ".join(s for s in distances.keys())))
+    else:
+        return DEFAULT_DISTANCE
 
 @db.command()
 @click.argument('name', type=str, required=True)
@@ -67,7 +71,9 @@ def create(name, distance, rep_tree, rep_set, biom_table, kmer_size):
     Create a new database
     """
     
-    api.create_database(name, distance, rep_tree, rep_set, biom_table, kmer_size)
+    api.create_database(name, 
+                        distance=distance, rep_tree=rep_tree, rep_set=rep_set, 
+                        biom_table=biom_table, kmer_size=kmer_size)
 
 
 @cli.command()

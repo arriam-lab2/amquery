@@ -38,16 +38,23 @@ def list_databases():
     print("\n".join(x for x in _get_databases_list(config)))
 
 
-def create_database(database_name, distance, rep_tree, rep_set, biom_table, kmer_size):
+def create_database(database_name, **kwargs):
     """
     Create a new database
     """
     
     from shutil import copyfile
     from amquery.core.index import Index
-    from amquery.utils.config import save_config, create_database, get_biom_path
+    import amquery.utils.config as amqconfig
 
-    config = create_database(database_name)
+    distance = kwargs.get("distance", "")
+    rep_tree = kwargs.get("rep_tree", "")
+    rep_set = kwargs.get("rep_set", "")
+    biom_table = kwargs.get("biom_table", "")
+    kmer_size = kwargs.get("kmer_size", "")
+
+    config = amqconfig.create_database(database_name)
+    
     database_config = config['databases'][database_name]
     database_config['distance'] = distance
 
@@ -56,12 +63,12 @@ def create_database(database_name, distance, rep_tree, rep_set, biom_table, kmer
     if rep_set:
         database_config['rep_set'] = str(rep_set)
     if biom_table:
-        database_config['biom_table'] = get_biom_path(database_name)
-        copyfile(str(biom_table), get_biom_path(database_name))
+        database_config['biom_table'] = amqconfig.get_biom_path(database_name)
+        copyfile(str(biom_table), amqconfig.get_biom_path(database_name))
     if kmer_size:
         database_config['kmer_size'] = str(kmer_size)
 
-    save_config(config)
+    amqconfig.save_config(config)
 
     index = Index.create(database_config)
     index.save(database_config)
