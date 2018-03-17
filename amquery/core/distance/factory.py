@@ -8,7 +8,7 @@ class Factory:
         :param database_config: dict
         :return: PairwiseDistance 
         """
-        method = database_config['distance']
+        method = database_config["distance"]
         return SamplePairwiseDistance(distances[method](database_config))
 
     @staticmethod

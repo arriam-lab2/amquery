@@ -14,6 +14,12 @@ def _create_if_not_exists(path):
     return os.path.join(path, '')
 
 
+def _get_database_dir(database_name):
+    database_dir = os.path.join(DATABASES_DIR, database_name)
+    _create_if_not_exists(database_dir)
+    return database_dir
+
+
 def _get_default_config():
     """
     Return default values for a global config
@@ -63,6 +69,8 @@ def create_database(database_name):
 
     config = _get_global_config()
     config["databases"][database_name] = get_default_database_config(database_name)
+    database_dir = os.path.join(AMQ_STORAGE_DIR, database_name)
+    _create_if_not_exists(database_dir)
     return config
 
 
@@ -95,26 +103,32 @@ def get_default_database_config(database_name):
     return config
 
 
-def get_distance_path():
-    return os.path.join(DATABASES_DIR, 'distance.txt')
+def get_distance_path(database_name):
+    database_dir = _get_database_dir(database_name)
+    return os.path.join(database_dir, 'distance.txt')
 
 
-def get_storage_path():
-    return os.path.join(DATABASES_DIR, 'storage.json')
+def get_storage_path(database_name):
+    database_dir = _get_database_dir(database_name)
+    return os.path.join(database_dir, 'storage.json')
 
 
-def get_kmers_dir():
-    return os.path.join(DATABASES_DIR, 'kmers')
+def get_kmers_dir(database_name):
+    database_dir = _get_database_dir(database_name)
+    return os.path.join(database_dir, 'kmers')
 
 
-def get_biom_path():
-    return os.path.join(DATABASES_DIR, 'otu_table.biom')
+def get_biom_path(database_name):
+    database_dir = _get_database_dir(database_name)
+    return os.path.join(database_dir, 'otu_table.biom')
 
 
-def get_sample_dir():
-    return os.path.join(DATABASES_DIR, 'samples')
+def get_sample_dir(database_name):
+    database_dir = _get_database_dir(database_name)
+    return os.path.join(database_dir, 'samples')
 
 
-def get_samplemap_path():
-    return os.path.join(DATABASES_DIR, 'sample_map.json')
+def get_samplemap_path(database_name):
+    database_dir = _get_database_dir(database_name)
+    return os.path.join(database_dir, 'sample_map.json')
 

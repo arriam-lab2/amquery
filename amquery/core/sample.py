@@ -32,46 +32,45 @@ def _parse_sample_name(sample_file):
         
 
 class Sample:
-    def __init__(self, sample_file):
+    def __init__(self, sample_file, database_name):
         self._name = _parse_sample_name(sample_file)
         self._source_file = SampleFile(sample_file)
         self._kmer_index = None
+        self._database_name = database_name
 
     @property
     def name(self):
         return self._name
 
-    @property
-    def original_name(self):
-        return self._original_name
+    @staticmethod
+    def make_sample_obj_filename(source_filename, database_name):
+        return os.path.join(get_sample_dir(database_name), _parse_sample_name(source_filename))
 
     @staticmethod
-    def make_sample_obj_filename(source_filename):
-        return os.path.join(get_sample_dir(), _parse_sample_name(source_filename))
-
-    @staticmethod
-    def make_kmer_index_obj_filename(source_filename):
-        return os.path.join(get_kmers_dir(), _parse_sample_name(source_filename))
+    def make_kmer_index_obj_filename(source_filename, database_name):
+        return os.path.join(get_kmers_dir(database_name), _parse_sample_name(source_filename))
 
     @staticmethod
     def load(object_file):
         sample = joblib.load(object_file)
         return sample
 
-    def load_kmer_index(self):
-        self._kmer_index = joblib.load(Sample.make_kmer_index_obj_filename(self.source_file.path))
+    def load_kmer_index(self, database_name):
+        self._kmer_index = joblib.load(Sample.make_kmer_index_obj_filename(self.source_file.path, database_name))
 
     @hide_field("_kmer_index")
     def _save(self):
         self._kmer_index = None
-        joblib.dump(self, Sample.make_sample_obj_filename(self.source_file.path))
+        joblib.dump(self, 
+                    Sample.make_sample_obj_filename(self.source_file.path, self._database_name))
 
     def save(self):
-        make_sure_exists(get_sample_dir())
+        make_sure_exists(get_sample_dir(self._database_name))
         self._save()
 
         if self._kmer_index:
-            joblib.dump(self._kmer_index, Sample.make_kmer_index_obj_filename(self.source_file.path))
+            joblib.dump(self._kmer_index, 
+                        Sample.make_kmer_index_obj_filename(self.source_file.path, self._database_name))
 
     @property
     def source_file(self):
@@ -80,7 +79,7 @@ class Sample:
     @property
     def kmer_index(self):
         if not self._kmer_index:
-            self.load_kmer_index()
+            self.load_kmer_index(self._database_name)
 
         return self._kmer_index
 

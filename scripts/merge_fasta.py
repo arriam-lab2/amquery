@@ -25,10 +25,10 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
                 required=True)
 @click.option('--output_file', '-o', help='Output .fasta file',
               required=True)
-def run(input_dirs, output_file):
+def cli(input_dirs, output_file):
     input_dirs = [os.path.join(x, '') for x in input_dirs]
     merge_fasta(input_dirs, output_file)
 
 
 if __name__ == "__main__":
-    run()
+    cli()
