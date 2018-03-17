@@ -6,7 +6,7 @@ from skbio import read
 from skbio.tree import TreeNode
 from skbio.diversity.beta import weighted_unifrac
 from ctypes import cdll, POINTER, c_uint64, c_size_t, c_double
-import api.utils.iof as iof
+import amquery.utils.iof as iof
 
 
 jsdlib = None

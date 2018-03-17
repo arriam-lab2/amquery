@@ -1,5 +1,5 @@
-from api.core.distance import FFP_JSD, WEIGHTED_UNIFRAC
-from api.core.preprocessing import KmerCounter, DummyPreprocessor
+from amquery.core.distance import FFP_JSD, WEIGHTED_UNIFRAC
+from amquery.core.preprocessing import KmerCounter, DummyPreprocessor
 
 
 class Factory:

@@ -2,10 +2,10 @@ import os
 import abc
 import numpy as np
 import pandas as pd
-from api.core.distance.metrics import distances
-from api.core.sample import Sample
-from api.core.sample_map import SampleMap
-from api.utils.config import get_distance_path
+from amquery.core.distance.metrics import distances
+from amquery.core.sample import Sample
+from amquery.core.sample_map import SampleMap
+from amquery.utils.config import get_distance_path
 
 
 class PairwiseDistance:
@@ -21,7 +21,9 @@ class PairwiseDistance:
 
 
 class SamplePairwiseDistance(PairwiseDistance):
-    def __init__(self, distance_function, dataframe=pd.DataFrame(), sample_map=SampleMap()):
+    def __init__(self, distance_function,
+                 dataframe=pd.DataFrame(), 
+                 sample_map=SampleMap()):
         """
         :param distance_function: amquery.core.metrics.SamplePairwiseDistanceFunction
         """
@@ -35,9 +37,11 @@ class SamplePairwiseDistance(PairwiseDistance):
         :param database_config: dict
         :return: SamplePairwiseDistance
         """
-        if os.path.exists(get_distance_path()):
+        database_name = database_config["name"]
+
+        if os.path.exists(get_distance_path(database_name)):
             try:
-                dataframe = pd.read_csv(get_distance_path(), sep='\t')
+                dataframe = pd.read_csv(get_distance_path(database_name), sep='\t')
                 dataframe['id'] = dataframe.keys()
                 dataframe = dataframe.set_index('id')
             except ValueError:
@@ -45,15 +49,16 @@ class SamplePairwiseDistance(PairwiseDistance):
         else:
             dataframe = pd.DataFrame()
 
-        sample_map = SampleMap.load()
+        sample_map = SampleMap.load(database_config)
         method = database_config['distance']
         return SamplePairwiseDistance(distances[method](database_config),
                                       dataframe=dataframe,
                                       sample_map=sample_map)
 
-    def save(self):
-        self._dataframe.to_csv(get_distance_path(), sep='\t', na_rep="N/A", index=False)
-        self._sample_map.save()
+    def save(self, database_name):
+        self._dataframe.to_csv(get_distance_path(database_name), 
+                               sep='\t', na_rep="N/A", index=False)
+        self._sample_map.save(database_name)
 
     def add_sample(self, sample):
         """

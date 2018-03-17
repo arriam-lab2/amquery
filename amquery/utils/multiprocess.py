@@ -2,7 +2,7 @@ from typing import Callable, Iterable, List
 import itertools
 import multiprocessing as mp
 
-from api.utils.decorators import singleton
+from amquery.utils.decorators import singleton
 
 
 @singleton

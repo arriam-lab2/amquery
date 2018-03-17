@@ -2,14 +2,14 @@
 Main class of a metric index
 """
 
-from api.core.biom import merge_biom_tables
-from api.core.distance.factory import Factory as DistanceFactory
-from api.core.preprocessing.factory import Factory as PreprocessorFactory
-from api.core.sample import Sample
-from api.core.storage.factory import Factory as StorageFactory
-from api.core.refindex import ReferenceTree
-from api.utils.benchmarking import measure_time
-from api.utils.config import read_config, get_sample_dir
+from amquery.core.biom import merge_biom_tables
+from amquery.core.distance.factory import Factory as DistanceFactory
+from amquery.core.preprocessing.factory import Factory as PreprocessorFactory
+from amquery.core.sample import Sample
+from amquery.core.storage.factory import Factory as StorageFactory
+from amquery.core.refindex import ReferenceTree
+from amquery.utils.benchmarking import measure_time
+from amquery.utils.config import read_config, get_sample_dir
 import scripts
 
 
@@ -46,9 +46,10 @@ class Index:
 
         return Index(distance, preprocessor, storage, reference_tree)
 
-    def save(self):
-        self.distance.save()
-        self.storage.save()
+    def save(self, database_config):
+        database_name = database_config["name"]
+        self.distance.save(database_name)
+        self.storage.save(database_name)
 
     @staticmethod
     def _load(database_name):
@@ -73,7 +74,7 @@ class Index:
         self._reference_tree = reference_tree
 
     @measure_time(enabled=True)
-    def build(self, input_files):
+    def build(self, input_files, database_name):
         """
         :param input_files: Sequence[str]
         :return:
@@ -81,7 +82,8 @@ class Index:
         assert (len(input_files) == 1)
         input_file = input_files[0]
 
-        samples = [Sample(sample_file) for sample_file in scripts.split_fasta(input_file, get_sample_dir())]
+        sample_files = scripts.split_fasta(input_file, get_sample_dir(database_name))
+        samples = [Sample(sample_file, database_name) for sample_file in sample_files]
         processed_samples = [self._preprocessor(sample) for sample in samples]
         self.distance.add_samples(processed_samples)
         self.storage.build(self.distance, processed_samples)
@@ -90,31 +92,33 @@ class Index:
         raise NotImplementedError
 
     @measure_time(enabled=True)
-    def add(self, config, input_files):
+    def add(self, input_files, database_config):
         """
+        :param sample_files: Sequence[str]
         :param config: configparser.ConfigParser
-        :param sample_files: Sequence[str] 
         :return: None
         """
         #assert (len(input_files) == 1)
         #input_file = input_files[0]
 
         # update biom table if present
-        if config.has_option("distance", "biom_table"):
-            master_table = config.get("distance", "biom_table")
-            additional_table = config.get("additional", "biom_table")
-            merge_biom_tables(master_table, additional_table)
-            self._reload()
+        #if database_config.has_option("distance", "biom_table"):
+        #    master_table = database_config.get("distance", "biom_table")
+        #    additional_table = database_config.get("additional", "biom_table")
+        #    merge_biom_tables(master_table, additional_table)
+        #    self._reload()
+
+        database_name = database_config["name"]
 
         #samples = [Sample(sample_file) for sample_file in split_fasta(input_file, get_sample_dir())]
-        samples = [Sample(sample_file) for sample_file in input_files]
+        samples = [Sample(sample_file, database_name) for sample_file in input_files]
         processed_samples = [self._preprocessor(sample) for sample in samples]
 
         self.distance.add_samples(processed_samples)
         self.storage.add_samples(processed_samples, self.distance)
 
     @measure_time(enabled=True)
-    def find(self, sample_name, k):
+    def search(self, sample_name, k, database_name):
         """
         :param sample_name: str 
         :param k: int
@@ -124,7 +128,8 @@ class Index:
         if sample_name in self.distance.labels:
             processed_samples = [self.distance.sample_map[sample_name]]
         else:
-            samples = [Sample(sample_file) for sample_file in scripts.split_fasta(sample_name, get_sample_dir())]
+            sample_files = scripts.split_fasta(sample_name, get_sample_dir(database_name))
+            samples = [Sample(sample_file, database_name) for sample_file in sample_files]
             processed_samples = [self._preprocessor(sample) for sample in samples]
 
         return self.storage.find(self.distance, processed_samples[0], k)

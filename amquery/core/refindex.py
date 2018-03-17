@@ -1,14 +1,13 @@
 """
-Metric index of reference database
+Metric index of a reference database
 """
 
-
-from api.core.distance import distances, FFP_JSD
-from api.core.preprocessing.kmer_counter import KmerCounter
-from api.core.sample import Sample
-from api.core.storage import VpTree
-from api.utils.config import get_sample_dir
-from scripts.split_fasta import split_fasta
+import scripts
+from amquery.core.distance import distances, FFP_JSD
+from amquery.core.preprocessing.kmer_counter import KmerCounter
+from amquery.core.sample import Sample
+from amquery.core.storage import VpTree
+from amquery.utils.config import get_sample_dir
 
 
 class ReferenceTree:
@@ -49,13 +48,14 @@ class ReferenceTree:
         """
         return None
 
-    def build(self):
+    def build(self, input_file):
         """
         :param input_file: str
         :return: None
         """
 
-        samples = [Sample(sample_file) for sample_file in split_fasta(input_file, get_sample_dir())]
+        sample_files = scripts.split_fasta(input_file, get_sample_dir())
+        samples = [Sample(sample_file) for sample_file in sample_files]
         processed_samples = [self._preprocessor(sample) for sample in samples]
         self._distance.add_samples(processed_samples)
         self._storage.build(self._distance, processed_samples)

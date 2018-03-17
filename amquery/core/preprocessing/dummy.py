@@ -1,4 +1,4 @@
-from api.core.preprocessing import Preprocessor
+from amquery.core.preprocessing import Preprocessor
 
 
 class DummyPreprocessor(Preprocessor):

@@ -2,9 +2,9 @@ import numpy as np
 import itertools
 import json
 import random
-from api.core.storage.vptree.search import neighbors
-from api.core.storage import Storage
-from api.utils.config import get_storage_path
+from amquery.core.storage.vptree import neighbors
+from amquery.core.storage import Storage
+from amquery.utils.config import get_storage_path
 
 
 class BaseVpTree:
@@ -112,16 +112,16 @@ class VpTree(Storage):
     """
     A wrapper for a vp-tree
     """
-    def __init__(self, vptree = None):
+    def __init__(self, vptree=None):
         self.tree = vptree if vptree else BaseVpTree.empty()
 
-    def save(self):
-        with open(get_storage_path(), 'w') as outfile:
+    def save(self, database_name):
+        with open(get_storage_path(database_name), 'w') as outfile:
             json.dump(self.tree.to_dict(), outfile)
 
     @classmethod
-    def load(cls):
-        with open(get_storage_path(), 'r') as infile:
+    def load(cls, database_name):
+        with open(get_storage_path(database_name), 'r') as infile:
             json_dict = json.loads(infile.read())
             return cls(BaseVpTree.from_dict(json_dict))
 

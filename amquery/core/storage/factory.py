@@ -1,9 +1,9 @@
-from api.core.storage import VpTree
+from amquery.core.storage import VpTree
 
 
 class Factory:
     @staticmethod
-    def create(config):
+    def create(database_config):
         """
         :param config: Config
         :return: Storage
@@ -11,9 +11,10 @@ class Factory:
         return VpTree()
 
     @staticmethod
-    def load(config):
+    def load(database_config):
         """
         :param config: Config
         :return: Storage
         """
-        return VpTree.load()
+        database_name = database_config["name"]
+        return VpTree.load(database_name)
