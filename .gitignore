@@ -46,6 +46,8 @@ coverage.xml
 *,cover
 .hypothesis/
 
+# JetBrains
+.idea/
 
 # dotenv
 .env
