@@ -133,11 +133,11 @@ class Database(Generic[A, B]):
             -> Iterable[Tuple[int, Mapping]]:
         pass
 
-    def save(self):
+    def save(self) -> Mapping[str, Tuple[str, Mapping[str, Any]]]:
         pass
 
     @classmethod
-    def load(cls, spec):
+    def load(cls, spec: Mapping[str, Tuple[str, Mapping[str, Any]]]) -> 'Database':
         pass
 
 
