@@ -1,12 +1,12 @@
 from typing import TypeVar, Generic, Container, Sized, Callable, Tuple, Mapping, Union, Iterable, Sequence, Any
 from itertools import filterfalse
-from frozendict import frozendict
 import operator as op
 import importlib
 import abc
 import inspect
 import keyword
 
+from frozendict import frozendict
 from fn import F
 
 
@@ -81,7 +81,7 @@ class Database(Generic[A, B]):
         bad_iden = list(filterfalse(isidentifier, custom_entries.keys()))
         if bad_iden:
             raise ValueError(f'invalid identifiers: {bad_iden}')
-        self._entries = frozendict(
+        self._entries: Mapping[str, Tuple[Loader, Mapping]] = frozendict(
             preprocessor=preprocessor,
             transform=transform,
             distance=distance,
@@ -91,7 +91,7 @@ class Database(Generic[A, B]):
             mtable=mtable,
             **custom_entries
         )
-        # make sure entries pack valid loaders and argument Mappings
+        # make sure entries pack valid loaders and parameter Mappings
         bad_entries = [iden for iden, item in self._entries.items() if not
                        (len(item) == 2 and isloader(item[0])
                         and isinstance(item[1], Mapping))]
@@ -101,16 +101,17 @@ class Database(Generic[A, B]):
         self._loaded = {}
 
     def __getattr__(self, entry: str) -> Any:
-        pass
-    #     if entry not in self._loaders:
-    #         raise AttributeError('no entry named {}'.format(entry))
-    #     # uninvoked dependencies are False, loading dependencies are None,
-    #     # loaded dependencies are True
-    #     if self._status[entry] is None:
-    #         raise RuntimeError("'{}' was accessed while loading".format(entry))
-    #     if not self._status[entry]:
-    #         self._activate_entry(entry)
-    #     return self._entries[entry]
+        if entry not in self._entries:
+            raise AttributeError(f'no entry named {entry!r}')
+        if entry not in self._loaded:
+            self._loaded[entry] = None
+            loader, parameters = self._entries[entry]
+            self._loaded[entry] = loader(self, parameters)
+        # loading dependencies are None
+        if self._loaded[entry] is None:
+            raise RuntimeError(f'{entry!r} was accessed while loading, '
+                               'which is a sign of circular dependencies')
+        return self._loaded[entry]
 
     @property
     def preprocessor(self) -> Preprocessor[A]:
@@ -182,7 +183,7 @@ def isidentifier(name: str) -> bool:
     Determines if string is valid Python identifier.
     """
     if not isinstance(name, str):
-        raise TypeError("expected str, but got {!r}".format(type(name)))
+        raise TypeError(f'expected str, but got {type(name)!r}')
     return name.isidentifier() and not keyword.iskeyword(name)
 
 
