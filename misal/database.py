@@ -149,14 +149,14 @@ class Database(Sized, Generic[A, B]):
     def query(self, k: int,
               query: Union[Sequence[Tuple[str]], Sequence[int], Mapping]) \
             -> Iterable[Tuple[int, Mapping]]:
-        pass
+        raise NotImplementedError
 
     def save(self) -> Mapping[str, Tuple[str, Mapping[str, Any]]]:
-        pass
+        raise NotImplementedError
 
     @classmethod
     def load(cls, spec: Mapping[str, Tuple[str, Mapping[str, Any]]]) -> 'Database':
-        pass
+        raise NotImplementedError
 
 
 def isloader(loader: A) -> bool:
