@@ -1,4 +1,4 @@
-from typing import TypeVar, Generic, Container, Sized, Callable, Tuple, Mapping, Union, Iterable, Sequence, Any
+from typing import TypeVar, Generic, Container, Sized, Callable, Tuple, Mapping, Union, Iterable, Sequence, Any, cast
 from itertools import filterfalse
 import operator as op
 import importlib
@@ -66,7 +66,7 @@ class QueryTable(Table, Generic[A, B], metaclass=abc.ABCMeta):
         pass
 
 
-class Database(Generic[A, B]):
+class Database(Sized, Generic[A, B]):
 
     def __init__(self,
                  preprocessor: Tuple[Loader[Preprocessor[A]], Mapping],
@@ -113,6 +113,9 @@ class Database(Generic[A, B]):
                                'which is a sign of circular dependencies')
         return self._loaded[entry]
 
+    def __len__(self):
+        return len(self.ttable)
+
     @property
     def preprocessor(self) -> Preprocessor[A]:
         return self.__getattr__('preprocessor')
@@ -126,7 +129,22 @@ class Database(Generic[A, B]):
         return self.__getattr__('distance')
 
     def add(self, samples: Iterable[Tuple[Tuple[str], Mapping]]):
-        pass
+        paths, metadata = zip(*samples)
+        # TODO we might consider multiprocessing here
+        preprocessed = list(map(self.preprocessor, paths))
+        # TODO and multithreading here
+        transformed = list(map(self.transform, preprocessed))
+        # TODO we can use all these context-managers in parallel, but it'll
+        # make error-handling more complicated
+        with cast(Table, self.ptable) as ptable:
+            for sample in preprocessed:
+                ptable.write(len(ptable), sample)
+        with cast(Table, self.ttable) as ttable:
+            for sample in transformed:
+                ttable.write(len(ttable), sample)
+        with cast(QueryTable, self.mtable) as mtable:
+            for meta in metadata:
+                mtable.write(len(mtable), meta)
 
     def query(self, k: int,
               query: Union[Sequence[Tuple[str]], Sequence[int], Mapping]) \
@@ -148,7 +166,7 @@ def isloader(loader: A) -> bool:
         2. it has exactly two arguments: a Database instance and a Mapping
         3. it is importable (i.e. is bound to the global namespace of an
            importable module)
-    :param loader: a function to validate
+    :param loader: a callable to validate
     :return:
     """
 
