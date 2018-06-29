@@ -65,7 +65,7 @@ class QueryTable(Table, Generic[A, B], metaclass=abc.ABCMeta):
 
 
 class Database(Sized, Generic[A, B]):
-
+    # TODO add Index loader type specification: write out tree properties
     def __init__(self,
                  preprocessor: Tuple[Loader[Preprocessor[A]], Mapping],
                  transform: Tuple[Loader[Transform[A, B]], Mapping],
@@ -143,6 +143,7 @@ class Database(Sized, Generic[A, B]):
         with cast(QueryTable, self.mtable) as mtable:
             for meta in metadata:
                 mtable.write(len(mtable), meta)
+        # TODO add samples to the Index
 
     def query(self, k: int,
               query: Union[Sequence[Tuple[str]], Sequence[int], Mapping]) \
@@ -150,6 +151,7 @@ class Database(Sized, Generic[A, B]):
         raise NotImplementedError
 
     def save(self) -> Mapping[str, Tuple[str, Mapping[str, Any]]]:
+        # TODO
         raise NotImplementedError
 
     @classmethod
