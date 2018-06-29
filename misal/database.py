@@ -1,14 +1,12 @@
-from typing import TypeVar, Generic, Container, Sized, Callable, Tuple, Mapping, Union, Iterable, Sequence, Any, cast
-from itertools import filterfalse
-import operator as op
-import importlib
 import abc
+import importlib
 import inspect
 import keyword
+from itertools import filterfalse
+from typing import TypeVar, Generic, Container, Sized, Callable, Tuple, \
+    Mapping, Union, Iterable, Sequence, Any, Optional, Dict, cast
 
 from frozendict import frozendict
-from fn import F
-
 
 A = TypeVar('A')
 B = TypeVar('B')
@@ -98,7 +96,7 @@ class Database(Sized, Generic[A, B]):
         if bad_entries:
             raise ValueError(f'invalid entries: {bad_entries}')
 
-        self._loaded = {}
+        self._loaded: Dict[str, Optional[Any]] = {}
 
     def __getattr__(self, entry: str) -> Any:
         if entry not in self._entries:
@@ -170,7 +168,7 @@ def isloader(loader: A) -> bool:
     :return:
     """
 
-    def checksignature(l: Callable) -> bool:
+    def proper_signature(l: Callable) -> bool:
         parameters = inspect.signature(l).parameters
         if not len(parameters) == 2:
             return False
@@ -178,7 +176,7 @@ def isloader(loader: A) -> bool:
         return (issubclass(first.annotation, Database) and
                 issubclass(second.annotation, Mapping))
 
-    return callable(loader) and checksignature(loader) and importable(loader)
+    return callable(loader) and proper_signature(loader) and importable(loader)
 
 
 def importable(item) -> bool:
