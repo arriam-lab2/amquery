@@ -16,8 +16,6 @@ EXPORT = re.compile(
     '^export (?P<name>[A-Za-z][A-Za-z0-9_]+)$'
 )
 
-RawExpression = NamedTuple('RawExpression', [('items', List[str])])
-
 
 def parse(lines: Iterable[str]) -> Tuple[OrderedDict, State]:
     # add the import (aka load) function to the namespace in advance
@@ -52,7 +50,6 @@ def _parse_expression(namespace: Mapping, expression: str) -> Any:
     return EvalWithCompoundTypes(
         operators={}, functions=namespace, names=namespace
     ).eval(expression)
-
 
 
 if __name__ == '__main__':
