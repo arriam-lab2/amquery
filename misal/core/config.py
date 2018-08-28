@@ -1,7 +1,8 @@
 import re
+import abc
 from collections import OrderedDict
 from importlib import import_module
-from typing import NamedTuple, List, Mapping, Any, Iterable, Tuple
+from typing import NamedTuple, List, Mapping, Any, Iterable, Tuple, Callable
 
 from fn import F
 from simpleeval import EvalWithCompoundTypes
@@ -15,6 +16,29 @@ DEFINITION = re.compile(
 EXPORT = re.compile(
     '^export (?P<name>[A-Za-z][A-Za-z0-9_]+)$'
 )
+
+
+class Action(metaclass=abc.ABCMeta):
+
+    @property
+    @abc.abstractmethod
+    def documentation(self) -> List[Tuple[str, str]]:
+        pass
+
+    @property
+    @abc.abstractmethod
+    def save(self) -> bool:
+        pass
+
+    @property
+    @abc.abstractmethod
+    def name(self) -> str:
+        # TODO we can use the __name__ attribute instead
+        pass
+
+    @abc.abstractmethod
+    def __call__(self, *args, **kwargs):
+        pass
 
 
 def parse(lines: Iterable[str]) -> Tuple[OrderedDict, State]:
@@ -34,7 +58,12 @@ def parse(lines: Iterable[str]) -> Tuple[OrderedDict, State]:
                 raise RuntimeError(f'multiple exports for {name} in config')
             if name not in namespace:
                 raise RuntimeError(f'exporting an undefined name {name}')
-            exports[name] = namespace[name]
+            try:
+                exports[name] = namespace[name]
+            except KeyError:
+                raise RuntimeError(f'exporting an undefined name {name!r}')
+            if not isinstance(exports[name], Action):
+                raise RuntimeError(f'exporting a non-action {name!r}')
         else:
             raise SyntaxError(
                 f'line {line!r} is neither a valid definition, nor a valid '
