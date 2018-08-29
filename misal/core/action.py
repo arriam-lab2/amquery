@@ -6,11 +6,13 @@ from typing import Callable, List, Tuple, Optional
 from fn.func import curried
 
 
+__all__ = ['action', 'argument', 'Action']
+
+
 VARARGS = frozenset(
     [inspect.Parameter.VAR_POSITIONAL,
      inspect.Parameter.VAR_KEYWORD]
 )
-
 
 class Action:
 

@@ -1,5 +1,3 @@
-from typing import List, Tuple
-
 from misal.core import action
 
 
