@@ -5,6 +5,9 @@ from typing import TypeVar, Iterable, Callable, Generic, NewType, overload
 from oslash import Functor, Applicative
 
 
+__all__ = ['State', 'Stateful']
+
+
 A = TypeVar('A')
 B = TypeVar('B')
 C = TypeVar('C')
