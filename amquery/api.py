@@ -40,7 +40,7 @@ def list_databases():
 
 def create_database(database_name, **kwargs):
     """
-    Create a new database
+    Create a new builtin
     """
     
     from shutil import copyfile
@@ -170,7 +170,7 @@ def search(sample_name, k, **kwargs):
         index, database_config = Index.load(database_name)
 
         values, points = index.search(sample_name, k, database_name)
-        results.append({"database": database_name, 
+        results.append({"builtin": database_name,
                         "k": k,
                         "results": (values, points)})
 
@@ -179,7 +179,7 @@ def search(sample_name, k, **kwargs):
 
 def print_search_results(results, k, database_name):
     for search_result in results:
-        database_name = search_result["database"]
+        database_name = search_result["builtin"]
         k = search_result["k"]
         values, points = search_result["results"]
 

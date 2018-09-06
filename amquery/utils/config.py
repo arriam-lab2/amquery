@@ -64,7 +64,7 @@ def _get_global_config():
 
 def create_database(database_name):
     """
-    Create a record for a new database
+    Create a record for a new builtin
     """
 
     config = _get_global_config()
@@ -91,7 +91,7 @@ def save_config(config):
 
 def get_default_database_config(database_name):
     """
-    Default values for a record of a new database
+    Default values for a record of a new builtin
     """
 
     config = {

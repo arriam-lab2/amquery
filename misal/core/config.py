@@ -1,7 +1,7 @@
 import re
 from collections import OrderedDict
 from importlib import import_module
-from typing import Mapping, Any, Iterable, Tuple
+from typing import Mapping, Any, Iterable, Tuple, List
 
 from fn import F
 from simpleeval import EvalWithCompoundTypes
@@ -21,7 +21,7 @@ EXPORT = re.compile(
 )
 
 
-def parse(lines: Iterable[str]) -> Tuple[OrderedDict, State]:
+def parse(lines: Iterable[str]) -> Tuple[State, List[Action]]:
     # add the import (aka load) function to the namespace in advance
     namespace = OrderedDict(load=import_module)
     exports = OrderedDict()
@@ -50,7 +50,7 @@ def parse(lines: Iterable[str]) -> Tuple[OrderedDict, State]:
                 f'export'
             )
     states = [val for val in namespace.values() if isinstance(val, Stateful)]
-    return exports, State(states)
+    return State(states), list(exports.values())
 
 
 def _parse_expression(namespace: Mapping, expression: str) -> Any:

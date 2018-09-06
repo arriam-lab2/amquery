@@ -1,5 +1,5 @@
 """
-Metric index of a reference database
+Metric index of a reference builtin
 """
 
 import scripts

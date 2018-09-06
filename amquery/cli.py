@@ -68,7 +68,7 @@ def _validate_distance(ctx, param, value):
 @click.option("--kmer_size", "-k", type=int, default=15)
 def create(name, distance, rep_tree, rep_set, biom_table, kmer_size):
     """
-    Create a new database
+    Create a new builtin
     """
     
     api.create_database(name, 
