@@ -6,6 +6,8 @@ from misal.core import toaction, argument
 @toaction(save=False, description='Write text to a file')
 def echoto(metadata, preprocessed, path: str, text: str):
     # the first two arguments are here for testing purposes only
+    from time import sleep
+    sleep(10)
     with open(path, 'w') as out:
         print(text, file=out)
 

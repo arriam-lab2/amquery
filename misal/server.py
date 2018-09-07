@@ -1,6 +1,6 @@
 import asyncio
 import json
-# import secrets
+import secrets
 import logging
 from concurrent.futures import ThreadPoolExecutor
 # from collections import deque
@@ -66,8 +66,9 @@ class Server:
         elif message.type is MessageType.CALL:
             # submit the call
             # TODO keep track of calls to make status update requests possible
-            self._logger.info('Submitting a CALL message')
-            self._executor.submit(self._call, message)
+            callid = secrets.token_hex(8)
+            self._logger.info(f'Submitting call {callid}')
+            self._executor.submit(self._call, callid, message)
             response = Message(
                 MessageType.RESULT, '',
                 f'Your call was submitted'
@@ -84,11 +85,11 @@ class Server:
             )
         writemessage(writer, response)
 
-    def _call(self, message: Message):
+    def _call(self, callid: int, message: Message):
         try:
             action_name, *args = message.content
             retval = self._database.call(action_name, *args)
-            self._logger.info('Finished processing a call')
+            self._logger.info(f'Finished processing call {callid}')
             return retval
         except Exception as err:
             self._logger.exception(str(err))
