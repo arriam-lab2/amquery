@@ -1,5 +1,6 @@
 import operator as op
 import inspect
+from functools import partial
 from inspect import signature
 from typing import Callable, List, Tuple, Optional
 from collections import OrderedDict
@@ -33,7 +34,7 @@ class Action:
         arguments = signature(f).parameters
         if any(arg.kind in VARARGS for arg in arguments.values()):
             raise ValueError(f'action {name} has variadic arguments')
-        self._action = curried(f)
+        self._action = f
 
         # validate the docs
         if argdocs is None:
@@ -63,7 +64,7 @@ class Action:
         if len(args) == len(self.arguments):
             return self.action(*args)
         # otherwise, curry the action
-        f = self.action(*args)
+        f = partial(self.action, *args)
         curried_docs = self.arguments[len(args):]
         return type(self)(self.name, f, curried_docs, self.description, self.save)
 
@@ -107,6 +108,7 @@ def toaction(save: bool, name: str=None, description: str=None):
     return decorator
 
 
+# TODO add type converters
 def argument(name: str, documentation: str):
 
     def decorator(action: Action):
@@ -120,6 +122,11 @@ def argument(name: str, documentation: str):
         argdocs = action.arguments
         description = action.description
         save = action.save
+        # check argument
+        if name not in map(op.itemgetter(0), argdocs):
+            raise ValueError(
+                f'action {action.name} does not have argument {name}'
+            )
         # update documentation
         new_docs = [(arg, doc) if arg != name else (name, documentation)
                     for arg, doc in argdocs]

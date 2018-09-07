@@ -20,13 +20,21 @@ EXPORT = re.compile(
     '^export (?P<name>[A-Za-z][A-Za-z0-9_]+)$'
 )
 
+# TODO create and use a ConfigError exception
+
 
 def parse(lines: Iterable[str]) -> Tuple[State, List[Action]]:
     # add the import (aka load) function to the namespace in advance
     namespace = OrderedDict(load=import_module)
     exports = OrderedDict()
-    # strip trailing white-space characters and remove empty lines
-    for line in (F(map, str.strip) >> (filter, bool))(lines):
+    # strip trailing white-space characters and remove empty and commented lines
+    # TODO add support for inline comments
+    sanitised_lines = (
+        F(map, str.strip) >>
+        (filter, bool) >>
+        (filter, lambda x: not x.startswith('#'))
+    )(lines)
+    for line in sanitised_lines:
         if DEFINITION.match(line):
             (name, expression), *_ = DEFINITION.findall(line)
             if name in namespace:

@@ -6,6 +6,7 @@ from misal.core import Action, State
 __all__ = ['Database']
 
 
+# TODO improve documentation aesthetics
 def format_help(action: Action) -> str:
     description = action.description
     argdocs = '\n'.join(
@@ -44,12 +45,18 @@ class Database:
         action = self._actions.get(name)
         if action is None:
             raise RuntimeError(
-                f'Action {name} is not available in {type(self).__name__} '
+                f'action {name} is not available in {type(self).__name__} '
                 f'{self.name}'
             )
+        if len(args) < len(action.arguments):
+            missing_args = action(*args).arguments
+            raise TypeError(
+                f'action {name} missing required arguments: '
+                f'{", ".join(arg for arg, _ in missing_args)}'
+            )
         with self._state(action.save):
-            feedback = action(*args)
-            return feedback
+            retval = action(*args)
+            return retval
 
 
 if __name__ == '__main__':

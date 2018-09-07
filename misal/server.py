@@ -1,5 +1,9 @@
 import asyncio
 import json
+# import secrets
+import logging
+from concurrent.futures import ThreadPoolExecutor
+# from collections import deque
 from enum import Enum, auto
 from typing import NamedTuple, Any
 
@@ -14,6 +18,7 @@ class MessageType(Enum):
     HELP = auto()
     CALL = auto()
     RESULT = auto()
+    STATUS = auto()
     ERROR = auto()
 
 
@@ -24,15 +29,18 @@ Message = NamedTuple('Message', [
 
 class Server:
 
-    def __init__(self, database: Database, port: int, key: str):
-        self.database = database
-        self.port = port
-        self.key = key
-        self.queue = []
+    def __init__(self, db: Database, port: int, key: str, log: logging.Logger):
+        self._database = db
+        self._port = port
+        self._key = key
+        self._logger = log
+        # self.queue: Deque[Tuple[str, Future]] = deque()
+        # setting max_workers to 1 to guarantee serial execution
+        self._executor = ThreadPoolExecutor(max_workers=1)
 
     async def run(self):
         server = await asyncio.start_server(
-            self.communicate, 'localhost', self.port
+            self.handle_client_connection, 'localhost', self._port
         )
         # TODO find a more elegant way to keep server running
         try:
@@ -42,29 +50,48 @@ class Server:
             server.close()
             await server.wait_closed()
 
-    async def communicate(self, reader, writer):
+    async def handle_client_connection(self, reader, writer):
         # receive a message
         message = await readmessage(reader)
-
-        if message.key != self.key:
+        # TODO we can provide docs without authentication
+        if message.key != self._key:
+            self._logger.info('Failed to authenticate a client')
             response = Message(
                 MessageType.ERROR, '', 'Invalid authentication key'
             )
         elif message.type is MessageType.HELP:
             response = Message(
-                MessageType.RESULT, '', self.database.help
+                MessageType.RESULT, '', self._database.help
             )
         elif message.type is MessageType.CALL:
-            self.queue.append(message.content)
+            # submit the call
+            # TODO keep track of calls to make status update requests possible
+            self._logger.info('Submitting a CALL message')
+            self._executor.submit(self._call, message)
             response = Message(
                 MessageType.RESULT, '',
-                f'Your call is number {len(self.queue)} in line'
+                f'Your call was submitted'
+            )
+        elif message.type is MessageType.STATUS:
+            response = Message(
+                MessageType.ERROR, '',
+                f'Status checks are not implemented yet'
             )
         else:
+            self._logger.info(f'Received a message of unknown type {message.type}')
             response = Message(
                 MessageType.ERROR, '', 'Unrecognised message type'
             )
         writemessage(writer, response)
+
+    def _call(self, message: Message):
+        try:
+            action_name, *args = message.content
+            retval = self._database.call(action_name, *args)
+            self._logger.info('Finished processing a call')
+            return retval
+        except Exception as err:
+            self._logger.exception(str(err))
 
 
 async def readmessage(reader: asyncio.StreamReader) -> Message:
@@ -84,7 +111,7 @@ def writemessage(writer: asyncio.StreamWriter, message: Message):
     writer.drain()
 
 
-async def client(port: int, message: Message):
+async def client_connection(port: int, message: Message):
     reader, writer = await asyncio.open_connection('localhost', port)
     writemessage(writer, message)
     response = await readmessage(reader)
