@@ -2,7 +2,7 @@ import asyncio
 import json
 import secrets
 import logging
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, Future
 # from collections import deque
 from enum import Enum, auto
 from typing import NamedTuple, Any
@@ -25,6 +25,10 @@ class MessageType(Enum):
 Message = NamedTuple('Message', [
     ('type', MessageType), ('key', str), ('content', Any)
 ])
+
+
+class CallError(RuntimeError):
+    pass
 
 
 class Server:
@@ -66,13 +70,7 @@ class Server:
         elif message.type is MessageType.CALL:
             # submit the call
             # TODO keep track of calls to make status update requests possible
-            callid = secrets.token_hex(8)
-            self._logger.info(f'Submitting call {callid}')
-            self._executor.submit(self._call, callid, message)
-            response = Message(
-                MessageType.RESULT, '',
-                f'Your call was submitted'
-            )
+            response = await self._submit(message)
         elif message.type is MessageType.STATUS:
             response = Message(
                 MessageType.ERROR, '',
@@ -83,16 +81,30 @@ class Server:
             response = Message(
                 MessageType.ERROR, '', 'Unrecognised message type'
             )
-        writemessage(writer, response)
+        await writemessage(writer, response)
 
-    def _call(self, callid: int, message: Message):
+    async def _submit(self, message: Message) -> Message:
+        callid = secrets.token_hex(8)
+        self._logger.info(f'Submitting call {callid}')
+        result = await asyncio.wrap_future(
+            self._executor.submit(self._call, message)
+        )
+        self._logger.info(f'Finished processing call {callid}')
+        exception = isinstance(result, CallError)
+        # TODO return exception as it is (or make an optional) after updating writemessage/readmessage
+        return Message(
+            MessageType.ERROR if exception else MessageType.RESULT, '',
+            str(result) if exception else result
+        )
+
+    def _call(self, message: Message):
         try:
             action_name, *args = message.content
             retval = self._database.call(action_name, *args)
-            self._logger.info(f'Finished processing call {callid}')
             return retval
         except Exception as err:
             self._logger.exception(str(err))
+            return CallError(str(err))
 
 
 async def readmessage(reader: asyncio.StreamReader) -> Message:
@@ -101,7 +113,7 @@ async def readmessage(reader: asyncio.StreamReader) -> Message:
     return Message(MessageType(decoded[MSGTYPE]), decoded[MSGKEY], decoded[MSGCONTENT])
 
 
-def writemessage(writer: asyncio.StreamWriter, message: Message):
+async def writemessage(writer: asyncio.StreamWriter, message: Message):
     jsonised = json.dumps({
         MSGTYPE: message.type.value,
         MSGKEY: message.key,
@@ -109,12 +121,12 @@ def writemessage(writer: asyncio.StreamWriter, message: Message):
     })
     encoded = (jsonised + '\n').encode()
     writer.write(encoded)
-    writer.drain()
+    await writer.drain()
 
 
 async def client_connection(port: int, message: Message):
     reader, writer = await asyncio.open_connection('localhost', port)
-    writemessage(writer, message)
+    await writemessage(writer, message)
     response = await readmessage(reader)
     print(response.content)
     asyncio.get_event_loop().stop()

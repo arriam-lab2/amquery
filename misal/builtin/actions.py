@@ -7,9 +7,12 @@ from misal.core import toaction, argument
 def echoto(metadata, preprocessed, path: str, text: str):
     # the first two arguments are here for testing purposes only
     from time import sleep
+    if text.startswith('raise'):
+        raise ValueError('test raise')
     sleep(10)
     with open(path, 'w') as out:
         print(text, file=out)
+    return text
 
 
 @argument('path', 'a fastq file')
