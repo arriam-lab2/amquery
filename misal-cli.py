@@ -16,6 +16,9 @@ from misal.server import MessageType, Message, Server, client_connection
 # TODO automatically search for a config by name instead of demanding a config path in the start command
 # TODO add password support in the start command
 
+PORT = 'PORT'
+NAME = 'NAME'
+
 logging.basicConfig(format='%(asctime)s %(message)s')
 
 
@@ -24,14 +27,19 @@ def gentoken(nbytes=32) -> str:
 
 
 @click.group('cli', context_settings=dict(help_option_names=['-h', '--help']))
-def cli():
-    pass
+@click.option('-p', '--port', required=True, type=int)
+@click.option('-n', '--name', type=str)
+@click.pass_context
+def cli(ctx, port: int, name: str):
+    ctx.obj[PORT] = port
+    ctx.obj[NAME] = name
 
 
 @cli.command('start')
-@click.option('-p', '--port', type=int, required=True)
-@click.option('-c', '--config', default=None)
-def start(port, config):
+@click.option('-c', '--config', required=True,
+              type=click.Path(exists=True, dir_okay=False, resolve_path=True))
+@click.pass_context
+def start(ctx, config):
     with open(config) as lines:
         # feed test name for now
         database = Database('DevDB', *parse(lines))
@@ -40,20 +48,20 @@ def start(port, config):
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
     logger.info(f'Access token: {key}')
-    server = Server(database, port, key, logger)
+    server = Server(database, ctx.obj[PORT], key, logger)
     run(server.run())
 
 
 @cli.command('call')
-@click.option('-p', '--port', type=int, required=True)
 @click.option('--token', prompt=True, hide_input=True, type=str)
 @click.argument('message', nargs=-1, type=str)
-def call(port, token, message):
+@click.pass_context
+def call(ctx, token, message):
     wrapped_msg = (Message(MessageType.CALL, token, message) if message else
                    Message(MessageType.HELP, token, ''))
-    run(client_connection(port, wrapped_msg))
+    run(client_connection(ctx.obj[PORT], wrapped_msg))
 
 
 if __name__ == '__main__':
-    cli()
+    cli(obj={})
 
