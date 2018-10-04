@@ -1,39 +1,44 @@
 import asyncio
-import json
 import secrets
 import logging
 from concurrent.futures import ThreadPoolExecutor
 # from collections import deque
-from enum import Enum, auto
-from typing import NamedTuple, Any
+from hmac import compare_digest as compare_hash
 
 from misal.core import Database
-
-MSGTYPE = 'TYPE'
-MSGCONTENT = 'CONTENT'
-MSGKEY = 'KEY'
-
-
-class MessageType(Enum):
-    HELP = auto()
-    CALL = auto()
-    RESULT = auto()
-    STATUS = auto()
-    ERROR = auto()
+from misal.core.users import UserDatabase, User, make_salt
+from misal.protocol import MessageType, Message, \
+                           readmessage, writemessage
 
 
-Message = NamedTuple('Message', [
-    ('type', MessageType), ('key', str), ('content', Any)
-])
+class Session:
+    def __init__(self, token: str, user: User) -> None:
+        self.token = token
+        self.user = user
+        self.authentificated = False
+        self.alive = True
 
 
 class Server:
 
-    def __init__(self, db: Database, port: int, key: str, log: logging.Logger):
-        self._database = db
-        self._port = port
-        self._key = key
-        self._logger = log
+    def __init__(self, db: Database, user_db: UserDatabase,
+                 port: int, root: str,
+                 log: logging.Logger):
+        self._database: Database = db
+        self._user_db: UserDatabase = user_db
+        self._port: int = port
+
+        # TODO create a root property in the Database class
+        self._root: str = root
+        
+        self._logger: logging.Logger = log
+        self._handlers = {
+            MessageType.HELP: self._handle_help,
+            MessageType.SYN: self._handle_syn,
+            MessageType.AUTH: self._handle_auth,
+            MessageType.CALL: self._handle_call,
+            MessageType.STATUS: self._handle_status
+        }
         # self.queue: Deque[Tuple[str, Future]] = deque()
         # setting max_workers to 1 to guarantee serial execution
         self._executor = ThreadPoolExecutor(max_workers=1)
@@ -51,39 +56,65 @@ class Server:
             await server.wait_closed()
 
     async def handle_client_connection(self, reader, writer):
-        # receive a message
-        message = await readmessage(reader)
-        # TODO we can provide docs without authentication
-        if message.key != self._key:
-            self._logger.info('Failed to authenticate a client')
-            response = Message(
-                MessageType.ERROR, '', 'Invalid authentication key'
-            )
-        elif message.type is MessageType.HELP:
-            response = Message(
-                MessageType.RESULT, '', self._database.help
-            )
-        elif message.type is MessageType.CALL:
-            # submit the call
-            # TODO keep track of calls to make status update requests possible
-            callid = secrets.token_hex(8)
-            self._logger.info(f'Submitting call {callid}')
-            self._executor.submit(self._call, callid, message)
-            response = Message(
-                MessageType.RESULT, '',
-                f'Your call was submitted'
-            )
-        elif message.type is MessageType.STATUS:
-            response = Message(
-                MessageType.ERROR, '',
-                f'Status checks are not implemented yet'
-            )
+        token = secrets.token_hex(8)
+        session = Session(token, None)
+
+        # TODO add a timeout parameter
+        while session.alive:
+            message = await readmessage(reader)
+
+            if message.type in self._handlers:
+                response = self._handlers[message.type](session, message)
+            else:
+                self._logger.info(f'Received a message of unknown '
+                                  'type {message.type}')
+                session.alive = False
+                response = Message(
+                    MessageType.ERROR, '', 'Unrecognised message type'
+                )
+
+            writemessage(writer, response)
+
+    def _handle_help(self, session: Session, message: Message) -> Message:
+        session.alive = False
+        return Message(MessageType.RESULT, '', self._database.help)
+
+    def _handle_syn(self, session: Session, message: Message) -> Message:
+        username = message.content
+        self._logger.info(f'Authentification request from {username}')
+
+        user = self._user_db.get_user(username)
+        if user:
+            session.user = user
+            salt = user.salt if user else make_salt()
+            return Message(MessageType.AUTH, session.token, salt)
         else:
-            self._logger.info(f'Received a message of unknown type {message.type}')
-            response = Message(
-                MessageType.ERROR, '', 'Unrecognised message type'
+            session.alive = False
+            return Message(
+                MessageType.ERROR, '', 'Invalid username or password'
             )
-        writemessage(writer, response)
+
+    def _handle_auth(self, session: Session, message: Message) -> Message:
+        crypted_pass = message.content
+        if compare_hash(session.user.crypted_pass, crypted_pass):
+            self._logger.info(f'{session.user.name} authentificated')
+            session.authenticated = True
+            response = Message(MessageType.ESTABLISHED, '', '')
+        else:
+            self._logger.info(f'Failed to authentificate {session.user.name}')
+            response = Message(
+                MessageType.ERROR, '', 'Invalid username or password'
+            )
+            session.alive = False
+        return response
+
+    def _handle_call(self, session: Session, message: Message) -> Message:
+        # TODO keep track of calls to make status update requests possible
+        callid = secrets.token_hex(8)
+        self._logger.info(f'Submitting call {callid}')
+        self._executor.submit(self._call, callid, message)
+        session.alive = False
+        return Message(MessageType.RESULT, '', f'Your call was submitted')
 
     def _call(self, callid: int, message: Message):
         try:
@@ -92,32 +123,14 @@ class Server:
             self._logger.info(f'Finished processing call {callid}')
             return retval
         except Exception as err:
+            # TODO update a call status instead
             self._logger.exception(str(err))
 
-
-async def readmessage(reader: asyncio.StreamReader) -> Message:
-    message = await reader.readline()
-    decoded = json.loads(message.decode())
-    return Message(MessageType(decoded[MSGTYPE]), decoded[MSGKEY], decoded[MSGCONTENT])
-
-
-def writemessage(writer: asyncio.StreamWriter, message: Message):
-    jsonised = json.dumps({
-        MSGTYPE: message.type.value,
-        MSGKEY: message.key,
-        MSGCONTENT: message.content
-    })
-    encoded = (jsonised + '\n').encode()
-    writer.write(encoded)
-    writer.drain()
-
-
-async def client_connection(port: int, message: Message):
-    reader, writer = await asyncio.open_connection('localhost', port)
-    writemessage(writer, message)
-    response = await readmessage(reader)
-    print(response.content)
-    asyncio.get_event_loop().stop()
+    def _handle_status(self, session: Session, message: Message) -> Message:
+        session.alive = False
+        return Message(MessageType.ERROR, '',
+                       f'Status checks are not implemented yet'
+                       )
 
 
 if __name__ == '__main__':
