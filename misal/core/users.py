@@ -2,8 +2,8 @@ import getpass
 import crypt
 import pathlib
 import secrets
-from typing import NamedTuple
 from enum import Enum
+from typing import NamedTuple
 from pony.orm import Database, Required, db_session, select
 
 
@@ -13,12 +13,13 @@ class UserPrivelege(str, Enum):
     READ_WRITE: str = "RW"
 
 
-UserData = NamedTuple('UserData', [
-    ('name', str), ('crypted_pass', str), ('salt', str),
-])
-
-
 db = Database()
+
+
+UserData = NamedTuple('UserData', [
+    ('name', str), ('crypted_pass', str),
+    ('salt', str), ('privelege', UserPrivelege)
+])
 
 
 class User(db.Entity):
@@ -59,7 +60,15 @@ class UserDatabase:
 
     @db_session
     def add_user(self, **kwargs) -> None:
-        name, crypted_pass, salt = _input_user_data()
+        name = kwargs.get('name', None)
+        name = name if name else _input_name()
+        salt = kwargs.get('salt', None)
+        crypted_pass = kwargs.get('crypted_pass', None)
+        if not crypted_pass:
+            password = _input_password()
+            salt = make_salt()
+            crypted_pass = crypt.crypt(password, salt=salt)
+
         privelege = kwargs.get('privelege', None)
         privelege = privelege if privelege else _input_privelege()
 
@@ -76,11 +85,8 @@ def make_salt() -> str:
     return crypt.mksalt()
 
 
-def _input_user_data() -> UserData:
-    username = input("Enter username: ")
-    password = _input_password()
-    salt = make_salt()
-    return UserData(username, crypt.crypt(password, salt=salt), salt)
+def _input_name() -> str:
+    return input("Enter username: ")
 
 
 def _input_password() -> str:

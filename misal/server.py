@@ -1,19 +1,22 @@
 import asyncio
 import secrets
 import logging
+import json
+import crypt
 from concurrent.futures import ThreadPoolExecutor
-# from collections import deque
 from hmac import compare_digest as compare_hash
 
 from misal.core import Database
-from misal.core.users import UserDatabase, User, make_salt
-from misal.protocol import MessageType, Message, \
-                           readmessage, writemessage
+from misal.core.users import UserDatabase, User
+from misal.proto import MessageType, Message, create_ssl_context, \
+                        readmessage, writemessage, \
+                        AuthMessageContent
 
 
 class Session:
     def __init__(self, token: str, user: User) -> None:
         self.token = token
+        self.box = None
         self.user = user
         self.authentificated = False
         self.alive = True
@@ -22,15 +25,14 @@ class Session:
 class Server:
 
     def __init__(self, db: Database, user_db: UserDatabase,
-                 port: int, root: str,
-                 log: logging.Logger):
+                 port: int, root: str, log: logging.Logger, **kwargs):
         self._database: Database = db
         self._user_db: UserDatabase = user_db
         self._port: int = port
 
         # TODO create a root property in the Database class
         self._root: str = root
-        
+
         self._logger: logging.Logger = log
         self._handlers = {
             MessageType.HELP: self._handle_help,
@@ -43,10 +45,32 @@ class Server:
         # setting max_workers to 1 to guarantee serial execution
         self._executor = ThreadPoolExecutor(max_workers=1)
 
+        self._certfile = kwargs.get('certfile', None)
+        self._keyfile = kwargs.get('keyfile', None)
+
+    def _init_ssl_context(self):
+        context = create_ssl_context() if self._certfile else None
+        if self._certfile and self._keyfile:
+            context.load_cert_chain(self._certfile, self._keyfile)
+        elif self._certfile:
+            context.load_cert_chain(self._certfile)
+        return context
+
     async def run(self):
-        server = await asyncio.start_server(
-            self.handle_client_connection, 'localhost', self._port
-        )
+        ssl_context = self._init_ssl_context()
+
+        if ssl_context:
+            server = await asyncio.start_server(
+                self.handle_client_connection,
+                'localhost', self._port,
+                ssl=ssl_context
+            )
+        else:
+            server = await asyncio.start_server(
+                self.handle_client_connection,
+                'localhost', self._port
+            )
+
         # TODO find a more elegant way to keep server running
         try:
             while True:
@@ -56,8 +80,7 @@ class Server:
             await server.wait_closed()
 
     async def handle_client_connection(self, reader, writer):
-        token = secrets.token_hex(8)
-        session = Session(token, None)
+        session = Session(secrets.token_hex(8), None)
 
         # TODO add a timeout parameter
         while session.alive:
@@ -77,33 +100,28 @@ class Server:
 
     def _handle_help(self, session: Session, message: Message) -> Message:
         session.alive = False
-        return Message(MessageType.RESULT, '', self._database.help)
+        return Message(MessageType.RESULT, self._database.help)
 
     def _handle_syn(self, session: Session, message: Message) -> Message:
-        username = message.content
-        self._logger.info(f'Authentification request from {username}')
-
-        user = self._user_db.get_user(username)
-        if user:
-            session.user = user
-            salt = user.salt if user else make_salt()
-            return Message(MessageType.AUTH, session.token, salt)
-        else:
-            session.alive = False
-            return Message(
-                MessageType.ERROR, '', 'Invalid username or password'
-            )
+        self._logger.info(f'Incoming authentication request')
+        return Message(MessageType.AUTH, '')
 
     def _handle_auth(self, session: Session, message: Message) -> Message:
-        crypted_pass = message.content
+        decrypted_content = session.box.decrypt(message.content)
+        auth_data = AuthMessageContent(**json.loads(decrypted_content))
+        user = self._user_db.get_user(auth_data.user)
+        self._logger.info(f'Authentification request from {user.name}')
+
+        crypted_pass = crypt.crypt(auth_data.password, user.salt)
         if compare_hash(session.user.crypted_pass, crypted_pass):
             self._logger.info(f'{session.user.name} authentificated')
             session.authenticated = True
-            response = Message(MessageType.ESTABLISHED, '', '')
+            response = Message(MessageType.ACK, '')
         else:
             self._logger.info(f'Failed to authentificate {session.user.name}')
             response = Message(
-                MessageType.ERROR, '', 'Invalid username or password'
+                MessageType.ERROR,
+                self.session.box.encrypt('Invalid username or password')
             )
             session.alive = False
         return response

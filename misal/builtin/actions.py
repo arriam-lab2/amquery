@@ -1,4 +1,5 @@
 from misal.core import toaction, argument
+from misal.core.users import UserData, UserDatabase
 
 
 @argument('path', 'a file to write to')
