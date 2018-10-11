@@ -1,5 +1,4 @@
 from misal.core import toaction, argument
-from misal.core.users import UserData, UserDatabase
 
 
 @argument('path', 'a file to write to')
@@ -8,9 +7,12 @@ from misal.core.users import UserData, UserDatabase
 def echoto(metadata, preprocessed, path: str, text: str):
     # the first two arguments are here for testing purposes only
     from time import sleep
+    if text.startswith('raise'):
+        raise ValueError('test raise')
     sleep(10)
     with open(path, 'w') as out:
         print(text, file=out)
+    return text
 
 
 @argument('path', 'a fastq file')

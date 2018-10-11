@@ -16,7 +16,6 @@ class MessageType(Enum):
     ACK = auto()
     CALL = auto()
     RESULT = auto()
-    STATUS = auto()
     ERROR = auto()
 
 
@@ -34,7 +33,6 @@ content_type = {
     MessageType.ACK: str,
     MessageType.CALL: str,
     MessageType.RESULT: str,
-    MessageType.STATUS: str,
     MessageType.ERROR: str
 }
 

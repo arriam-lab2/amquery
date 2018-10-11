@@ -3,8 +3,11 @@ import secrets
 import logging
 import json
 import crypt
-from concurrent.futures import ThreadPoolExecutor
 from hmac import compare_digest as compare_hash
+from concurrent.futures import ThreadPoolExecutor, Future
+# from collections import deque
+from enum import Enum, auto
+from typing import NamedTuple, Any
 
 from misal.core import Database
 from misal.core.users import UserDatabase, User
@@ -18,6 +21,10 @@ class Session:
         self.user = user
         self.authenticated = False
         self.alive = True
+
+
+class CallError(RuntimeError):
+    pass
 
 
 class Server:
@@ -35,8 +42,7 @@ class Server:
         self._handlers = {
             MessageType.HELP: self._handle_help,
             MessageType.SYN: self._handle_syn,
-            MessageType.CALL: self._handle_call,
-            MessageType.STATUS: self._handle_status
+            MessageType.CALL: self._handle_call
         }
         # self.queue: Deque[Tuple[str, Future]] = deque()
         # setting max_workers to 1 to guarantee serial execution
@@ -84,7 +90,7 @@ class Server:
             message = await readmessage(reader)
 
             if message.type in self._handlers:
-                response = self._handlers[message.type](session, message)
+                response = await self._handlers[message.type](session, message)
             else:
                 self._logger.info(f'Received a message of unknown '
                                   'type {message.type}')
@@ -102,11 +108,11 @@ class Server:
         else:
             return ctype(**json.loads(message.content))
 
-    def _handle_help(self, session: Session, message: Message) -> Message:
+    async def _handle_help(self, session: Session, message: Message) -> Message:
         session.alive = False
         return Message(MessageType.RESULT, self._database.help)
 
-    def _handle_syn(self, session: Session, message: Message) -> Message:
+    async def _handle_syn(self, session: Session, message: Message) -> Message:
         content = self._parse_message(message)
         user = self._user_db.get_user(content.name)
         self._logger.info(f'Incoming authentication request '
@@ -123,29 +129,32 @@ class Server:
         self._logger.info(f'Failed to authenticate {content.name}')
         return Message(MessageType.ERROR, 'Invalid username or password')
 
-    def _handle_call(self, session: Session, message: Message) -> Message:
+    async def _handle_call(self, session: Session, message: Message) -> Message:
         # TODO keep track of calls to make status update requests possible
         callid = secrets.token_hex(8)
         self._logger.info(f'Submitting call {callid}')
-        self._executor.submit(self._call, callid, message)
+        result = await asyncio.wrap_future(
+            self._executor.submit(self._call, message)
+        )
+        self._logger.info(f'Finished processing call {callid}')
+        exception = isinstance(result, CallError)
         session.alive = False
-        return Message(MessageType.RESULT, f'Your call was submitted')
+        # TODO return exception as it is (or make an optional) after
+        # updating writemessage/readmessage
+        return Message(
+            MessageType.ERROR if exception else MessageType.RESULT,
+            str(result) if exception else result
+        )
 
-    def _call(self, callid: int, message: Message):
+    def _call(self, message: Message):
         try:
             action_name, *args = message.content
             retval = self._database.call(action_name, *args)
-            self._logger.info(f'Finished processing call {callid}')
             return retval
         except Exception as err:
             # TODO update a call status instead
             self._logger.exception(str(err))
-
-    def _handle_status(self, session: Session, message: Message) -> Message:
-        session.alive = False
-        return Message(MessageType.ERROR, '',
-                       f'Status checks are not implemented yet'
-                       )
+            return CallError(str(err))
 
 
 if __name__ == '__main__':
