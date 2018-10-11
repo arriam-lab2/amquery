@@ -1,32 +1,31 @@
 import asyncio
 import ssl
+import json
 from typing import NamedTuple
 from misal.proto import Message, MessageType, \
-                        writemessage, readmessage
+                        writemessage, readmessage, \
+                        content_type
 
 
 UserCredentials = NamedTuple('UserCredentials', [
-    ('user', str), ('password', str)
+    ('name', str), ('password', str)
 ])
 
 
 class Session:
-    def __init__(self, address: str, port: int,
-                 token: str) -> None:
+    def __init__(self, address: str, port: int) -> None:
         self.address: str = address
         self.port: int = port
-        self.token: str = token
 
 
 class Client:
     def __init__(self, address: str, port: int, user: str,
                  password: str, query: str, **kwargs):
         self._query = query
-        self._session = Session(address, port, None)
+        self._session = Session(address, port)
         self._user_creds = UserCredentials(user, password)
         self._keep_alive = True
         self._handlers = {
-            MessageType.AUTH: self._handle_auth,
             MessageType.ACK: self._handle_ack,
             MessageType.RESULT: self._handle_result,
             MessageType.ERROR: self._handle_error
@@ -51,12 +50,12 @@ class Client:
             reader, writer = await self._open_connection()
 
             if self._query:
-                message = Message(
+                message = self._make_message(
                     MessageType.SYN,
-                    "HELLO",
-                )
+                    name=self._user_creds.name,
+                    password=self._user_creds.password)
             else:
-                message = Message(MessageType.HELP, '')
+                message = self._make_message(MessageType.HELP, content='')
 
             while self._keep_alive:
                 writemessage(writer, message)
@@ -67,15 +66,24 @@ class Client:
 
         except Exception as error:
             print(error)
+            raise
         finally:
             writer.close()
             asyncio.get_event_loop().stop()
 
+    def _make_message(self, message_type: MessageType, **kwargs) -> Message:
+        ctype = content_type[message_type]
+        if ctype != str:
+            content = ctype(*kwargs.values())._asdict()
+            return Message(message_type, json.dumps(content))
+        else:
+            return Message(message_type, kwargs.get('content', ''))
+
     def _handle_auth(self, response: Message) -> Message:
-        return Message(MessageType.AUTH, '')
+        return self._make_message(MessageType.AUTH, content='')
 
     def _handle_ack(self, response: Message) -> Message:
-        return Message(MessageType.CALL, '')
+        return self._make_message(MessageType.CALL, content=self._query)
 
     def _handle_result(self, response: Message) -> None:
         print(response.content)

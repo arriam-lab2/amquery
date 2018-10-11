@@ -13,22 +13,30 @@ MSGKEY = 'KEY'
 class MessageType(Enum):
     HELP = auto()
     SYN = auto()
-    AUTH = auto()
     ACK = auto()
     CALL = auto()
     RESULT = auto()
     STATUS = auto()
     ERROR = auto()
-    FIN = auto()
 
 
 Message = NamedTuple('Message', [
     ('type', MessageType), ('content', Any)
 ])
 
-AuthMessageContent = NamedTuple('AuthMessageContent', [
-    ('user', str), ('password', str)
+SynContent = NamedTuple('SynContent', [
+    ('name', str), ('password', str)
 ])
+
+content_type = {
+    MessageType.HELP: str,
+    MessageType.SYN: SynContent,
+    MessageType.ACK: str,
+    MessageType.CALL: str,
+    MessageType.RESULT: str,
+    MessageType.STATUS: str,
+    MessageType.ERROR: str
+}
 
 
 def create_ssl_context(proto=ssl.PROTOCOL_SSLv23, verify_mode=ssl.CERT_NONE,
@@ -38,7 +46,7 @@ def create_ssl_context(proto=ssl.PROTOCOL_SSLv23, verify_mode=ssl.CERT_NONE,
                           'OP_SINGLE_ECDH_USE', 'OP_NO_COMPRESSION')
     context = ssl.SSLContext(proto)
     context.verify_mode = verify_mode
-    
+
     # reset protocol and options
     context.protocol = 0
     context.options = 0

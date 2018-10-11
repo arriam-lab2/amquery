@@ -10,15 +10,13 @@ from misal.core import Database
 from misal.core.users import UserDatabase, User
 from misal.proto import MessageType, Message, create_ssl_context, \
                         readmessage, writemessage, \
-                        AuthMessageContent
+                        content_type
 
 
 class Session:
-    def __init__(self, token: str, user: User) -> None:
-        self.token = token
-        self.box = None
+    def __init__(self, user: User) -> None:
         self.user = user
-        self.authentificated = False
+        self.authenticated = False
         self.alive = True
 
 
@@ -37,7 +35,6 @@ class Server:
         self._handlers = {
             MessageType.HELP: self._handle_help,
             MessageType.SYN: self._handle_syn,
-            MessageType.AUTH: self._handle_auth,
             MessageType.CALL: self._handle_call,
             MessageType.STATUS: self._handle_status
         }
@@ -80,7 +77,7 @@ class Server:
             await server.wait_closed()
 
     async def handle_client_connection(self, reader, writer):
-        session = Session(secrets.token_hex(8), None)
+        session = Session(None)
 
         # TODO add a timeout parameter
         while session.alive:
@@ -98,33 +95,33 @@ class Server:
 
             writemessage(writer, response)
 
+    def _parse_message(self, message: Message):
+        ctype = content_type[message.type]
+        if ctype == str:
+            return message.content
+        else:
+            return ctype(**json.loads(message.content))
+
     def _handle_help(self, session: Session, message: Message) -> Message:
         session.alive = False
         return Message(MessageType.RESULT, self._database.help)
 
     def _handle_syn(self, session: Session, message: Message) -> Message:
-        self._logger.info(f'Incoming authentication request')
-        return Message(MessageType.AUTH, '')
+        content = self._parse_message(message)
+        user = self._user_db.get_user(content.name)
+        self._logger.info(f'Incoming authentication request '
+                          f'from {content.name}')
 
-    def _handle_auth(self, session: Session, message: Message) -> Message:
-        decrypted_content = session.box.decrypt(message.content)
-        auth_data = AuthMessageContent(**json.loads(decrypted_content))
-        user = self._user_db.get_user(auth_data.user)
-        self._logger.info(f'Authentification request from {user.name}')
+        if user:
+            crypted_pass = crypt.crypt(content.password, user.salt)
+            if compare_hash(user.crypted_pass, crypted_pass):
+                self._logger.info(f'{content.name} authenticated')
+                session.authenticated = True
+                return Message(MessageType.ACK, '')
 
-        crypted_pass = crypt.crypt(auth_data.password, user.salt)
-        if compare_hash(session.user.crypted_pass, crypted_pass):
-            self._logger.info(f'{session.user.name} authentificated')
-            session.authenticated = True
-            response = Message(MessageType.ACK, '')
-        else:
-            self._logger.info(f'Failed to authentificate {session.user.name}')
-            response = Message(
-                MessageType.ERROR,
-                self.session.box.encrypt('Invalid username or password')
-            )
-            session.alive = False
-        return response
+        session.alive = False
+        self._logger.info(f'Failed to authenticate {content.name}')
+        return Message(MessageType.ERROR, 'Invalid username or password')
 
     def _handle_call(self, session: Session, message: Message) -> Message:
         # TODO keep track of calls to make status update requests possible
@@ -132,7 +129,7 @@ class Server:
         self._logger.info(f'Submitting call {callid}')
         self._executor.submit(self._call, callid, message)
         session.alive = False
-        return Message(MessageType.RESULT, '', f'Your call was submitted')
+        return Message(MessageType.RESULT, f'Your call was submitted')
 
     def _call(self, callid: int, message: Message):
         try:
